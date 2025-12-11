@@ -3,6 +3,8 @@ package pt.ipca.lojasocial.presentation.components
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -28,9 +30,8 @@ fun AppTopBar(
         modifier = modifier,
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                // Icone de seta (ArrowBack)
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.Filled.ChevronLeft,
                     contentDescription = "Voltar"
                 )
             }
