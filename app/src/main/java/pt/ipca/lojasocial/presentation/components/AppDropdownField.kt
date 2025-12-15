@@ -42,14 +42,15 @@ fun AppDropdownField(
                 shape = fieldShape,
 
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true },
+                    .fillMaxWidth(),
 
                 trailingIcon = {
-                    Icon(
-                        Icons.Filled.ArrowDropDown,
-                        contentDescription = "Abrir seleção"
-                    )
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(
+                            Icons.Filled.ArrowDropDown,
+                            contentDescription = "Abrir seleção"
+                        )
+                    }
                 },
 
                 colors = OutlinedTextFieldDefaults.colors(
@@ -57,6 +58,12 @@ fun AppDropdownField(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            )
+
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true }
             )
 
             DropdownMenu(

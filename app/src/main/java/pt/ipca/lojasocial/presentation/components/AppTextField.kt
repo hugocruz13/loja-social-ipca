@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun AppTextField(
@@ -75,7 +76,9 @@ fun AppTextField(
             trailingIcon = trailingIcon,
 
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                focusedBorderColor = Color(0XFF00713C),
+                focusedLabelColor = Color(0XFF00713C),
+                cursorColor = Color(0XFF00713C),
                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 errorBorderColor = MaterialTheme.colorScheme.error,
                 unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
