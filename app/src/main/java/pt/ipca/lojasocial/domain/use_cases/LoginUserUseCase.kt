@@ -4,6 +4,16 @@ import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import javax.inject.Inject
 
+/**
+* Use Case para autenticação de utilizadores.
+*
+* **Regras de negócio aplicadas:**
+* - Email deve ser válido (conter @)
+* - Password deve ter no mínimo 8 caracteres
+* - Não permite emails ou passwords vazias
+*
+* @property repository Repositório de autenticação
+*/
 class LoginUserUseCase @Inject constructor(
     private val repository: AuthRepository
 

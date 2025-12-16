@@ -4,6 +4,12 @@ import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import javax.inject.Inject
 
+
+/**
+* Use case para obter o utilizador atualmente autenticado.
+*
+* @property repository Repositório de autenticação
+*/
 class GetCurrentUserUseCase @Inject constructor(
     private val repository: AuthRepository
 ) {
