@@ -9,6 +9,7 @@ import pt.ipca.lojasocial.presentation.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
+import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -50,15 +51,15 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
-        /*composable(AppScreen.RegisterStep3.route) {
+        composable(AppScreen.RegisterStep3.route) {
             RegisterStep3Screen(
                 viewModel = viewModel,
                 onRegisterSuccess = { navController.navigate(AppScreen.ConfirmationHome.route) },
-                onBack = { navController.goBack() }
+                onBack = { navController.popBackStack() }
             )
         }
 
-        // --- HOME / PÁGINA DE ESPERA ---
+        /*// --- HOME / PÁGINA DE ESPERA ---
         composable(AppScreen.ConfirmationHome.route) {
             ConfirmationHomeScreen()
         }*/

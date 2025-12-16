@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.presentation.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
@@ -62,7 +63,7 @@ fun RegisterStep1Screen(
                 AppTextField(
                     value = state.fullName,
                     onValueChange = {
-                        viewModel.updateStep1(it, state.cc, state.phone, state.email)
+                        viewModel.updateStep1(it, state.cc, state.phone, state.email, state.password)
                     },
                     label = "Nome Completo",
                     placeholder = "Insira o seu nome",
@@ -72,7 +73,7 @@ fun RegisterStep1Screen(
                 AppTextField(
                     value = state.cc,
                     onValueChange = {
-                        if (it.length <= 14) viewModel.updateStep1(state.fullName, it, state.phone, state.email)
+                        if (it.length <= 14) viewModel.updateStep1(state.fullName, it, state.phone, state.email, state.password)
                     },
                     label = "Cartão de Cidadão",
                     placeholder = "000000000 ZZ0",
@@ -90,7 +91,7 @@ fun RegisterStep1Screen(
                 AppTextField(
                     value = state.phone,
                     onValueChange = {
-                        if (it.length <= 9) viewModel.updateStep1(state.fullName, state.cc, it, state.email)
+                        if (it.length <= 9) viewModel.updateStep1(state.fullName, state.cc, it, state.email, state.password)
                     },
                     label = "Telemóvel",
                     placeholder = "9XX XXX XXX",
@@ -99,11 +100,20 @@ fun RegisterStep1Screen(
 
                 AppTextField(
                     value = state.email,
-                    onValueChange = { viewModel.updateStep1(state.fullName, state.cc, state.phone, it) },
+                    onValueChange = { viewModel.updateStep1(state.fullName, state.cc, state.phone, it, state.password) },
                     label = "Email",
                     placeholder = "seumemail@email.com",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
 
+                )
+
+                AppTextField(
+                    value = state.password,
+                    onValueChange = { viewModel.updateStep1(state.fullName, state.cc, state.phone, state.email, it) },
+                    label = "Password",
+                    placeholder = "Introduza a sua password",
+                    keyboardType = KeyboardType.Password,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
                 )
 
 

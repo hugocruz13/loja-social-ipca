@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,8 @@ data class RegistrationState(
     val cc: String = "",
     val phone: String = "",
     val data: String = "",
+    val email: String = "",
+    val password: String = "",
 
     val requestCategory: RequestCategory? = null,
     val educationLevel: String = "",
@@ -33,8 +36,13 @@ data class RegistrationState(
     val courseName: String = "",
     val studentNumber: String = "",
 
-    val email: String = "",
-    val password: String = "",
+
+
+    val docIdentification: Uri? = null,
+    val docFamily: Uri? = null,
+    val docMorada: Uri? = null,
+    val docRendimento: Uri? = null,
+    val docMatricula: Uri? = null
 )
 
 class AuthViewModel : ViewModel() {
@@ -43,7 +51,7 @@ class AuthViewModel : ViewModel() {
 
     fun isStep1Valid(): Boolean {
         val s = _state.value
-        return s.fullName.isNotBlank() && s.cc.length == 9 && s.phone.length >= 9 && s.fullName.isNotBlank()
+        return s.fullName.isNotBlank() && s.cc.length == 9 && s.phone.length >= 9 && s.fullName.isNotBlank() && s.email.contains("@") && s.password.length >= 6
     }
     fun isStep2Valid(): Boolean {
         val s = _state.value
@@ -52,13 +60,15 @@ class AuthViewModel : ViewModel() {
                 s.school.isNotBlank()
     }
     fun isStep3Valid(): Boolean {
-        val s = _state.value
-        return s.email.isNotBlank() && s.password.length >= 6
+
+        return true
     }
 
-    fun updateStep1(fullName: String, cc: String, phone: String, email: String) {
+
+
+    fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
         _state.update {
-            it.copy(fullName = fullName, cc = cc, phone = phone, email = email)
+            it.copy(fullName = fullName, cc = cc, phone = phone, email = email, password = password)
         }
     }
     fun updateStep2(
@@ -80,13 +90,24 @@ class AuthViewModel : ViewModel() {
             )
         }
     }
-    fun updateStep3(email: String, password: String) {
+    fun updateStep3(
+        docIdentification: Uri? = _state.value.docIdentification,
+        docFamily: Uri? = _state.value.docFamily,
+        docMorada: Uri? = _state.value.docMorada,
+        docRendimento: Uri? = _state.value.docRendimento,
+        docMatricula: Uri? = _state.value.docMatricula
+    ) {
         _state.update {
-            it.copy(email = email, password = password)
+            it.copy(
+                docIdentification = docIdentification,
+                docFamily = docFamily,
+                docMorada = docMorada,
+                docRendimento = docRendimento,
+                docMatricula = docMatricula
+            )
         }
     }
 
-    // --- Ação Final ---
     fun register() {
         println("A registar utilizador: ${_state.value}")
     }
