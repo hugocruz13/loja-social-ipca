@@ -8,12 +8,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.use_cases.GetBeneficiariesUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class BeneficiariesViewModel @Inject constructor(
-    private val repository: BeneficiaryRepository
+    private val getBeneficiariesUseCase: GetBeneficiariesUseCase
 ) : ViewModel() {
 
     // Estados de UI
@@ -25,7 +25,6 @@ class BeneficiariesViewModel @Inject constructor(
 
     // Lista vinda da Base de Dados (Fonte da verdade)
     private val _beneficiaries = MutableStateFlow<List<Beneficiary>>(emptyList())
-    // Nota: Não expomos esta lista diretamente à UI, usamos a função de filtro
 
     // Estados dos Filtros
     private val _searchQuery = MutableStateFlow("")
@@ -46,8 +45,8 @@ class BeneficiariesViewModel @Inject constructor(
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                // Chama a função do repositório que criaste antes
-                val result = repository.getBeneficiaryList()
+                // Alteração Principal: Chamamos o UseCase
+                val result = getBeneficiariesUseCase()
                 _beneficiaries.value = result
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao carregar dados: ${e.message}"
@@ -58,7 +57,7 @@ class BeneficiariesViewModel @Inject constructor(
         }
     }
 
-    // Lógica de Filtragem
+    // Lógica de Filtragem (Mantida no ViewModel pois é lógica de apresentação/UI)
     fun getFilteredList(): List<Beneficiary> {
         val query = _searchQuery.value.lowercase()
         val year = _selectedYear.value
@@ -72,7 +71,7 @@ class BeneficiariesViewModel @Inject constructor(
             // 2. Filtro de Ano
             val matchesYear = year.isEmpty() || ben.schoolYearId == year
 
-            // 3. Filtro de Status (Enum para String)
+            // 3. Filtro de Status
             val matchesStatus = statusFilter.isEmpty() ||
                     ben.status.name.equals(statusFilter, ignoreCase = true)
 
