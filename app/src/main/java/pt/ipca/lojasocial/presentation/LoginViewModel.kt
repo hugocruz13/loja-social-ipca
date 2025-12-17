@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.models.UserRole
-import pt.ipca.lojasocial.domain.use_cases.LoginUserUseCase
+import pt.ipca.lojasocial.domain.use_cases.auth.LoginUserUseCase
 import javax.inject.Inject
 
 //--------------------------------------------

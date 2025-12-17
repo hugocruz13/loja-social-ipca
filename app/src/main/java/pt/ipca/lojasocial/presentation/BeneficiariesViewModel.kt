@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.domain.use_cases.GetBeneficiariesUseCase
+import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
 import javax.inject.Inject
 
 @HiltViewModel
