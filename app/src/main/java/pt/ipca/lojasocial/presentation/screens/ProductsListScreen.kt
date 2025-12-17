@@ -24,7 +24,7 @@ data class ProductItem(
 
 /**
  * Ecrã principal de listagem de produtos.
- * * Integra pesquisa, filtragem por ano letivo/status e a lista de bens em stock.
+ * Integra pesquisa, filtragem por ano letivo/status e a lista de bens em stock.
  * O fundo é uniforme para destacar os componentes individuais.
  */
 @Composable
@@ -64,13 +64,10 @@ fun ProductListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddProductClick,
-                containerColor = Color(0xFF00713C),
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = "Adicionar Produto")
-            }
+            // Substituído pelo componente personalizado AdicionarButton
+            AdicionarButton(
+                onClick = onAddProductClick
+            )
         },
         bottomBar = {
             AppBottomBar(
@@ -89,7 +86,6 @@ fun ProductListScreen(
         ) {
 
             // --- SECÇÃO SUPERIOR: PESQUISA E FILTROS ---
-            // Esta secção não tem fundo próprio (Surface), herdando o cinza do Scaffold
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
