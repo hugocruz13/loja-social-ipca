@@ -17,6 +17,9 @@ import pt.ipca.lojasocial.presentation.screens.ProfileScreen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
+import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
+import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
     object RegisterStep1 : AppScreen("register/step1")
@@ -27,26 +30,28 @@ sealed class AppScreen(val route: String) {
     object Profile : AppScreen("profile")
     object AnoLetivoList : AppScreen("anoletivolist")
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
+    object RequerimentosList : AppScreen("requerimentoslist")
+    object RequerimentoDetails : AppScreen("requerimentodetails?id={id}")
 }
 
 @Composable
 fun AppNavHost(
-    viewModel: AuthViewModel = viewModel() // ViewModel para gerir o estado de autenticação/registo
+    viewModel: AuthViewModel = viewModel()
 ) {
     val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.Login.route // A primeira página a aparecer é o Login
+        startDestination = AppScreen.Login.route
     ) {
+
         composable(AppScreen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(AppScreen.AnoLetivoList.route) },
+                onLoginSuccess = { navController.navigate(AppScreen.RequerimentosList.route) },
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) }
             )
         }
 
-        // --- FLUXO DE REGISTO (3 PASSOS) ---
         composable(AppScreen.RegisterStep1.route) {
             RegisterStep1Screen(
                 viewModel = viewModel,
@@ -68,11 +73,6 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() }
             )
         }
-
-        /*// --- HOME / PÁGINA DE ESPERA ---
-        composable(AppScreen.ConfirmationHome.route) {
-            ConfirmationHomeScreen()
-        }*/
 
         composable(AppScreen.Notification.route) {
             NotificationsScreen(
@@ -97,27 +97,59 @@ fun AppNavHost(
         }
 
         composable(
-            route = "anoletivoaddedit?id={id}", // A tua rota definida no AppScreen
+            route = "anoletivoaddedit?id={id}",
             arguments = listOf(
                 navArgument("id") {
-                    type = NavType.StringType // Ou IntType dependendo da tua BD
+                    type = NavType.StringType
                     nullable = true
                     defaultValue = null
                 }
             )
         ) { backStackEntry ->
-            // Extrair o ID dos argumentos
             val idString = backStackEntry.arguments?.getString("id")
-            val id = idString?.toIntOrNull() // Converte para Int se necessário
+            val id = idString?.toIntOrNull()
 
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveClick = { dataInicio, dataFim ->
-                    // Aqui chamarias o ViewModel para guardar os dados antes de voltar
                     navController.popBackStack()
                 }
             )
         }
+
+        composable(AppScreen.RequerimentosList.route) {
+            RequerimentosScreen(
+                onBackClick = { navController.popBackStack() },
+                onRequerimentoClick = { id -> navController.navigate("requerimentodetails?id=$id")}
+            )
+        }
+
+        composable(
+            route = AppScreen.RequerimentoDetails.route,
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+
+            RequerimentoDetailScreen(
+                requerimentoId = id,
+                onBackClick = { navController.popBackStack() },
+                onAccept = {
+                    // Lógica para aceitar
+                    navController.popBackStack()
+                },
+                onReject = { justificacao ->
+                    // Lógica para rejeitar com a justificativa vinda do modal
+                    navController.popBackStack()
+                }
+            )
+        }
+
+
     }
 }
