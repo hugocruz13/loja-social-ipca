@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,27 +25,23 @@ fun AppDatePickerField(
     selectedValue: String,
     onDateSelected: (String) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    enabled: Boolean = true,
     placeholder: String = "mm/dd/yyyy"
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Obtém o ano, mês e dia atuais para definir a data padrão do seletor
     val year = calendar.get(Calendar.YEAR)
     val month = calendar.get(Calendar.MONTH)
     val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-    // Formato de data para exibir
     val dateFormat = { y: Int, m: Int, d: Int ->
         String.format(Locale.getDefault(), "%02d/%02d/%d", m + 1, d, y)
     }
 
-    // Função para mostrar o diálogo do seletor de data
     val datePickerDialog = DatePickerDialog(
         context,
-        { _, y, m, d ->
-            onDateSelected(dateFormat(y, m, d))
-        },
+        { _, y, m, d -> onDateSelected(dateFormat(y, m, d)) },
         year, month, day
     )
 
@@ -52,32 +49,35 @@ fun AppDatePickerField(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         OutlinedTextField(
             value = selectedValue.ifEmpty { placeholder },
             onValueChange = { },
             readOnly = true,
+            enabled = enabled,
             singleLine = true,
             shape = RoundedCornerShape(8.dp),
-
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { datePickerDialog.show() },
+                .then(if (enabled) Modifier.clickable { datePickerDialog.show() } else Modifier),
 
-            // Ícone de Calendário
             trailingIcon = {
                 Icon(
                     Icons.Filled.DateRange,
                     contentDescription = "Abrir calendário",
-                    modifier = Modifier.clickable { datePickerDialog.show() }
+                    modifier = if (enabled) Modifier.clickable { datePickerDialog.show() } else Modifier
                 )
             },
 
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                focusedBorderColor = Color(0XFF00713C),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
     }

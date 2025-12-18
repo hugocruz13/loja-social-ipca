@@ -6,13 +6,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 
+data class UserProfile(
+    val name: String,
+    val email: String,
+    val userType: String,
+    val status: String
+)
+
 enum class RequestCategory {
     ALIMENTARES,
     HIGIENE,
     LIMPEZA,
     TODOS
-
-
 }
 
 val educationLevels = listOf(
