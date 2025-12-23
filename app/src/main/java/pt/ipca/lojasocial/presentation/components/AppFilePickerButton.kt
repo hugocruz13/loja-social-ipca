@@ -12,20 +12,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import android.net.Uri // 💥 IMPORTANTE: Necessário para Uri?
+import android.net.Uri
 
 @Composable
 fun AppFilePickerButton(
     onClick: () -> Unit,
     label: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
-    isSelected: Boolean = false
+    isSelected: Boolean = false,
+    enabled: Boolean = true
 ) {
     val accentColor = Color(0XFF00713C)
     val buttonBgColor = accentColor.copy(alpha = 0.1f)
 
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(horizontal = 16.dp),

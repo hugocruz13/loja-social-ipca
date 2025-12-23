@@ -9,8 +9,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import pt.ipca.lojasocial.presentation.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
-import pt.ipca.lojasocial.presentation.screens.DashboardScreen
+import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
+import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
 import pt.ipca.lojasocial.presentation.screens.ProfileScreen
@@ -32,6 +34,9 @@ sealed class AppScreen(val route: String) {
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
     object RequerimentosList : AppScreen("requerimentoslist")
     object RequerimentoDetails : AppScreen("requerimentodetails?id={id}")
+    object CampanhasList : AppScreen("campanhaslist")
+    object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
+    object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
 }
 
 @Composable
@@ -47,7 +52,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(AppScreen.RequerimentosList.route) },
+                onLoginSuccess = { navController.navigate(AppScreen.CampanhasList.route) },
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) }
             )
         }
@@ -146,6 +151,50 @@ fun AppNavHost(
                 onReject = { justificacao ->
                     // Lógica para rejeitar com a justificativa vinda do modal
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable(AppScreen.CampanhasList.route) {
+            CampanhasScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddClick = { navController.navigate("campanha_add_edit") },
+                onCampanhaClick = { id -> navController.navigate("campanha_detail/$id") }
+            )
+        }
+
+        composable(
+            route = "campanha_add_edit?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+
+            AddEditCampanhaScreen(
+                campanhaId = id,
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = { n, d, i, f, t ->
+                    /* tua lógica de save */
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(route = "campanha_detail/{campanhaId}",
+            arguments = listOf(navArgument("campanhaId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("campanhaId") ?: ""
+            CampanhaDetailScreen(
+                campanhaId = id,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { idToEdit ->
+                    // Navega para a página de AddEdit passando o ID
+                    navController.navigate("campanha_add_edit?id=$idToEdit")
                 }
             )
         }
