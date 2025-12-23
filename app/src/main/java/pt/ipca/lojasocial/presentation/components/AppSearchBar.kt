@@ -17,7 +17,7 @@ fun AppSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     placeholder: String,
-    modifier: Modifier = Modifier.fillMaxWidth()
+    modifier: Modifier = Modifier
 ) {
     val searchShape = RoundedCornerShape(8.dp)
 
@@ -30,7 +30,7 @@ fun AppSearchBar(
             Icon(Icons.Filled.Search, contentDescription = "Pesquisar")
         },
 
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         singleLine = true,
 
         shape = searchShape,
