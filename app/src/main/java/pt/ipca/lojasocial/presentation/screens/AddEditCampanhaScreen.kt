@@ -7,10 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,7 +19,9 @@ import pt.ipca.lojasocial.presentation.components.*
 fun AddEditCampanhaScreen(
     campanhaId: String? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String, String, String, CampaignType) -> Unit
+    onSaveClick: (String, String, String, String, CampaignType) -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
@@ -74,12 +72,12 @@ fun AddEditCampanhaScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
+            AppBottomBar(
+                navItems = navItems,
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
-            AppBottomBar(navItems = navItems, currentRoute = "home", onItemSelected = { })
         }
     ) { paddingValues ->
         Column(

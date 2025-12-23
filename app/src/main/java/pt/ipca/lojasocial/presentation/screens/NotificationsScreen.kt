@@ -10,16 +10,15 @@ import pt.ipca.lojasocial.presentation.components.AppTopBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.ui.tooling.preview.Preview
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 
 @Composable
 fun NotificationsScreen(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     // 1. LISTA SIMULADA / TROCAR PELO BACKEND
     val notifications = remember {
@@ -59,15 +58,11 @@ fun NotificationsScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "notification",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -86,8 +81,3 @@ fun NotificationsScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun NotificationsScreenPreview() {
-    NotificationsScreen(onBackClick = {})
-}

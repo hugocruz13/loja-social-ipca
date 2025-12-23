@@ -1,5 +1,9 @@
 package pt.ipca.lojasocial.presentation.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -8,11 +12,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import pt.ipca.lojasocial.presentation.AuthViewModel
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
+import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
+import pt.ipca.lojasocial.presentation.screens.EntregasScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
 import pt.ipca.lojasocial.presentation.screens.ProfileScreen
@@ -37,6 +45,7 @@ sealed class AppScreen(val route: String) {
     object CampanhasList : AppScreen("campanhaslist")
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
+    object EntregasList : AppScreen("entregaslist")
 }
 
 @Composable
@@ -45,6 +54,20 @@ fun AppNavHost(
 ) {
     val navController = rememberNavController()
 
+    val globalNavItems = listOf(
+        BottomNavItem(AppScreen.CampanhasList.route, Icons.Filled.Home, "Home"),
+        BottomNavItem(AppScreen.Notification.route, Icons.Filled.Notifications, "Notificações"),
+        BottomNavItem(AppScreen.Profile.route, Icons.Filled.Settings, "Configurações")
+    )
+
+    val onNavigate: (String) -> Unit = { route ->
+        navController.navigate(route) {
+            popUpTo(navController.graph.startDestinationId) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = AppScreen.Login.route
@@ -52,7 +75,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(AppScreen.CampanhasList.route) },
+                onLoginSuccess = { navController.navigate(AppScreen.EntregasList.route) },
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) }
             )
         }
@@ -81,7 +104,9 @@ fun AppNavHost(
 
         composable(AppScreen.Notification.route) {
             NotificationsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -89,7 +114,9 @@ fun AppNavHost(
             ProfileScreen(
                 viewModel = viewModel,
                 onLogout = { navController.navigate(AppScreen.Login.route) },
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -97,7 +124,9 @@ fun AppNavHost(
             AnoLetivoListScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate(AppScreen.AnoLetivoAddEdit.route) },
-                onYearClick = { ano -> navController.navigate("anoletivoaddedit?id=${ano.id}")}
+                onYearClick = { ano -> navController.navigate("anoletivoaddedit?id=${ano.id}")},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -117,16 +146,18 @@ fun AppNavHost(
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { dataInicio, dataFim ->
-                    navController.popBackStack()
-                }
+                onSaveClick = { dataInicio, dataFim ->navController.popBackStack()},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
         composable(AppScreen.RequerimentosList.route) {
             RequerimentosScreen(
                 onBackClick = { navController.popBackStack() },
-                onRequerimentoClick = { id -> navController.navigate("requerimentodetails?id=$id")}
+                onRequerimentoClick = { id -> navController.navigate("requerimentodetails?id=$id")},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -151,7 +182,9 @@ fun AppNavHost(
                 onReject = { justificacao ->
                     // Lógica para rejeitar com a justificativa vinda do modal
                     navController.popBackStack()
-                }
+                },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -159,7 +192,9 @@ fun AppNavHost(
             CampanhasScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate("campanha_add_edit") },
-                onCampanhaClick = { id -> navController.navigate("campanha_detail/$id") }
+                onCampanhaClick = { id -> navController.navigate("campanha_detail/$id") },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -178,10 +213,9 @@ fun AppNavHost(
             AddEditCampanhaScreen(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { n, d, i, f, t ->
-                    /* tua lógica de save */
-                    navController.popBackStack()
-                }
+                onSaveClick = { n, d, i, f, t ->navController.popBackStack()},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 
@@ -192,10 +226,60 @@ fun AppNavHost(
             CampanhaDetailScreen(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = { idToEdit ->
-                    // Navega para a página de AddEdit passando o ID
-                    navController.navigate("campanha_add_edit?id=$idToEdit")
-                }
+                onEditClick = { idToEdit ->navController.navigate("campanha_add_edit?id=$idToEdit")},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.EntregasList.route) {
+            EntregasScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddClick = { navController.navigate("agendar_entrega?role=colaborador") },
+                onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=colaborador") },
+                onDeliveryClick = { id ->navController.navigate("entrega_detail/$id/colaborador")},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = "agendar_entrega?id={id}&role={role}",
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("role") { type = NavType.StringType; defaultValue = "colaborador" }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+            val role = backStackEntry.arguments?.getString("role")
+
+            AddEditEntregaScreen(
+                entregaId = id,
+                isCollaborator = role == "colaborador",
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = {navController.popBackStack()},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = "entrega_detail/{id}/{role}",
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType },
+                navArgument("role") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id") ?: ""
+            val role = backStackEntry.arguments?.getString("role") ?: "beneficiario"
+
+            EntregaDetailScreen(
+                entregaId = id,
+                userRole = role,
+                onBackClick = { navController.popBackStack() },
+                onStatusUpdate = { entregue ->navController.popBackStack()},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
             )
         }
 

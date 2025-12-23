@@ -18,12 +18,15 @@ import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDatePickerField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.navigation.AppScreen
 
 @Composable
 fun AddEditAnoLetivoScreen(
     anoLetivoId: Int? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String) -> Unit
+    onSaveClick: (String, String) -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     var dataInicio by remember { mutableStateOf("") }
     var dataFim by remember { mutableStateOf("") }
@@ -39,15 +42,11 @@ fun AddEditAnoLetivoScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         }
     ) { paddingValues ->
