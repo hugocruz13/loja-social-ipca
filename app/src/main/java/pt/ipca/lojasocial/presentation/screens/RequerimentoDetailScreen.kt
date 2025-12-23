@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,14 +20,15 @@ fun RequerimentoDetailScreen(
     requerimentoId: String,
     onBackClick: () -> Unit,
     onAccept: () -> Unit,
-    onReject: (String) -> Unit
+    onReject: (String) -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     val accentGreen = Color(0XFF00713C)
     var showRejectModal by remember { mutableStateOf(false) }
     var justificacao by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
 
-    // Modal de Rejeição
     if (showRejectModal) {
         AlertDialog(
             onDismissRequest = { showRejectModal = false },
@@ -69,15 +66,11 @@ fun RequerimentoDetailScreen(
             AppTopBar(title = "Aceitar / Rejeitar Requerimento", onBackClick = onBackClick)
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         }
     ) { paddingValues ->
@@ -92,7 +85,6 @@ fun RequerimentoDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 24.dp)
             ) {
-                // Avatar (Simulado com cor sólida ou imagem)
                 Box(
                     modifier = Modifier
                         .size(80.dp)

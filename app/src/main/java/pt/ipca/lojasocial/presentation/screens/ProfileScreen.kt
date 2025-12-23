@@ -6,10 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +27,9 @@ import pt.ipca.lojasocial.presentation.components.BottomNavItem
 fun ProfileScreen(
     viewModel: AuthViewModel,
     onLogout: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val accentGreen = Color(0XFF00713C)
@@ -39,8 +37,6 @@ fun ProfileScreen(
 
     var isEditing by remember { mutableStateOf(false) }
 
-    // 1. Criar estados para os campos (inicializados com os valores do state)
-    // Nota: Numa aplicação real, o ideal é atualizar o ViewModel diretamente
     var nome by remember{ mutableStateOf("ASD") }
     var email by remember{ mutableStateOf("ASD@ASD.COM") }
     var nif by remember { mutableStateOf("123456789") }
@@ -54,15 +50,11 @@ fun ProfileScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notification", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "profile",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -75,7 +67,6 @@ fun ProfileScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar com a inicial do nome editado
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -104,7 +95,6 @@ fun ProfileScreen(
                 ),
                 modifier = Modifier.clickable {
                     if (isEditing) {
-                        // Resetar valores ao cancelar se necessário
                         nome = "123"
                         email = state.email
                     }
@@ -114,7 +104,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 2. Ligar o 'value' e o 'onValueChange' às variáveis criadas
             AppTextField(
                 value = nome,
                 onValueChange = { nome = it },
@@ -163,8 +152,6 @@ fun ProfileScreen(
                 AppButton(
                     text = "Guardar Alterações",
                     onClick = {
-                        // 3. Aqui chamarias o viewModel para gravar permanentemente
-                        // viewModel.updateProfile(nome, email, nif, numero)
                         isEditing = false
                     },
                     containerColor = accentGreen,

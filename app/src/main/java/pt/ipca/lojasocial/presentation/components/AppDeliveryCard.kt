@@ -24,12 +24,12 @@ fun AppDeliveryDetailCard(
     deliveryContent: String,
     status: StatusType,
     onEditClick: () -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth()
+    modifier: Modifier = Modifier
 ) {
 
 
     Card(
-        modifier = modifier.clickable(onClick = onEditClick),
+        modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -41,7 +41,6 @@ fun AppDeliveryDetailCard(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {

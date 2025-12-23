@@ -1,30 +1,25 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.presentation.components.*
 
 @Composable
 fun RegisterProductScreen(
     onBackClick: () -> Unit,
-    onAddToStockClick: () -> Unit
+    onAddToStockClick: () -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
-    // --- ESTADOS DO FORMULÁRIO ---
     var productType by remember { mutableStateOf("") }
     var quantity by remember { mutableStateOf("") }
     var deliveryDate by remember { mutableStateOf("10/27/2023") }
@@ -45,15 +40,11 @@ fun RegisterProductScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         },
         containerColor = backgroundColor
@@ -66,7 +57,6 @@ fun RegisterProductScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // --- SECÇÃO: INFORMAÇÃO PRODUTO ---
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = "Informação Produto",
@@ -110,7 +100,6 @@ fun RegisterProductScreen(
                 }
             }
 
-            // --- SECÇÃO: ASSOCIAR CAMPANHA ---
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
                     text = "Associar Campanha",
@@ -126,7 +115,6 @@ fun RegisterProductScreen(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    // Seletor Interna/Externa (Segmented Control manual)
                     Surface(
                         tonalElevation = 2.dp,
                         shape = RoundedCornerShape(8.dp),
@@ -136,7 +124,6 @@ fun RegisterProductScreen(
                         Row(modifier = Modifier.fillMaxSize().padding(4.dp)) {
                             val modifierWeight = Modifier.weight(1f).fillMaxHeight()
 
-                            // Botão Interna
                             Button(
                                 onClick = { campaignType = "Interna" },
                                 modifier = modifierWeight,
@@ -151,7 +138,6 @@ fun RegisterProductScreen(
                                 Text("Interna", fontWeight = FontWeight.Medium)
                             }
 
-                            // Botão Externa
                             Button(
                                 onClick = { campaignType = "Externa" },
                                 modifier = modifierWeight,
@@ -179,7 +165,6 @@ fun RegisterProductScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- BOTÃO FINAL ---
             AppButton(
                 onClick = onAddToStockClick,
                 text = "Add to Stock",
@@ -190,11 +175,3 @@ fun RegisterProductScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun RegisterProductScreenPreview() {
-    RegisterProductScreen(
-        onBackClick = {},
-        onAddToStockClick = {}
-    )
-}

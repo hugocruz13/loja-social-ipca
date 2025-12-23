@@ -9,31 +9,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.presentation.components.*
 
-/**
- * Modelo de dados representativo de um Produto na View.
- */
+
 data class ProductItem(
     val name: String,
     val id: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
+
 )
 
-/**
- * Ecrã principal de listagem de produtos.
- * Integra pesquisa, filtragem por ano letivo/status e a lista de bens em stock.
- * O fundo é uniforme para destacar os componentes individuais.
- */
+
 @Composable
 fun ProductListScreen(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
-    onAddProductClick: () -> Unit
+    onAddProductClick: () -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
-    // --- ESTADOS DA UI ---
     var searchQuery by remember { mutableStateOf("") }
     var selectedYear by remember { mutableStateOf("2024-2025") }
     var selectedStatus by remember { mutableStateOf("") }
@@ -41,14 +36,12 @@ fun ProductListScreen(
     val years = listOf("2023-2024", "2024-2025", "2025-2026")
     val statusOptions = listOf("Ativo", "Inativo", "Pendente")
 
-    // Dados fictícios baseados na imagem de referência
     val products = listOf(
         ProductItem("Arroz", "B-67890", Icons.Filled.Fastfood),
         ProductItem("Água", "B-24680", Icons.Filled.WaterDrop),
         ProductItem("Bolacha", "B-13579", Icons.Filled.Fastfood)
     )
 
-    // Configuração de cores e navegação
     val backgroundColor = Color(0xFFF8F9FA)
     val navItems = listOf(
         BottomNavItem("home", Icons.Filled.Home, "Home"),
@@ -64,7 +57,6 @@ fun ProductListScreen(
             )
         },
         floatingActionButton = {
-            // Substituído pelo componente personalizado AdicionarButton
             AdicionarButton(
                 onClick = onAddProductClick
             )
@@ -72,8 +64,9 @@ fun ProductListScreen(
         bottomBar = {
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { /* Lógica de navegação */ }
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         },
         containerColor = backgroundColor
@@ -85,21 +78,18 @@ fun ProductListScreen(
                 .padding(paddingValues)
         ) {
 
-            // --- SECÇÃO SUPERIOR: PESQUISA E FILTROS ---
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Componente de Pesquisa
                 AppSearchBar(
                     query = searchQuery,
                     onQueryChange = { searchQuery = it },
                     placeholder = "Procurar produto"
                 )
 
-                // Linha de Filtros (Dropdowns lado a lado)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -123,7 +113,6 @@ fun ProductListScreen(
                 }
             }
 
-            // --- LISTA DE PRODUTOS ---
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
@@ -142,14 +131,3 @@ fun ProductListScreen(
     }
 }
 
-// --- PREVIEW ---
-
-@Preview(showBackground = true)
-@Composable
-fun ProductListScreenPreview() {
-    ProductListScreen(
-        onBackClick = {},
-        onProductClick = {},
-        onAddProductClick = {}
-    )
-}

@@ -7,14 +7,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.CleaningServices
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.presentation.components.*
 
@@ -30,7 +26,9 @@ data class CampanhaModel(
 fun CampanhasScreen(
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
-    onCampanhaClick: (String) -> Unit
+    onCampanhaClick: (String) -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -57,15 +55,11 @@ fun CampanhasScreen(
             )
         },
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { }
+                currentRoute = "",
+                onItemSelected = { item -> onNavigate(item.route)
+                }
             )
         },
         floatingActionButton = {
@@ -103,12 +97,3 @@ fun CampanhasScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun CampanhasScreenPreview() {
-    CampanhasScreen(
-        onBackClick = {},
-        onAddClick = {},
-        onCampanhaClick = {}
-    )
-}
