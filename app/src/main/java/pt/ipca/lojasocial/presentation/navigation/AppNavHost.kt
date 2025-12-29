@@ -23,12 +23,15 @@ import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.EntregasScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
+import pt.ipca.lojasocial.presentation.screens.ProductDetailScreen
 import pt.ipca.lojasocial.presentation.screens.ProfileScreen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
+
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -46,6 +49,8 @@ sealed class AppScreen(val route: String) {
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
     object EntregasList : AppScreen("entregaslist")
+    object ProductList : AppScreen("product_list")
+    object ProductDetail : AppScreen("product_detail/{productId}")
 }
 
 @Composable
@@ -75,7 +80,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                onLoginSuccess = { navController.navigate(AppScreen.EntregasList.route) },
+                onLoginSuccess = { navController.navigate(AppScreen.ProductList.route) },
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) }
             )
         }
@@ -283,6 +288,32 @@ fun AppNavHost(
             )
         }
 
+        composable(AppScreen.ProductList.route) {
+            ProductListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
+                onAddProductClick = {},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = AppScreen.ProductDetail.route,
+            arguments = listOf(
+                navArgument("productId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+
+            ProductDetailScreen(
+                productId = productId,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = {},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
 
     }
 }

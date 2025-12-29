@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.AccessTimeFilled
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Numbers
 
 @Composable
@@ -26,7 +28,7 @@ fun ProductInfoRow(
 
     Row(
         modifier = modifier
-            .padding(vertical = 12.dp),
+            .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
@@ -64,51 +66,63 @@ fun ProductInfoRow(
 }
 
 
-
-@Preview(showBackground = true)
 @Composable
-fun ProductDetailsListPreview() {
+fun ProductDetailsListPreview(
+    type: String,
+    quantity: String,
+    lastDelivery: String,
+    expiry: String,
+    code: String,
+    campaign: String? = null
+) {
     val highlightColor = Color(0xFFFF9800)
 
     Column(modifier = Modifier.padding(16.dp)) {
 
-        Text(text = "Arroz", style = MaterialTheme.typography.headlineLarge)
-
-        Divider(modifier = Modifier.padding(vertical = 4.dp))
-
+        HorizontalDivider()
         ProductInfoRow(
             icon = Icons.Filled.Category,
             label = "Tipo Produto",
-            value = "Comida"
+            value = type
         )
 
-        Divider(modifier = Modifier.padding(vertical = 4.dp))
-
+        HorizontalDivider()
         ProductInfoRow(
             icon = Icons.Filled.Inventory2,
             label = "Quantidade",
-            value = "32 unidades",
+            value = quantity,
             valueColor = highlightColor
         )
 
-        Divider(modifier = Modifier.padding(vertical = 4.dp))
-
+        HorizontalDivider()
         ProductInfoRow(
             icon = Icons.Filled.AccessTimeFilled,
-            label = "Validade",
-            value = "Expira a 31/12/2025",
-            valueColor = highlightColor
+            label = "Última Entrega",
+            value = lastDelivery
         )
 
-        Divider(modifier = Modifier.padding(vertical = 4.dp))
+        HorizontalDivider()
+        ProductInfoRow(
+            icon = Icons.Filled.Event,
+            label = "Validade",
+            value = expiry
+        )
 
+        HorizontalDivider()
         ProductInfoRow(
             icon = Icons.Filled.Numbers,
             label = "Código Produto",
-            value = "FSB-0012-C4"
+            value = code
         )
 
-        Divider(modifier = Modifier.padding(vertical = 4.dp))
+        HorizontalDivider()
+        ProductInfoRow(
+            icon = Icons.Filled.Link,
+            label = "Campanha Associada",
+            value = campaign ?: "Nenhuma"
+        )
 
+        HorizontalDivider()
     }
 }
+
