@@ -16,6 +16,7 @@ import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
@@ -51,6 +52,8 @@ sealed class AppScreen(val route: String) {
     object EntregasList : AppScreen("entregaslist")
     object ProductList : AppScreen("product_list")
     object ProductDetail : AppScreen("product_detail/{productId}")
+    object ProductAddEdit : AppScreen("product_add_edit?id={id}")
+
 }
 
 @Composable
@@ -309,11 +312,34 @@ fun AppNavHost(
             ProductDetailScreen(
                 productId = productId,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = {},
+                onEditClick = { navController.navigate("product_add_edit?id=$it") },
+                        navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = "product_add_edit?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+
+            val productId = backStackEntry.arguments?.getString("id")
+
+            AddEditProductScreen(
+                productId = productId,
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
+
 
     }
 }
