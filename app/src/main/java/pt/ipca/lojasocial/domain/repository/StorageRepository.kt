@@ -10,4 +10,6 @@ interface StorageRepository {
      * @return O URL de download (String).
      */
     suspend fun uploadFile(uri: Uri, fileName: String): String
+
+    suspend fun deleteFile(fileUrl: String)
 }

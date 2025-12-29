@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.domain.repository
 
 import pt.ipca.lojasocial.domain.models.Request
-import pt.ipca.lojasocial.domain.models.RequestStatus
+import pt.ipca.lojasocial.presentation.components.StatusType
 
 /**
  * Interface responsável pela gestão dos Pedidos de Apoio (Candidaturas).
@@ -43,7 +43,7 @@ interface RequestRepository {
      * @param status (Opcional) Se fornecido, filtra a lista para mostrar apenas pedidos neste estado.
      * @return Lista de [Request] que correspondem aos critérios.
      */
-    suspend fun getRequestsByYear(schoolYearId: String, status: RequestStatus? = null): List<Request>
+    suspend fun getRequestsByYear(schoolYearId: String, status: StatusType? = null): List<Request>
 
     /**
      * Atualiza o estado de uma candidatura (ex: de SUBMITTED para APPROVED).
@@ -51,5 +51,7 @@ interface RequestRepository {
      * @param id O identificador do pedido.
      * @param newStatus O novo estado a aplicar.
      */
-    suspend fun updateStatus(id: String, newStatus: RequestStatus)
+    suspend fun updateStatus(id: String, newStatus: StatusType)
+
+    suspend fun updateRequestDocsAndStatus(id: String, documents: Map<String, String?>, status: StatusType)
 }

@@ -77,6 +77,7 @@ fun AppNavHost(
     NavHost(
         navController = navController,
         startDestination = AppScreen.Login.route
+        //startDestination = AppScreen.RequerimentosList.route
     ) {
 
         composable(AppScreen.Login.route) {
@@ -110,23 +111,7 @@ fun AppNavHost(
             )
         }
 
-        composable(AppScreen.RequerimentoStatus.route) {
 
-            val state by viewModel.state.collectAsState()
-
-            RequerimentoEstadoScreen(
-                status = RequestStatus.IN_ANALYSIS,
-
-                beneficiaryName = state.fullName,
-                studentNumber = state.studentNumber,
-
-                onBackClick = {
-                    navController.navigate(AppScreen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
 
         composable(AppScreen.Notification.route) {
             NotificationsScreen(
@@ -196,21 +181,32 @@ fun AppNavHost(
                 }
             )
         ) { backStackEntry ->
+
             val id = backStackEntry.arguments?.getString("id") ?: ""
 
             RequerimentoDetailScreen(
                 requerimentoId = id,
                 onBackClick = { navController.popBackStack() },
-                onAccept = {
-                    // Lógica para aceitar
-                    navController.popBackStack()
-                },
-                onReject = { justificacao ->
-                    // Lógica para rejeitar com a justificativa vinda do modal
-                    navController.popBackStack()
-                },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.RequerimentoStatus.route) {
+
+            val state by viewModel.state.collectAsState()
+
+            RequerimentoEstadoScreen(
+                status = RequestStatus.IN_ANALYSIS,
+
+                beneficiaryName = state.fullName,
+                studentNumber = state.studentNumber,
+
+                onBackClick = {
+                    navController.navigate(AppScreen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

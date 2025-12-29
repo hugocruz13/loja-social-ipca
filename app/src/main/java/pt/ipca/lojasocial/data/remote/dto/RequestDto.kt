@@ -4,7 +4,7 @@ import com.google.firebase.firestore.PropertyName
 
 /**
  * DTO para a coleção 'requerimentos'.
- * Mapeia as variáveis em Inglês para os campos em Português na BD.
+ * Agora mapeia os documentos como um Mapa (Chave -> URL) para sabermos qual é qual.
  */
 data class RequestDto(
     @get:PropertyName("idBeneficiario") @set:PropertyName("idBeneficiario")
@@ -16,15 +16,13 @@ data class RequestDto(
     @get:PropertyName("dataSubmissao") @set:PropertyName("dataSubmissao")
     var submissionDate: Long = 0,
 
-    // Guardamos o Enum como String (ex: "SUBMITTED", "APPROVED")
     @get:PropertyName("estado") @set:PropertyName("estado")
     var status: String = "",
 
-    // Guardamos o Enum como String (ex: "FOOD", "HYGIENE")
     @get:PropertyName("tipo") @set:PropertyName("tipo")
     var type: String = "",
 
-    // Lista de URLs dos ficheiros (PDFs/Imagens)
+
     @get:PropertyName("documentosUrl") @set:PropertyName("documentosUrl")
-    var documentUrls: List<String> = emptyList(),
+    var documentUrls: Map<String, String?> = emptyMap()
 )
