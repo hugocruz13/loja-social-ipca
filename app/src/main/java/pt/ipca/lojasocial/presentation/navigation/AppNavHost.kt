@@ -28,7 +28,11 @@ import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
 import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
+import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.screens.RequestStatus
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -42,6 +46,8 @@ sealed class AppScreen(val route: String) {
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
     object RequerimentosList : AppScreen("requerimentoslist")
     object RequerimentoDetails : AppScreen("requerimentodetails?id={id}")
+
+    object RequerimentoStatus : AppScreen("request_status")
     object CampanhasList : AppScreen("campanhaslist")
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
@@ -97,8 +103,28 @@ fun AppNavHost(
         composable(AppScreen.RegisterStep3.route) {
             RegisterStep3Screen(
                 viewModel = viewModel,
-                onRegisterSuccess = { navController.navigate(AppScreen.ConfirmationHome.route) },
+                onRegisterSuccess = { navController.navigate(AppScreen.RequerimentoStatus.route) {
+                    popUpTo(AppScreen.Login.route) { inclusive = false }
+                } },
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppScreen.RequerimentoStatus.route) {
+
+            val state by viewModel.state.collectAsState()
+
+            RequerimentoEstadoScreen(
+                status = RequestStatus.IN_ANALYSIS,
+
+                beneficiaryName = state.fullName,
+                studentNumber = state.studentNumber,
+
+                onBackClick = {
+                    navController.navigate(AppScreen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

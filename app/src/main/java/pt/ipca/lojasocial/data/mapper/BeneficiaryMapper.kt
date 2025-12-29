@@ -18,10 +18,9 @@ fun BeneficiaryDto.toDomain(documentId: String): Beneficiary {
         phoneNumber = this.phoneNumber,
         ccNumber = this.ccNumber,
         status = try {
-            // Tenta converter "Ativo" para BeneficiaryStatus.ATIVO (Case insensitive se necessário)
             BeneficiaryStatus.valueOf(this.status.uppercase())
         } catch (e: Exception) {
-            BeneficiaryStatus.INATIVO // Default seguro
+            BeneficiaryStatus.INATIVO
         }
     )
 }

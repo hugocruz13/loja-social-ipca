@@ -4,6 +4,7 @@ import pt.ipca.lojasocial.data.remote.dto.RequestDto
 import pt.ipca.lojasocial.domain.models.Request
 import pt.ipca.lojasocial.domain.models.RequestStatus
 import pt.ipca.lojasocial.domain.models.RequestType
+import pt.ipca.lojasocial.presentation.components.StatusType
 
 fun RequestDto.toDomain(documentId: String): Request {
     return Request(
@@ -14,9 +15,9 @@ fun RequestDto.toDomain(documentId: String): Request {
         documentUrls = this.documentUrls,
         // Conversão Segura de Status
         status = try {
-            RequestStatus.valueOf(this.status)
+            StatusType.valueOf(this.status)
         } catch (e: Exception) {
-            RequestStatus.SUBMITTED // Default se der erro
+            StatusType.ANALISE // Default se der erro
         },
         // Conversão Segura de Tipo
         type = try {

@@ -51,14 +51,23 @@ class RequestRepositoryImpl @Inject constructor(
         return try {
             var query = collection.whereEqualTo("idAnoLetivo", schoolYearId)
 
-            // Se for passado um status, filtra também por ele
             if (status != null) {
                 query = query.whereEqualTo("estado", status.name)
             }
 
             val snapshot = query.get().await()
-            snapshot.documents.mapNotNull { it.toObject(RequestDto::class.java)?.toDomain(it.id) }
+
+            val lista = snapshot.documents.mapNotNull { doc ->
+
+                // Tenta converter
+                val dto = doc.toObject(RequestDto::class.java)
+
+                dto?.toDomain(doc.id)
+            }
+
+            lista
         } catch (e: Exception) {
+            e.printStackTrace()
             emptyList()
         }
     }

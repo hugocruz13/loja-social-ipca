@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.presentation.components.StatusType
 import java.util.UUID
 
 
@@ -7,7 +8,6 @@ import java.util.UUID
  * Representa o estado atual de uma candidatura/requerimento (Request).
  */
 enum class RequestStatus {
-    SUBMITTED,      // Submetido: Acabou de entrar, ainda não foi visto
     IN_REVIEW,      // Em Análise: Um staff está a verificar
     MISSING,        // Faltando: Existe algum tipo de informação/ficheiro em falta
     APPROVED,       // Aprovado: A candidatura foi aprovada
@@ -42,7 +42,7 @@ data class Request(
     val beneficiaryId: String,
     val schoolYearId: String,
     val submissionDate: Long = System.currentTimeMillis(),
-    val status: RequestStatus = RequestStatus.SUBMITTED,
+    val status: StatusType = StatusType.ANALISE,
     val type: RequestType = RequestType.FOOD,
     val documentUrls: List<String> = emptyList(),
     val observations: String = ""

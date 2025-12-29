@@ -8,7 +8,8 @@ package pt.ipca.lojasocial.domain.models
  */
 enum class BeneficiaryStatus {
     ATIVO,
-    INATIVO
+    INATIVO,
+    ANALISE
 }
 
 /**

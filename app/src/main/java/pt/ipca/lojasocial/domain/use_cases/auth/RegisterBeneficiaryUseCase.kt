@@ -3,6 +3,7 @@ package pt.ipca.lojasocial.domain.use_cases.auth
 import android.net.Uri
 import pt.ipca.lojasocial.domain.models.*
 import pt.ipca.lojasocial.domain.repository.*
+import pt.ipca.lojasocial.presentation.components.StatusType
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
@@ -50,7 +51,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
             birthDate = convertDateToSeconds(state.birthDate),
             schoolYearId = "2024_2025",
             ccNumber = state.cc,
-            status = BeneficiaryStatus.INATIVO
+            status = BeneficiaryStatus.ANALISE
         )
         beneficiaryRepository.addBeneficiary(newBeneficiary)
 
@@ -59,7 +60,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
             id = UUID.randomUUID().toString(),
             beneficiaryId = newUserId,
             schoolYearId = "2024_2025",
-            status = RequestStatus.SUBMITTED,
+            status = StatusType.ANALISE ,
             type = mapCategoryToType(state.requestCategory),
             documentUrls = uploadedDocUrls,
             observations = "Curso: ${state.courseName}, Escola: ${state.school}, Nº: ${state.studentNumber}"

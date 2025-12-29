@@ -5,37 +5,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppSearchBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.RequerimentoListItem
-import pt.ipca.lojasocial.presentation.components.StatusType
-
-data class RequerimentoData(
-    val id: String,
-    val nome: String,
-    val data: String,
-    val status: StatusType
-)
+import pt.ipca.lojasocial.presentation.viewmodels.RequerimentosViewModel
 
 @Composable
 fun RequerimentosScreen(
     onBackClick: () -> Unit,
     onRequerimentoClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: RequerimentosViewModel = hiltViewModel()
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-
-    val listaRequerimentos = listOf(
-        RequerimentoData("1234", "Maria Joana Sousa", "20/05/2026", StatusType.ANALISE),
-        RequerimentoData("1235", "Leonor Ferreira", "21/05/2026", StatusType.ANALISE),
-        RequerimentoData("1236", "Marco Costa", "22/05/2026", StatusType.ANALISE)
-    )
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val requestsList by viewModel.filteredRequests.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
@@ -47,9 +39,8 @@ fun RequerimentosScreen(
         bottomBar = {
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                currentRoute = "requerimentoslist",
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         containerColor = Color(0xFFF8F9FA)
@@ -61,26 +52,38 @@ fun RequerimentosScreen(
         ) {
             AppSearchBar(
                 query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                placeholder = "Procurar requerimentos...",
+                onQueryChange = viewModel::onSearchQueryChange,
+                placeholder = "Procurar por nome...",
                 modifier = Modifier.padding(16.dp)
             )
 
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(listaRequerimentos) { req ->
-                    RequerimentoListItem(
-                        applicantName = req.nome,
-                        requerimentId = req.id,
-                        submissionDate = req.data,
-                        avatarUrl = null,
-                        status = req.status,
-                        onClick = { onRequerimentoClick(req.id) }
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFF00713C)
                     )
+                } else if (requestsList.isEmpty()) {
+                    Text(
+                        text = "Não existem requerimentos.",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Gray
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(requestsList) { req ->
+                            RequerimentoListItem(
+                                applicantName = req.beneficiaryName,
+                                avatarUrl = null,
+                                status = req.status,
+                                onClick = { onRequerimentoClick(req.requestId) }
+                            )
+                        }
+                    }
                 }
             }
         }
