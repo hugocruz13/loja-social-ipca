@@ -17,16 +17,24 @@ import javax.inject.Singleton
  * Módulo Hilt que fornece dependências da camada de Data.
  *
  * Configurações:
- * - Firebase Auth como Singletons
+ * - Firebase Auth e Firestore como Singletons
  * - Repository implementations bound às suas interfaces
- * - Data sources configurados com suas dependências
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    // --- FIREBASE INSTANCES ---
+
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
+
+    // --- DATA SOURCES ---
 
     @Provides
     @Singleton
@@ -35,6 +43,8 @@ object AppModule {
     ): FirebaseAuthDataSource {
         return FirebaseAuthDataSource(auth)
     }
+
+    // --- REPOSITORIES ---
 
     @Provides
     @Singleton
@@ -46,8 +56,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideBeneficiaryRepository(firestore: FirebaseFirestore): BeneficiaryRepository {
+    fun provideBeneficiaryRepository(
+        firestore: FirebaseFirestore
+    ): BeneficiaryRepository {
         return BeneficiaryRepositoryImpl(firestore)
     }
-
 }

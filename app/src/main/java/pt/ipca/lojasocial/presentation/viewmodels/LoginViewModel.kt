@@ -1,4 +1,4 @@
-package pt.ipca.lojasocial.presentation
+package pt.ipca.lojasocial.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

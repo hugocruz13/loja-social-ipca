@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import pt.ipca.lojasocial.presentation.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppTextField

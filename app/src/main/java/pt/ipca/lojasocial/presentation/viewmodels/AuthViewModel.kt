@@ -1,4 +1,4 @@
-package pt.ipca.lojasocial.presentation
+package pt.ipca.lojasocial.presentation.viewmodels
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel

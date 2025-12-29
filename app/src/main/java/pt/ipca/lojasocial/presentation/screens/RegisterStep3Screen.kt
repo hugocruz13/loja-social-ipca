@@ -12,12 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import android.net.Uri
-import pt.ipca.lojasocial.presentation.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppFilePickerField
 import pt.ipca.lojasocial.presentation.components.AppNoteBox
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.viewmodels.RegistrationState
 
 @Composable
 fun RegisterStep3Screen(
@@ -159,7 +160,7 @@ fun RegisterStep3Screen(
 
 private fun updateStep3Fields(
     viewModel: AuthViewModel,
-    state: pt.ipca.lojasocial.presentation.RegistrationState,
+    state: RegistrationState,
     docIdentification: Uri? = state.docIdentification,
     docFamily: Uri? = state.docFamily,
     docMorada: Uri? = state.docMorada,

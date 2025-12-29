@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import pt.ipca.lojasocial.presentation.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen

@@ -9,16 +9,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pt.ipca.lojasocial.presentation.AuthViewModel
-import pt.ipca.lojasocial.presentation.RequestCategory
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.RequestCategory
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDropdownField
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppRadioCardItem
 import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-import pt.ipca.lojasocial.presentation.components.ProductCategory
-import pt.ipca.lojasocial.presentation.educationLevels
+import pt.ipca.lojasocial.presentation.viewmodels.educationLevels
 
 @Composable
 fun RegisterStep2Screen(

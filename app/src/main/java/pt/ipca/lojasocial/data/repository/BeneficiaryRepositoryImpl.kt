@@ -1,33 +1,97 @@
 package pt.ipca.lojasocial.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-import pt.ipca.lojasocial.data.mapper.BeneficiaryMapper
+import pt.ipca.lojasocial.data.mapper.toDomain
+import pt.ipca.lojasocial.data.mapper.toDto
 import pt.ipca.lojasocial.data.remote.dto.BeneficiaryDto
 import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class BeneficiaryRepositoryImpl(
-    private val firestore: FirebaseFirestore // Injeção do Firebase
+@Singleton
+class BeneficiaryRepositoryImpl @Inject constructor(
+    private val firestore: FirebaseFirestore
 ) : BeneficiaryRepository {
 
-    override suspend fun getBeneficiaryList(): List<Beneficiary> {
+    // Referência direta à coleção criada na consola
+    private val collection = firestore.collection("beneficiarios")
+
+    /**
+     * Suporta: GetBeneficiariesUseCase
+     * Obtém tudo e converte. A ordenação é feita depois no UseCase.
+     */
+    override suspend fun getBeneficiaries(): List<Beneficiary> {
         return try {
-            // 1. Ir à coleção "beneficiarios" no Firebase
-            val snapshot = firestore.collection("beneficiarios")
-                .get()
-                .await() // Espera pela resposta sem bloquear a thread principal
-
-            // 2. Mapear cada documento encontrado
+            val snapshot = collection.get().await()
             snapshot.documents.mapNotNull { doc ->
-                // Converte o JSON do Firebase para o teu DTO
-                val dto = doc.toObject(BeneficiaryDto::class.java)
+                doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
 
-                // Se o DTO for válido, converte para Domain usando o Mapper
-                dto?.let {
-                    it.id = doc.id
-                    BeneficiaryMapper.toDomain(it)
-                }
+    /**
+     * Suporta: GetBeneficiaryByIdUseCase
+     */
+    override suspend fun getBeneficiaryById(id: String): Beneficiary? {
+        return try {
+            val doc = collection.document(id).get().await()
+            if (doc.exists()) {
+                doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Suporta: AddBeneficiaryUseCase
+     * Usa .set() com o ID fornecido pelo domínio (ex: número de aluno).
+     */
+    override suspend fun addBeneficiary(beneficiary: Beneficiary) {
+        try {
+            val dto = beneficiary.toDto()
+            // Como o UseCase valida que o ID existe, usamos esse ID como chave do documento
+            collection.document(beneficiary.id).set(dto).await()
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    /**
+     * Suporta: UpdateBeneficiaryUseCase
+     * Usa SetOptions.merge() para ser mais seguro, embora o set simples também funcionasse.
+     */
+    override suspend fun updateBeneficiary(beneficiary: Beneficiary) {
+        try {
+            val dto = beneficiary.toDto()
+            collection.document(beneficiary.id).set(dto, SetOptions.merge()).await()
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    /**
+     * Suporta: GetBeneficiariesByYearUseCase
+     * Faz a query filtering pelo campo "idAnoLetivo"
+     */
+    override suspend fun getBeneficiariesBySchoolYear(schoolYear: String): List<Beneficiary> {
+        return try {
+            val snapshot = collection
+                .whereEqualTo("idAnoLetivo", schoolYear)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
             }
         } catch (e: Exception) {
             e.printStackTrace()

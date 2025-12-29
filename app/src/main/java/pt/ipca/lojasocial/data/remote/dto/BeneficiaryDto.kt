@@ -1,18 +1,35 @@
 package pt.ipca.lojasocial.data.remote.dto
 
+import com.google.firebase.firestore.PropertyName
+
 /**
- * Definição da classe BeneficiaryDto para transferência de dados com o Firebase
- * e estrutura intermédia para o mapeamento do modelo `Beneficiary` de domínio.
- * * **Notas Técnicas:**
- * - Exige construtor vazio para serialização do Firebase.
- * - Campos anuláveis (nullable) para tolerância a falhas na leitura da BD.
+ * Objeto de Transferência de Dados (DTO) para Beneficiários.
+ *
+ * Representa a estrutura exata do documento armazenado na coleção 'beneficiarios' do Firestore.
+ * Utiliza anotações [PropertyName] para mapear os campos da base de dados (snake_case/português)
+ * para as propriedades Kotlin (camelCase).
+ *
+ * **Nota:** As propriedades devem ter valores padrão para permitir a deserialização vazia do Firebase.
  */
 data class BeneficiaryDto(
-    var id: String? = null,
-    var nome: String? = null,
-    var email: String? = null,
-    var dataNascimento: Int? = null,
-    var idAnoLetivo: String? = null,
-    var telemovel: Int? = null,
-    var estado: String? = null // Guardamos o Enum como String na BD
+    // Mapeamento: "nome" (Firebase) <-> name (Código)
+    @get:PropertyName("nome") @set:PropertyName("nome")
+    var name: String = "",
+
+    @get:PropertyName("email") @set:PropertyName("email")
+    var email: String = "",
+
+    // Nota: O Firebase devolve números como Long. O teu domínio usa Int, faremos a conversão no Mapper.
+    @get:PropertyName("dataNascimento") @set:PropertyName("dataNascimento")
+    var birthDate: Long = 0,
+
+    @get:PropertyName("idAnoLetivo") @set:PropertyName("idAnoLetivo")
+    var schoolYearId: String = "",
+
+    @get:PropertyName("telemovel") @set:PropertyName("telemovel")
+    var phoneNumber: Int = 0,
+
+    // Ex: "Ativo", "Inativo"
+    @get:PropertyName("estado") @set:PropertyName("estado")
+    var status: String = ""
 )

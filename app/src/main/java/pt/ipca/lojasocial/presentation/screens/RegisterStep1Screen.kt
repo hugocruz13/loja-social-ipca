@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import pt.ipca.lojasocial.presentation.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDatePickerField
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
