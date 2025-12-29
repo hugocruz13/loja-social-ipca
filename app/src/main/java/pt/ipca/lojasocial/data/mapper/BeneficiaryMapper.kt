@@ -16,6 +16,7 @@ fun BeneficiaryDto.toDomain(documentId: String): Beneficiary {
         birthDate = this.birthDate.toInt(), // Conversão de Long para Int conforme o teu domínio
         schoolYearId = this.schoolYearId,
         phoneNumber = this.phoneNumber,
+        ccNumber = this.ccNumber,
         status = try {
             // Tenta converter "Ativo" para BeneficiaryStatus.ATIVO (Case insensitive se necessário)
             BeneficiaryStatus.valueOf(this.status.uppercase())
@@ -35,6 +36,7 @@ fun Beneficiary.toDto(): BeneficiaryDto {
         birthDate = this.birthDate.toLong(),
         schoolYearId = this.schoolYearId,
         phoneNumber = this.phoneNumber,
+        ccNumber = this.ccNumber,
         // Grava na base de dados como string (ex: "ATIVO")
         status = this.status.name
     )

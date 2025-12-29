@@ -36,5 +36,6 @@ data class Beneficiary(
     val birthDate: Int,
     val schoolYearId: String,
     val phoneNumber: Int,
+    val ccNumber: String,
     val status: BeneficiaryStatus
 )

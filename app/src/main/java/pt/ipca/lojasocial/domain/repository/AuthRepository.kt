@@ -12,6 +12,10 @@ interface AuthRepository {
      * @throws IllegalArgumentException se email ou password forem inválidos
      */
     suspend fun login(email: String, password: String): Result<User>
+
+    // Retorna Result<String> onde a String é o UID do utilizador
+    suspend fun signUp(email: String, password: String): Result<String>
+
     /**
     * Termina a sessão do utilizador atual.
     *

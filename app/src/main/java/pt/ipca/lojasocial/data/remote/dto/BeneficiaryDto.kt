@@ -29,6 +29,9 @@ data class BeneficiaryDto(
     @get:PropertyName("telemovel") @set:PropertyName("telemovel")
     var phoneNumber: Int = 0,
 
+    @get:PropertyName("cc") @set:PropertyName("cc")
+    var ccNumber: String = "",
+
     // Ex: "Ativo", "Inativo"
     @get:PropertyName("estado") @set:PropertyName("estado")
     var status: String = ""

@@ -41,6 +41,12 @@ class FirebaseAuthDataSource @Inject constructor(
         )
     }
 
+    suspend fun signUp(email: String, pass: String): String {
+        val result = auth.createUserWithEmailAndPassword(email, pass).await()
+        // Retorna o UID do novo utilizador ou lança erro se for null
+        return result.user?.uid ?: throw Exception("Erro ao obter UID após registo")
+    }
+
     suspend fun getCurrentUser(): UserDto? {
         val firebaseUser = auth.currentUser ?: return null
 

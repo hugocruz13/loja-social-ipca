@@ -31,6 +31,16 @@ class MainActivity : ComponentActivity() {
 
                     AppNavHost()
                 }
+
+                /*ListBeneficiariesScreen(
+                    onNavigateBack = { },
+                    onBeneficiaryClick = { id ->
+                        println("Clicou no beneficiário: $id")
+                    },
+                    onAddBeneficiaryClick = {
+                        println("Clicou em Adicionar")
+                    }
+                )*/
             }
         }
     }

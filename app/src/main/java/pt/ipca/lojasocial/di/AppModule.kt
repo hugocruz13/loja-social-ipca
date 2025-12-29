@@ -2,6 +2,7 @@ package pt.ipca.lojasocial.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,8 +10,12 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
+import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
+import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 
 /**
@@ -32,8 +37,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
-
+    fun provideFirestore(): FirebaseFirestore{
+        return FirebaseFirestore.getInstance("loja-social-ipca-db")
+    }
     // --- DATA SOURCES ---
 
     @Provides
@@ -43,6 +49,18 @@ object AppModule {
     ): FirebaseAuthDataSource {
         return FirebaseAuthDataSource(auth)
     }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
+        return StorageRepositoryImpl(storage)
+    }
+
+
 
     // --- REPOSITORIES ---
 
@@ -60,5 +78,11 @@ object AppModule {
         firestore: FirebaseFirestore
     ): BeneficiaryRepository {
         return BeneficiaryRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRequestRepository(firestore: FirebaseFirestore): RequestRepository {
+        return RequestRepositoryImpl(firestore)
     }
 }

@@ -34,6 +34,24 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun signUp(email: String, password: String): Result<String> {
+        return try {
+            // Chama a DataSource que criámos no passo 1
+            val uid = remoteDataSource.signUp(email, password)
+            Result.success(uid)
+        } catch (e: FirebaseAuthException) {
+            val errorMessage = when (e.errorCode) {
+                "ERROR_EMAIL_ALREADY_IN_USE" -> "Este email já está registado."
+                "ERROR_INVALID_EMAIL" -> "O email é inválido."
+                "ERROR_WEAK_PASSWORD" -> "A password é muito fraca (mínimo 6 caracteres)."
+                else -> "Erro de registo: ${e.message}"
+            }
+            Result.failure(Exception(errorMessage))
+        } catch (e: Exception) {
+            Result.failure(Exception("Erro desconhecido ao registar: ${e.message}"))
+        }
+    }
+
     override suspend fun getCurrentUser(): User?{
         return try {
             val userDto = remoteDataSource.getCurrentUser()

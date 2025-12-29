@@ -1,6 +1,5 @@
 package pt.ipca.lojasocial.presentation.screens
 
-// ui/screens/RegisterStep1Screen.kt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,12 +23,7 @@ fun RegisterStep1Screen(
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
-
-
     val state by viewModel.state.collectAsState()
-
-    var selectedDate by remember { mutableStateOf("") }
-
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -80,11 +74,14 @@ fun RegisterStep1Screen(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 )
 
+                // CORREÇÃO: Agora usa o state.birthDate e chama viewModel.updateBirthDate
                 AppDatePickerField(
                     label = "Data de Nascimento",
-                    selectedValue = selectedDate,
-                    onDateSelected = { selectedDate = it },
-                    placeholder = "mm/dd/yyyy",
+                    selectedValue = state.birthDate,
+                    onDateSelected = { newDate ->
+                        viewModel.updateBirthDate(newDate)
+                    },
+                    placeholder = "dd/mm/yyyy",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 )
 
@@ -104,7 +101,6 @@ fun RegisterStep1Screen(
                     label = "Email",
                     placeholder = "seumemail@email.com",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-
                 )
 
                 AppTextField(
@@ -115,7 +111,6 @@ fun RegisterStep1Screen(
                     keyboardType = KeyboardType.Password,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
                 )
-
 
                 Spacer(modifier = Modifier.weight(1f))
 
