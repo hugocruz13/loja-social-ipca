@@ -1,7 +1,7 @@
-package pt.ipca.lojasocial.domain.use_cases.auth
+package pt.ipca.lojasocial.domain.use_cases;
 
 import pt.ipca.lojasocial.domain.repository.AuthRepository
-import javax.inject.Inject
+import javax.inject.Inject;
 
 /**
  * Use case para fazer logout de um utilizador.
