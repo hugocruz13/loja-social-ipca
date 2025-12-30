@@ -53,6 +53,16 @@ class BeneficiaryRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getBeneficiaryByUid(uid: String): Beneficiary {
+        val snapshot = collection.whereEqualTo("userId", uid).limit(1).get().await()
+        if (snapshot.isEmpty) {
+            throw Exception("Beneficiary profile not found for UID: $uid")
+        }
+        val doc = snapshot.documents.first()
+        return doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
+            ?: throw Exception("Failed to parse beneficiary data")
+    }
+
     /**
      * Suporta: AddBeneficiaryUseCase
      * Usa .set() com o ID fornecido pelo domínio (ex: número de aluno).

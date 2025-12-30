@@ -76,18 +76,20 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        //startDestination = AppScreen.Login.route // <--- Usa este para a App Real
-        startDestination = AppScreen.RequerimentosList.route // <--- Modo Teste (Staff)
+        startDestination = AppScreen.Login.route
     ) {
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                // Callback chamado quando o login e o carregamento do perfil terminam com sucesso
-                onLoginSuccess = {
-                    // Verificamos o estado ATUAL que está no ViewModel
-                    val currentStatus = viewModel.state.value.beneficiaryStatus
-
-                    if (currentStatus == BeneficiaryStatus.ATIVO) {
+                onLoginSuccessStaff = {
+                    // Se for Staff, vai sempre para a lista de requerimentos
+                    navController.navigate(AppScreen.RequerimentosList.route) {
+                        popUpTo(AppScreen.Login.route) { inclusive = true }
+                    }
+                },
+                onLoginSuccessBeneficiary = { status ->
+                    // Se for Beneficiário, a navegação depende do status
+                    if (status == BeneficiaryStatus.ATIVO) {
                         // Se estiver ATIVO -> Vai para a Home (Entregas/Campanhas)
                         navController.navigate(AppScreen.EntregasList.route) {
                             popUpTo(AppScreen.Login.route) { inclusive = true }

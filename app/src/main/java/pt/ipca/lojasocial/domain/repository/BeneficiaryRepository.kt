@@ -31,6 +31,15 @@ interface BeneficiaryRepository {
     suspend fun getBeneficiaryById(id: String): Beneficiary?
 
     /**
+     * Obtém os detalhes de um beneficiário específico através do seu UID de autenticação.
+     *
+     * @param uid O UID do utilizador do Firebase Auth.
+     * @return [Beneficiary] se encontrado.
+     * @throws Exception se não for encontrado.
+     */
+    suspend fun getBeneficiaryByUid(uid: String): Beneficiary
+
+    /**
      * Regista um novo beneficiário no sistema.
      *
      * Cumpre o requisito **RF01** (Registo de nome, nº aluno, curso, etc.).

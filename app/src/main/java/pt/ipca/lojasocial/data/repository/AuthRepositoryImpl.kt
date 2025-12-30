@@ -34,10 +34,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun signUp(email: String, password: String): Result<String> {
+    override suspend fun signUp(email: String, password: String, nome: String): Result<String> {
         return try {
             // Chama a DataSource que criámos no passo 1
-            val uid = remoteDataSource.signUp(email, password)
+            val uid = remoteDataSource.signUp(email, password, nome)
             Result.success(uid)
         } catch (e: FirebaseAuthException) {
             val errorMessage = when (e.errorCode) {

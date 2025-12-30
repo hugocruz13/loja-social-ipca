@@ -20,7 +20,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
     suspend operator fun invoke(state: AuthState) {
 
         // 1. Criar utilizador
-        val result = authRepository.signUp(state.email, state.password)
+        val result = authRepository.signUp(state.email, state.password, state.fullName)
         val newUserId = result.getOrThrow()
 
         // 2. Upload de Documentos (AGORA É UM MAPA)
