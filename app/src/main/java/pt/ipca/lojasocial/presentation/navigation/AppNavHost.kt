@@ -5,32 +5,18 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel // Importante para o novo ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import pt.ipca.lojasocial.domain.models.UserRole // Importante para definir o cargo
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel // Import do VM de Beneficiários
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
-import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
-import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
-import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
-import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
-import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
-import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
-import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
-import pt.ipca.lojasocial.presentation.screens.EntregasScreen
-import pt.ipca.lojasocial.presentation.screens.LoginScreen
-import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
-import pt.ipca.lojasocial.presentation.screens.ProductDetailScreen
-import pt.ipca.lojasocial.presentation.screens.ProfileScreen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
-import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
-import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.screens.*
 import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 
 
@@ -53,7 +39,6 @@ sealed class AppScreen(val route: String) {
     object ProductList : AppScreen("product_list")
     object ProductDetail : AppScreen("product_detail/{productId}")
     object ProductAddEdit : AppScreen("product_add_edit?id={id}")
-
 }
 
 @Composable
@@ -118,9 +103,18 @@ fun AppNavHost(
             )
         }
 
+        // --- CORREÇÃO AQUI ---
         composable(AppScreen.Profile.route) {
+            // 1. Criar o ViewModel correto
+            val beneficiariesViewModel = hiltViewModel<BeneficiariesViewModel>()
+
             ProfileScreen(
-                viewModel = viewModel,
+                viewModel = beneficiariesViewModel, // Passa o novo VM
+
+                // 2. Passar dados temporários para compilar e testar
+                currentUser = null,
+                userRole = UserRole.STAFF, // Muda para BENEFICIARY para testar as restrições
+
                 onLogout = { navController.navigate(AppScreen.Login.route) },
                 onBackClick = { navController.popBackStack() },
                 navItems = globalNavItems,
@@ -184,11 +178,9 @@ fun AppNavHost(
                 requerimentoId = id,
                 onBackClick = { navController.popBackStack() },
                 onAccept = {
-                    // Lógica para aceitar
                     navController.popBackStack()
                 },
                 onReject = { justificacao ->
-                    // Lógica para rejeitar com a justificativa vinda do modal
                     navController.popBackStack()
                 },
                 navItems = globalNavItems,
@@ -313,7 +305,7 @@ fun AppNavHost(
                 productId = productId,
                 onBackClick = { navController.popBackStack() },
                 onEditClick = { navController.navigate("product_add_edit?id=$it") },
-                        navItems = globalNavItems,
+                navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
@@ -339,7 +331,5 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
-
-
     }
 }
