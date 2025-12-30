@@ -50,5 +50,6 @@ data class Campaign(
     val endDate: Long,
     val type: CampaignType,
     val status: CampaignStatus,
+    val imageUrl: String,
     val neededProductIds: List<String> = emptyList()
 )

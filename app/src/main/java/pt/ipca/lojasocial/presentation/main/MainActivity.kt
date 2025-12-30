@@ -38,34 +38,7 @@ class MainActivity : ComponentActivity() {
                     AppNavHost()
                 }
 
-                /*ListBeneficiariesScreen(
-                    onNavigateBack = { },
-                    onBeneficiaryClick = { id ->
-                        println("Clicou no beneficiário: $id")
-                    },
-                    onAddBeneficiaryClick = {
-                        println("Clicou em Adicionar")
-                    }
-                )*/
 
-                val dummyNavItems = listOf(
-                    BottomNavItem("home", Icons.Filled.Home, "Home"),
-                    BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                    BottomNavItem("settings", Icons.Filled.Settings, "Configurações")
-                )
-
-                RequerimentosScreen(
-                    onBackClick = {
-                        println("DEBUG: Clicou em voltar")
-                    },
-                    onRequerimentoClick = { id ->
-                        println("DEBUG: Clicou no requerimento ID: $id")
-                    },
-                    navItems = dummyNavItems,
-                    onNavigate = { route ->
-                        println("DEBUG: Navegar para $route")
-                    }
-                )
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -33,6 +34,9 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.screens.RequestStatus
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.CampaignType
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -76,7 +80,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.Login.route
+        startDestination = AppScreen.CampanhasList.route
     ) {
 
         composable(AppScreen.Login.route) {
@@ -215,31 +219,33 @@ fun AppNavHost(
         }
 
         composable(AppScreen.CampanhasList.route) {
+
+            val campanhasVm: CampanhasViewModel = hiltViewModel()
+
+            LaunchedEffect(Unit) {
+                campanhasVm.loadCampanhas()
+            }
+
             CampanhasScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate("campanha_add_edit") },
                 onCampanhaClick = { id -> navController.navigate("campanha_detail/$id") },
                 navItems = globalNavItems,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                viewModel = campanhasVm // Passa o VM aqui
             )
         }
 
-        composable(
-            route = "campanha_add_edit?id={id}",
-            arguments = listOf(
-                navArgument("id") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
+        composable(route = "campanha_add_edit?id={id}") { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")
+            val viewModel: CampanhasViewModel = hiltViewModel()
 
             AddEditCampanhaScreen(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { n, d, i, f, t ->navController.popBackStack()},
+                onSaveClick = { nome, desc, inicio, fim, tipo, uri ->
+                    viewModel.saveCampanha(id, nome, desc, inicio, fim, tipo, uri)
+                },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
