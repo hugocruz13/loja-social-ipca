@@ -80,7 +80,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.CampanhasList.route
+        startDestination = AppScreen.AnoLetivoList.route
     ) {
 
         composable(AppScreen.Login.route) {
@@ -153,7 +153,7 @@ fun AppNavHost(
         composable(AppScreen.AnoLetivoList.route) {
             AnoLetivoListScreen(
                 onBackClick = { navController.popBackStack() },
-                onAddClick = { navController.navigate(AppScreen.AnoLetivoAddEdit.route) },
+                onAddClick = { navController.navigate("anoletivoaddedit") },
                 onYearClick = { ano -> navController.navigate("anoletivoaddedit?id=${ano.id}")},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
@@ -162,21 +162,14 @@ fun AppNavHost(
 
         composable(
             route = "anoletivoaddedit?id={id}",
-            arguments = listOf(
-                navArgument("id") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
+            arguments = listOf(navArgument("id") {nullable = true; defaultValue = null})
         ) { backStackEntry ->
-            val idString = backStackEntry.arguments?.getString("id")
-            val id = idString?.toIntOrNull()
+            val id = backStackEntry.arguments?.getString("id")
+
 
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { dataInicio, dataFim ->navController.popBackStack()},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
