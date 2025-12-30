@@ -7,6 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.use_cases.request.GetRequestByIdUseCase
@@ -19,6 +21,7 @@ class RequerimentoDetailViewModel @Inject constructor(
     private val getRequestByIdUseCase: GetRequestByIdUseCase,
     private val requestRepository: RequestRepository,
     private val storageRepository: StorageRepository,
+    private val beneficiaryRepository: BeneficiaryRepository,
     savedStateHandle: SavedStateHandle // Para pegar o ID da navegação
 ) : ViewModel() {
 
@@ -64,13 +67,52 @@ class RequerimentoDetailViewModel @Inject constructor(
 
     // --- AÇÃO: APROVAR ---
     fun approveRequest() {
-        updateStatus(StatusType.APROVADA)
+        val requestId = _uiState.value?.id ?: return
+        val beneficiaryId = _uiState.value?.beneficiaryId ?: return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // 1. Atualizar Requerimento para APROVADA
+                requestRepository.updateStatusAndObservation(requestId, StatusType.APROVADA,"")
+
+                // 2. Atualizar Beneficiário para ATIVO
+                beneficiaryRepository.updateStatus(beneficiaryId, BeneficiaryStatus.ATIVO)
+
+                loadRequest()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     // --- AÇÃO: REJEITAR ---
     fun rejectRequest(justificacao: String) {
-        // Futuro: Gravar a justificação na BD
-        updateStatus(StatusType.REJEITADA)
+        val requestId = _uiState.value?.id ?: return
+        val beneficiaryId = _uiState.value?.beneficiaryId ?: return
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // 1. Atualizar Requerimento para REJEITADA e gravar justificação
+                requestRepository.updateStatusAndObservation(
+                    id = requestId,
+                    status = StatusType.REJEITADA,
+                    observation = justificacao
+                )
+
+                // 2. Atualizar Beneficiário para INATIVO
+                beneficiaryRepository.updateStatus(beneficiaryId, BeneficiaryStatus.INATIVO)
+
+                loadRequest()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     // --- AÇÃO: DOCUMENTOS INCORRETOS ---
@@ -111,7 +153,7 @@ class RequerimentoDetailViewModel @Inject constructor(
     private fun updateStatus(status: StatusType) {
         val id = _uiState.value?.id ?: return
         viewModelScope.launch {
-            requestRepository.updateStatus(id, status) // Tens de adaptar para usar StatusType
+            requestRepository.updateStatusAndObservation(id, status, "") // Tens de adaptar para usar StatusType
             loadRequest()
         }
     }

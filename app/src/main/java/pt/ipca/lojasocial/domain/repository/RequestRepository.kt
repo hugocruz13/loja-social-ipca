@@ -51,7 +51,7 @@ interface RequestRepository {
      * @param id O identificador do pedido.
      * @param newStatus O novo estado a aplicar.
      */
-    suspend fun updateStatus(id: String, newStatus: StatusType)
+    suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String)
 
     suspend fun updateRequestDocsAndStatus(id: String, documents: Map<String, String?>, status: StatusType)
 }

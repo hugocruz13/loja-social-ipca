@@ -5,6 +5,7 @@ import pt.ipca.lojasocial.presentation.components.StatusType
 
 data class RequestDetailUiModel(
     val id: String,
+    val beneficiaryId: String,
     val beneficiaryName: String,
     val cc: String,
     val email: String,

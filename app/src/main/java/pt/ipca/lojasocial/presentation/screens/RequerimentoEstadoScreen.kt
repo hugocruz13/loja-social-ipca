@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.presentation.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,13 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-
-// --- ESTADOS DA UI ---
-
-enum class RequestStatus {
-    IN_ANALYSIS,        // Em Análise
-    DOCUMENTS_INCORRECT // Documentos Incorretos
-}
+import pt.ipca.lojasocial.presentation.components.StatusType
 
 data class DocumentItemState(
     val name: String,
@@ -42,10 +37,10 @@ data class DocumentItemState(
 @Composable
 fun RequerimentoEstadoScreen(
     onBackClick: () -> Unit,
-    status: RequestStatus = RequestStatus.IN_ANALYSIS, // Default seguro
-    // NOVOS PARÂMETROS: Recebe os dados reais do utilizador
+    status: StatusType,
     beneficiaryName: String,
-    studentNumber: String
+    studentNumber: String,
+    observations: String = ""
 ) {
     // Dados de exemplo para os documentos (apenas visualização)
     val documents = listOf(
@@ -81,16 +76,28 @@ fun RequerimentoEstadoScreen(
             StatusCard(status = status)
 
             // 3. Lista de Documentos (SÓ aparece se houver erros)
-            if (status == RequestStatus.DOCUMENTS_INCORRECT) {
-                Text(
-                    text = "Documentos Enviados",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+            if (status == StatusType.REJEITADA || status == StatusType.DOCS_INCORRETOS) {
 
-                documents.forEach { doc ->
-                    DocumentRowItem(document = doc)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Motivo / Observações",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (observations.isNotBlank()) observations else "Sem detalhes adicionais.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }
@@ -155,16 +162,16 @@ private fun ProfileHeaderCard(name: String, studentNumber: String) {
 }
 
 @Composable
-private fun StatusCard(status: RequestStatus) {
+private fun StatusCard(status: StatusType) {
     // Configuração de Cores e Texto baseada no estado
-    val containerColor = if (status == RequestStatus.IN_ANALYSIS) Color(0xFFFFF8E1) else Color(0xFFFFEBEE)
-    val contentColor = if (status == RequestStatus.IN_ANALYSIS) Color(0xFFF57C00) else Color(0xFFD32F2F)
-    val borderColor = if (status == RequestStatus.IN_ANALYSIS) Color(0xFFFFB74D) else Color(0xFFEF9A9A)
+    val containerColor = if (status == StatusType.ANALISE) Color(0xFFFFF8E1) else Color(0xFFFFEBEE)
+    val contentColor = if (status == StatusType.ANALISE) Color(0xFFF57C00) else Color(0xFFD32F2F)
+    val borderColor = if (status == StatusType.ANALISE) Color(0xFFFFB74D) else Color(0xFFEF9A9A)
 
-    val title = if (status == RequestStatus.IN_ANALYSIS) "Em Análise" else "Atenção Necessária"
-    val icon = if (status == RequestStatus.IN_ANALYSIS) Icons.Outlined.Timer else Icons.Outlined.Warning
+    val title = if (status == StatusType.ANALISE) "Em Análise" else "Atenção Necessária"
+    val icon = if (status == StatusType.ANALISE) Icons.Outlined.Timer else Icons.Outlined.Warning
 
-    val description = if (status == RequestStatus.IN_ANALYSIS)
+    val description = if (status == StatusType.ANALISE)
         "O processo encontra-se em validação pelos serviços."
     else
         "Detetámos problemas em alguns documentos. Verifique abaixo."
@@ -294,7 +301,7 @@ private fun DocumentRowItem(document: DocumentItemState) {
 fun PreviewIncorretos() {
     RequerimentoEstadoScreen(
         onBackClick = {},
-        status = RequestStatus.DOCUMENTS_INCORRECT,
+        status = StatusType.DOCS_INCORRETOS,
         beneficiaryName = "Ana Pereira",
         studentNumber = "12345"
     )
@@ -305,7 +312,7 @@ fun PreviewIncorretos() {
 fun PreviewEmAnalise() {
     RequerimentoEstadoScreen(
         onBackClick = {},
-        status = RequestStatus.IN_ANALYSIS,
+        status = StatusType.DOCS_INCORRETOS,
         beneficiaryName = "João Silva",
         studentNumber = "20000"
     )

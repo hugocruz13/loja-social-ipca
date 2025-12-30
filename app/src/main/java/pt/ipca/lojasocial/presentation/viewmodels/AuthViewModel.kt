@@ -5,12 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import pt.ipca.lojasocial.domain.models.RegistrationState
 import pt.ipca.lojasocial.domain.models.RequestCategory
 import pt.ipca.lojasocial.domain.use_cases.auth.RegisterBeneficiaryUseCase
+import pt.ipca.lojasocial.presentation.state.AuthState
 import javax.inject.Inject
 
 @HiltViewModel // <--- OBRIGATÓRIO PARA O HILT
@@ -19,8 +18,8 @@ class AuthViewModel @Inject constructor(
     private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(RegistrationState())
-    val state: StateFlow<RegistrationState> = _state
+    private val _state = MutableStateFlow(AuthState())
+    val state: MutableStateFlow<AuthState> = _state
 
     // --- VALIDAÇÕES ---
 
@@ -106,14 +105,9 @@ class AuthViewModel @Inject constructor(
 
     fun register() {
         viewModelScope.launch {
-            // 1. Iniciar Loading e limpar erros antigos
             _state.update { it.copy(isLoading = true, errorMessage = null) }
 
             try {
-                // 2. Chamar o UseCase (A magia acontece aqui!)
-                // Nota: O UseCase espera um RegistrationStateData.
-                // Se o teu UseCase importar ESTA classe RegistrationState, passa direto.
-                // Caso contrário, terás de mapear aqui. Assumindo que é a mesma classe:
                 registerBeneficiaryUseCase(_state.value)
 
                 // 3. Sucesso!

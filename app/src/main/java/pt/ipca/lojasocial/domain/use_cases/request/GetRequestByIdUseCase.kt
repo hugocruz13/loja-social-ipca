@@ -27,6 +27,7 @@ class GetRequestByIdUseCase @Inject constructor(
         // 4. Mapear para UI Model
         return RequestDetailUiModel(
             id = request.id,
+            beneficiaryId = request.beneficiaryId,
             beneficiaryName = beneficiary?.name ?: "Desconhecido",
             cc = beneficiary?.ccNumber ?: "N/A",
             email = beneficiary?.email ?: "N/A",

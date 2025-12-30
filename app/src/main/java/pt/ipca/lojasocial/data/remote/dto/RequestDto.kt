@@ -22,6 +22,8 @@ data class RequestDto(
     @get:PropertyName("tipo") @set:PropertyName("tipo")
     var type: String = "",
 
+    @get:PropertyName("observacoes") @set:PropertyName("observacoes")
+    var observations: String = "",
 
     @get:PropertyName("documentosUrl") @set:PropertyName("documentosUrl")
     var documentUrls: Map<String, String?> = emptyMap()

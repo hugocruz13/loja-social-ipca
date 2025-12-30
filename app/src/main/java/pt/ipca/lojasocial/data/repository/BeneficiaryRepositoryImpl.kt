@@ -7,6 +7,7 @@ import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
 import pt.ipca.lojasocial.data.remote.dto.BeneficiaryDto
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -97,5 +98,11 @@ class BeneficiaryRepositoryImpl @Inject constructor(
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    override suspend fun updateStatus(id: String, status: BeneficiaryStatus) {
+        collection.document(id)
+            .update("status", status.name)
+            .await()
     }
 }

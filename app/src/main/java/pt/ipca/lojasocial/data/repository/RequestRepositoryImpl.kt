@@ -72,10 +72,12 @@ class RequestRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateStatus(id: String, newStatus: StatusType) {
-        // Atualiza apenas o campo 'estado' sem mexer no resto
+    override suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String) {
         collection.document(id)
-            .update("estado", newStatus.name)
+            .update(mapOf(
+                "estado" to status.name,
+                "observacoes" to observation
+            ))
             .await()
     }
 

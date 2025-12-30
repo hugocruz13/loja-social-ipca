@@ -13,7 +13,7 @@ fun RequestDto.toDomain(documentId: String): Request {
         submissionDate = this.submissionDate,
         // Passamos o mapa diretamente. Se vier null do DTO, usamos emptyMap
         documents = this.documentUrls,
-
+        observations = this.observations,
         // Conversão Segura de Status
         status = try {
             StatusType.valueOf(this.status)
@@ -36,6 +36,7 @@ fun Request.toDto(): RequestDto {
         submissionDate = this.submissionDate,
         status = this.status.name,
         type = this.type.name,
-        documentUrls = this.documents
+        documentUrls = this.documents,
+        observations = this.observations
     )
 }

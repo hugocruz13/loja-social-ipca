@@ -4,6 +4,7 @@ import android.net.Uri
 import pt.ipca.lojasocial.domain.models.*
 import pt.ipca.lojasocial.domain.repository.*
 import pt.ipca.lojasocial.presentation.components.StatusType // Certifica-te que importas o StatusType correto
+import pt.ipca.lojasocial.presentation.state.AuthState
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.UUID
@@ -16,7 +17,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
     private val requestRepository: RequestRepository
 ) {
 
-    suspend operator fun invoke(state: RegistrationState) {
+    suspend operator fun invoke(state: AuthState) {
 
         // 1. Criar utilizador
         val result = authRepository.signUp(state.email, state.password)
