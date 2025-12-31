@@ -5,36 +5,38 @@ import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 
 /**
- * Uma classe de instância única (singleton) que realiza o mapeamento entre o BeneficiaryDto
- * definido na camada de dados para o Beneficiary definido na camada de domínio.
+ * Converte o DTO do Firebase para o Modelo de Domínio.
+ * @param documentId O ID do documento (que vem separado do corpo do JSON no Firestore).
  */
-object BeneficiaryMapper {
+fun BeneficiaryDto.toDomain(documentId: String): Beneficiary {
+    return Beneficiary(
+        id = documentId,
+        name = this.name,
+        email = this.email,
+        birthDate = this.birthDate.toInt(), // Conversão de Long para Int conforme o teu domínio
+        schoolYearId = this.schoolYearId,
+        phoneNumber = this.phoneNumber,
+        ccNumber = this.ccNumber,
+        status = try {
+            BeneficiaryStatus.valueOf(this.status.uppercase())
+        } catch (e: Exception) {
+            BeneficiaryStatus.INATIVO
+        }
+    )
+}
 
-    fun toDomain(dto: BeneficiaryDto): Beneficiary {
-        return Beneficiary(
-            id = dto.id ?: throw IllegalArgumentException("Beneficiary ID cannot be null"),
-            name = dto.nome ?: "Sem Nome", // Ou lançar erro
-            email = dto.email ?: "",
-            birthDate = dto.dataNascimento ?: 0,
-            schoolYearId = dto.idAnoLetivo ?: "",
-            phoneNumber = dto.telemovel ?: 0,
-            status = when (dto.estado?.uppercase()) {
-                "ATIVO" -> BeneficiaryStatus.ATIVO
-                "INATIVO" -> BeneficiaryStatus.INATIVO
-                else -> BeneficiaryStatus.INATIVO // Default case safe
-            }
-        )
-    }
-
-    fun toDto(domain: Beneficiary): BeneficiaryDto {
-        return BeneficiaryDto(
-            id = domain.id,
-            nome = domain.name,
-            email = domain.email,
-            dataNascimento = domain.birthDate,
-            idAnoLetivo = domain.schoolYearId,
-            telemovel = domain.phoneNumber,
-            estado = domain.status.name // Converte ENUM para String (ex: "ATIVO")
-        )
-    }
+/**
+ * Converte o Modelo de Domínio para DTO para enviar para o Firebase.
+ */
+fun Beneficiary.toDto(): BeneficiaryDto {
+    return BeneficiaryDto(
+        name = this.name,
+        email = this.email,
+        birthDate = this.birthDate.toLong(),
+        schoolYearId = this.schoolYearId,
+        phoneNumber = this.phoneNumber,
+        ccNumber = this.ccNumber,
+        // Grava na base de dados como string (ex: "ATIVO")
+        status = this.status.name
+    )
 }

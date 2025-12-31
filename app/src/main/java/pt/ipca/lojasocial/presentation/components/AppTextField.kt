@@ -12,8 +12,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
 
 @Composable
@@ -23,17 +21,16 @@ fun AppTextField(
     label: String,
     placeholder: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    enabled: Boolean = true,
     isError: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     val fieldShape = RoundedCornerShape(8.dp)
 
-    //Estados para a funcionalidade do Ícone de Olho
     val isPasswordToggle = keyboardType == KeyboardType.Password
     var passwordVisible by remember { mutableStateOf(false) }
 
-    //Determinar a transformação visual final
     val currentVisualTransformation = when {
         isPasswordToggle && !passwordVisible -> PasswordVisualTransformation()
         else -> visualTransformation
@@ -41,12 +38,7 @@ fun AppTextField(
 
     val trailingIcon = if (isPasswordToggle) {
         @Composable {
-            val image = if (passwordVisible)
-                Icons.Filled.Visibility
-            else
-                Icons.Filled.VisibilityOff
-
-
+            val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                 Icon(imageVector = image, contentDescription = "password visivel")
             }
@@ -59,7 +51,9 @@ fun AppTextField(
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
+            // Se estiver desativado, mudamos a cor do label para parecer bloqueado
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         OutlinedTextField(
@@ -67,22 +61,41 @@ fun AppTextField(
             onValueChange = onValueChange,
             placeholder = { Text(placeholder) },
             modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
             isError = isError,
             singleLine = true,
             shape = fieldShape,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = currentVisualTransformation,
-
             trailingIcon = trailingIcon,
-
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Color(0XFF00713C),
                 focusedLabelColor = Color(0XFF00713C),
                 cursorColor = Color(0XFF00713C),
                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                 errorBorderColor = MaterialTheme.colorScheme.error,
-                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                // Cores para quando o campo está bloqueado (enabled = false)
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledContainerColor = Color.Transparent
             )
+        )
+    }
+}
+
+@Preview(name = "Campo Bloqueado (Read Only)", showBackground = true)
+@Composable
+fun AppTextFieldDisabledPreview() {
+    Surface(modifier = Modifier.padding(16.dp)) {
+        AppTextField(
+            value = "Gustavo Santos",
+            onValueChange = { },
+            label = "Nome Completo",
+            placeholder = "",
+            enabled = false
         )
     }
 }

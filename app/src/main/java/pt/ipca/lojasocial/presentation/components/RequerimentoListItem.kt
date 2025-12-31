@@ -18,13 +18,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import pt.ipca.lojasocial.domain.models.StatusType
 
 @Composable
 fun RequerimentoListItem(
     applicantName: String,
-    submissionDate: String,
     avatarUrl: String? = null,
-    requerimentId: String,
     status: StatusType,
     onClick: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth()
@@ -84,18 +83,6 @@ fun RequerimentoListItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
-                    text = "Nº: $requerimentId",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "Submetido: $submissionDate",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -123,8 +110,6 @@ fun RequerimentoListItemPendingPreview() {
     Surface(modifier = Modifier.padding(16.dp)) {
         RequerimentoListItem(
             applicantName = "Maria Joana Sousa",
-            requerimentId = "1234",
-            submissionDate = "20/05/2026",
             avatarUrl = null,
             status = StatusType.ANALISE,
             onClick = {  }

@@ -1,5 +1,11 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.domain.models.ProductType.CLEANING
+import pt.ipca.lojasocial.domain.models.ProductType.FOOD
+import pt.ipca.lojasocial.domain.models.ProductType.HYGIENE
+import pt.ipca.lojasocial.domain.models.ProductType.OTHER
+
+
 /**
  * Define as categorias principais dos bens geridos pela Loja Social.
  *

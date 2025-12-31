@@ -3,12 +3,14 @@ package pt.ipca.lojasocial.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +20,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.filled.Settings
+
+data class NotificationModel(
+    val id: Int,
+    val title: String,
+    val timestamp: String,
+    val dateLabel: String,
+    val icon: ImageVector,
+    val isUnread: Boolean
+)
 
 @Composable
 fun AppNotificationItem(
@@ -29,21 +39,12 @@ fun AppNotificationItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
-    val iconTint = if (isUnread) {
-        Color(0XFF00713C)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val backgroundTint = if (isUnread) {
-        Color(0X3000713C)
-    } else {
-        MaterialTheme.colorScheme.surfaceVariant
-    }
+    val iconTint = if (isUnread) Color(0XFF00713C) else MaterialTheme.colorScheme.onSurfaceVariant
+    val backgroundTint = if (isUnread) Color(0X3000713C) else MaterialTheme.colorScheme.surfaceVariant
 
     Card(
         modifier = modifier
-            .padding(vertical = 4.dp, horizontal = 0.dp)
+            .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -55,7 +56,6 @@ fun AppNotificationItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -73,9 +73,7 @@ fun AppNotificationItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -105,39 +103,64 @@ fun AppNotificationItem(
     }
 }
 
+@Composable
+fun NotificationsList(
+    notifications: List<NotificationModel>,
+    onNotificationClick: (NotificationModel) -> Unit
+) {
+    val grouped = notifications.groupBy { it.dateLabel }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        grouped.forEach { (label, items) ->
+            item {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            items(items) { notification ->
+                AppNotificationItem(
+                    title = notification.title,
+                    timestamp = notification.timestamp,
+                    notificationIcon = notification.icon,
+                    isUnread = notification.isUnread,
+                    onClick = { onNotificationClick(notification) }
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
-fun NotificationListCardsConditionalColorPreview() {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-
-        Text("HOJE", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
-
-        AppNotificationItem(
-            title = "Estado da entraga 123 alterado para 'Em Progresso'.",
-            timestamp = "5m atrás",
-            notificationIcon = Icons.Filled.LocalShipping,
-            isUnread = true,
-            onClick = {}
+fun NotificationListFullPreview() {
+    val demoNotifications = listOf(
+        NotificationModel(
+            1, "Estado da entrega 123 alterado para 'Em Progresso'.",
+            "5m atrás", "HOJE", Icons.Filled.LocalShipping, true
+        ),
+        NotificationModel(
+            2, "Stock de 'Arroz' está baixo.",
+            "10:30 AM", "HOJE", Icons.Filled.Description, false
+        ),
+        NotificationModel(
+            3, "Definições alteradas.",
+            "Yesterday", "ONTEM", Icons.Filled.Settings, false
         )
+    )
 
-        AppNotificationItem(
-            title = "Stock de 'Arroz' está baixo.",
-            timestamp = "10:30 AM",
-            notificationIcon = Icons.Filled.Description,
-            isUnread = false,
-            onClick = {}
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("ONTEM", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
-
-        AppNotificationItem(
-            title = "Definições alteradas.",
-            timestamp = "Yesterday",
-            notificationIcon = Icons.Filled.Settings,
-            isUnread = false,
-            onClick = {}
+    Surface(color = MaterialTheme.colorScheme.background) {
+        NotificationsList(
+            notifications = demoNotifications,
+            onNotificationClick = {}
         )
     }
 }

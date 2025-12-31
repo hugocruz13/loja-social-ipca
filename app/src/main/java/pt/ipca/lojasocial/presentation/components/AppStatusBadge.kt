@@ -22,50 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-enum class StatusType(val label: String, val baseColor: Color, val textColor: Color) {
-    ATIVA(
-        "Ativa",
-        Color(0xFF22C55E),
-        Color(0xFF22C55E)
-    ),
-    AGENDADA(
-        "Agendada",
-        Color(0xFFD97706),
-        Color(0xFFD97706)
-    ),
-    COMPLETA(
-        "Completa",
-        Color(0xFF9CA3AF),
-        Color(0xFF9CA3AF)
-    ),
-    ANALISE(
-        "Em Análise",
-        Color(0xFFD97706),
-        Color(0xFFD97706)
-    ),
-    PENDENTE(
-        "Pendente",
-        Color(0xFFD97706),
-        Color(0xFFD97706)
-    ),
-    ENTREGUE(
-        "Entregue",
-        Color(0xFF2E7D32),
-        Color(0xFF2E7D32)
-    ),
-    NOT_ENTREGUE(
-        "Não Entregue",
-        Color(0xFFD32F2F),
-        Color(0xFFD32F2F)
-    ),
-    ATUAL(
-        "Atual",
-        Color(0xFF2E7D32),
-        Color(0xFF2E7D32)
-    )
-
-}
+import pt.ipca.lojasocial.domain.models.StatusType
 
 @Composable
 fun AppStatusBadge(

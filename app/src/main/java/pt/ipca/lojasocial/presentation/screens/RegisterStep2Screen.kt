@@ -9,16 +9,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pt.ipca.lojasocial.presentation.AuthViewModel
-import pt.ipca.lojasocial.presentation.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.educationLevels
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDropdownField
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppRadioCardItem
 import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-import pt.ipca.lojasocial.presentation.components.ProductCategory
-import pt.ipca.lojasocial.presentation.educationLevels
 
 @Composable
 fun RegisterStep2Screen(
@@ -26,10 +25,10 @@ fun RegisterStep2Screen(
     onNext: () -> Unit,
     onBack: () -> Unit
 ) {
-
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
 
+    // Helper function local
     fun updateStep2Fields(
         category: RequestCategory? = state.requestCategory,
         education: String = state.educationLevel,
@@ -63,7 +62,7 @@ fun RegisterStep2Screen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(scrollState)
-                    .padding(horizontal = 24.dp) // Padding lateral para o conteúdo
+                    .padding(horizontal = 24.dp)
             ) {
 
                 Text(
@@ -73,43 +72,32 @@ fun RegisterStep2Screen(
                 )
 
                 Column(modifier = Modifier.padding(bottom = 24.dp)) {
-
                     AppRadioCardItem(
                         label = "Produtos Alimentares",
                         isSelected = state.requestCategory == RequestCategory.ALIMENTARES,
-                        onClick = {
-                            updateStep2Fields(category = RequestCategory.ALIMENTARES)
-                        }
+                        onClick = { updateStep2Fields(category = RequestCategory.ALIMENTARES) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Produtos de Higiene Pessoal",
                         isSelected = state.requestCategory == RequestCategory.HIGIENE,
-                        onClick = {
-                            updateStep2Fields(category = RequestCategory.HIGIENE)
-                        }
+                        onClick = { updateStep2Fields(category = RequestCategory.HIGIENE) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Produtos de Limpeza",
                         isSelected = state.requestCategory == RequestCategory.LIMPEZA,
-                        onClick = {
-                            updateStep2Fields(category = RequestCategory.LIMPEZA)
-                        }
+                        onClick = { updateStep2Fields(category = RequestCategory.LIMPEZA) }
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Todos",
                         isSelected = state.requestCategory == RequestCategory.TODOS,
-                        onClick = {
-                            updateStep2Fields(category = RequestCategory.TODOS)
-                        }
+                        onClick = { updateStep2Fields(category = RequestCategory.TODOS) }
                     )
-
                 }
 
                 Text(
@@ -120,9 +108,7 @@ fun RegisterStep2Screen(
 
                 AppTextField(
                     value = state.school,
-                    onValueChange = {
-                        updateStep2Fields(school = it)
-                    },
+                    onValueChange = { updateStep2Fields(school = it) },
                     label = "Nome da Escola / Universidade",
                     placeholder = "Nome da Escola / Universidade",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
@@ -132,18 +118,14 @@ fun RegisterStep2Screen(
                     label = "Nível de Ensino",
                     selectedValue = state.educationLevel,
                     options = educationLevels,
-                    onOptionSelected = { novoNivel ->
-                        updateStep2Fields(education = novoNivel)
-                    },
+                    onOptionSelected = { novoNivel -> updateStep2Fields(education = novoNivel) },
                     placeholder = "Selecione nível de ensino",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
                 )
 
                 AppTextField(
                     value = state.courseName,
-                    onValueChange = {
-                        updateStep2Fields(courseName = it)
-                    },
+                    onValueChange = { updateStep2Fields(courseName = it) },
                     label = "Nome do Curso",
                     placeholder = "Nome do Curso",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
@@ -151,17 +133,13 @@ fun RegisterStep2Screen(
 
                 AppTextField(
                     value = state.studentNumber,
-                    onValueChange = {
-                        updateStep2Fields(studentNumber = it)
-                    },
+                    onValueChange = { updateStep2Fields(studentNumber = it) },
                     label = "Número do Estudante",
                     placeholder = "Insira o seu nº de estudante",
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
                 )
 
-
-
-                Spacer(modifier = Modifier.weight(1f)) // Empurra o botão para baixo
+                Spacer(modifier = Modifier.weight(1f))
 
                 Row(
                     modifier = Modifier
@@ -169,15 +147,12 @@ fun RegisterStep2Screen(
                         .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-
                     AppButton(
                         text = "Recuar",
                         onClick = onBack,
                         containerColor = Color(0XFFC7C7C7),
                         enabled = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
+                        modifier = Modifier.weight(1f).height(56.dp)
                     )
 
                     AppButton(
@@ -185,12 +160,9 @@ fun RegisterStep2Screen(
                         onClick = onNext,
                         enabled = viewModel.isStep2Valid(),
                         containerColor = Color(0XFF00713C),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(56.dp)
+                        modifier = Modifier.weight(1f).height(56.dp)
                     )
                 }
-
             }
         }
     }

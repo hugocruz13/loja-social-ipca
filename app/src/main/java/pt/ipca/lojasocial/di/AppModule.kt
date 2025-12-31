@@ -2,6 +2,7 @@ package pt.ipca.lojasocial.di
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,45 +10,81 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
+import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
+import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 
 /**
  * Módulo Hilt que fornece dependências da camada de Data.
  *
  * Configurações:
- * - Firebase Auth como Singletons
+ * - Firebase Auth e Firestore como Singletons
  * - Repository implementations bound às suas interfaces
- * - Data sources configurados com suas dependências
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    // --- FIREBASE INSTANCES ---
+
     @Provides
     @Singleton
     fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
 
     @Provides
     @Singleton
+    fun provideFirestore(): FirebaseFirestore{
+        return FirebaseFirestore.getInstance("loja-social-ipca-db")
+    }
+    // --- DATA SOURCES ---
+
+    @Provides
+    @Singleton
     fun provideFirebaseAuthDataSource(
         auth: FirebaseAuth,
+        store: FirebaseFirestore
     ): FirebaseAuthDataSource {
-        return FirebaseAuthDataSource(auth)
+        return FirebaseAuthDataSource(auth, store)
     }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
+        return StorageRepositoryImpl(storage)
+    }
+
+
+
+    // --- REPOSITORIES ---
 
     @Provides
     @Singleton
     fun provideAuthRepository(
-        dataSource: FirebaseAuthDataSource
+        dataSource: FirebaseAuthDataSource,
+        firestore: FirebaseFirestore
     ): AuthRepository {
-        return AuthRepositoryImpl(dataSource)
+        return AuthRepositoryImpl(dataSource, firestore)
     }
 
     @Provides
     @Singleton
-    fun provideBeneficiaryRepository(firestore: FirebaseFirestore): BeneficiaryRepository {
+    fun provideBeneficiaryRepository(
+        firestore: FirebaseFirestore
+    ): BeneficiaryRepository {
         return BeneficiaryRepositoryImpl(firestore)
     }
 
+    @Provides
+    @Singleton
+    fun provideRequestRepository(firestore: FirebaseFirestore): RequestRepository {
+        return RequestRepositoryImpl(firestore)
+    }
 }

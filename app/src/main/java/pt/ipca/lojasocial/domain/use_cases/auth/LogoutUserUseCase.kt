@@ -1,4 +1,4 @@
-package pt.ipca.lojasocial.domain.use_cases;
+package pt.ipca.lojasocial.domain.use_cases.auth
 
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import javax.inject.Inject;

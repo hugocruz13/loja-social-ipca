@@ -3,9 +3,12 @@ package pt.ipca.lojasocial.data.remote
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.remote.dto.UserDto
+import pt.ipca.lojasocial.domain.models.User
 import javax.inject.Inject
+import kotlin.io.path.exists
 
 
 /**
@@ -13,6 +16,7 @@ import javax.inject.Inject
  */
 class FirebaseAuthDataSource @Inject constructor(
     private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore,
 ){
 
     suspend fun login(email:String, password:String): UserDto {
@@ -20,18 +24,12 @@ class FirebaseAuthDataSource @Inject constructor(
         val authResult = auth.signInWithEmailAndPassword(email, password).await()
         val firebaseUser = authResult.user ?: throw Exception("Utilizador não encontrado")
 
-        //2. Forçar refresh do token para obter custom claims atualizados
-        val tokenResult = firebaseUser.getIdToken(true).await()
-
-        //3. Extrair custom claims
-        val customClaims = tokenResult.claims
-        val role = customClaims["role"] as? String
-            ?: throw Exception("Role não definida para o utilizador")
-
         //4. Buscar dados adicionais
         val name = firebaseUser.displayName ?: ""
         val email = firebaseUser.email ?: ""
         val uid = firebaseUser.uid
+
+        val role = getUserRole(uid)
 
         return UserDto(
             id = uid,
@@ -41,18 +39,21 @@ class FirebaseAuthDataSource @Inject constructor(
         )
     }
 
+    suspend fun signUp(email: String, pass: String, nome: String): String {
+        val result = auth.createUserWithEmailAndPassword(email, pass).await()
+        result.user?.updateProfile(com.google.firebase.auth.UserProfileChangeRequest.Builder().setDisplayName(nome).build())
+        return result.user?.uid ?: throw Exception("Erro ao obter UID após registo")
+    }
+
     suspend fun getCurrentUser(): UserDto? {
         val firebaseUser = auth.currentUser ?: return null
-
-        //Refresh tokens para obter claims atualizados
-        val tokenResult = firebaseUser.getIdToken(true).await()
-        val customClaims = tokenResult.claims
-        val role = customClaims["role"] as? String
 
         val user = Firebase.auth.currentUser
         val name = user?.displayName ?: ""
         val email = user?.email ?: ""
         val uid = user?.uid ?: ""
+
+        val role = getUserRole(uid)
 
         return UserDto(
             id = uid,
@@ -63,6 +64,23 @@ class FirebaseAuthDataSource @Inject constructor(
 
     fun logout() {
         auth.signOut()
+    }
+
+    private suspend fun getUserRole(uid: String): String? {
+        // Check if the user is in the 'beneficiary' collection
+        val beneficiaryDoc = firestore.collection("beneficiarios").document(uid).get().await()
+        if (beneficiaryDoc.exists()) {
+            return "BENEFICIARY"
+        }
+
+        // Check if the user is in the 'colaborador' collection
+        val colaboradorDoc = firestore.collection("colaboradores").document(uid).get().await()
+        if (colaboradorDoc.exists()) {
+            return "STAFF"
+        }
+
+        // Return null or a default role if not found in either collection
+        return null
     }
 
 
