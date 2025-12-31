@@ -30,11 +30,11 @@ fun EntregasScreen(
     val deliveries by viewModel.deliveries.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
 
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
 
-    val filters = listOf("All", "Agendada", "Entregue", "Cancelada", "Rejeitada", "Em Análise")
+    val filters = listOf("All", "Agendada", "Entregue", "Cancelada")
     val accentGreen = Color(0XFF00713C)
 
     Scaffold(
@@ -59,12 +59,13 @@ fun EntregasScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Top
         ) {
             AppSearchBar(
                 query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                placeholder = "Procurar por item, ID, data, beneficiário",
+                onQueryChange = { viewModel.onSearchQueryChange(it) },
+                placeholder = "Procurar por ID, beneficiário, data...",
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
@@ -77,7 +78,7 @@ fun EntregasScreen(
                 filters.forEach { filter ->
                     FilterChip(
                         selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
+                        onClick = { viewModel.onFilterSelected(filter) },
                         label = { Text(filter) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = accentGreen,
