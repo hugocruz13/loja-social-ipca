@@ -5,129 +5,211 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.repository.AuthRepository
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.RegisterBeneficiaryUseCase
+import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.state.AuthState
 import javax.inject.Inject
 
-@HiltViewModel // <--- OBRIGATÓRIO PARA O HILT
+@HiltViewModel
 class AuthViewModel @Inject constructor(
-    // Injetamos o Use Case que trata de toda a lógica complexa (Auth + Storage + Firestore)
-    private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase
+    private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase,
+    private val authRepository: AuthRepository,
+    private val beneficiaryRepository: BeneficiaryRepository,
+    private val requestRepository: RequestRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
-    val state: MutableStateFlow<AuthState> = _state
+    val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    // --- VALIDAÇÕES ---
-
-    fun isStep1Valid(): Boolean {
-        val s = _state.value
-        // Validações básicas (podes refinar a lógica do CC e Telemóvel)
-        return s.fullName.isNotBlank() &&
-                s.cc.length >= 8 && // CC tem pelo menos 8 chars
-                s.birthDate.isNotBlank() &&
-                s.phone.length >= 9 &&
-                s.email.contains("@") &&
-                s.password.length >= 6
+    // --- INIT: Verificar se já existe user logado ao abrir a app ---
+    init {
+        checkAuthStatus()
     }
 
-    fun isStep2Valid(): Boolean {
-        val s = _state.value
-        // Dependendo do nível de ensino, alguns campos podem não ser obrigatórios
-        return s.requestCategory != null &&
-                s.educationLevel.isNotBlank() &&
-                s.school.isNotBlank() &&
-                s.studentNumber.isNotBlank()
-    }
-
-    fun isStep3Valid(): Boolean {
-        val s = _state.value
-        // Pelo menos a Identificação e a Morada costumam ser obrigatórias
-        return s.docIdentification != null && s.docMorada != null
-    }
-
-
-    // --- ATUALIZAÇÕES DE ESTADO (INPUTS DA UI) ---
-
-    fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
-        _state.update {
-            it.copy(fullName = fullName, cc = cc, phone = phone, email = email, password = password)
-        }
-    }
-
-    // Função específica para o DatePicker (geralmente é um componente separado)
-    fun updateBirthDate(date: String) {
-        _state.update { it.copy(birthDate = date) }
-    }
-
-    fun updateStep2(
-        category: RequestCategory?,
-        education: String,
-        dependents: Int,
-        school: String,
-        courseName: String,
-        studentNumber: String
-    ) {
-        _state.update {
-            it.copy(
-                requestCategory = category,
-                educationLevel = education,
-                dependents = dependents,
-                school = school,
-                courseName = courseName,
-                studentNumber = studentNumber
-            )
-        }
-    }
-
-    fun updateStep3(
-        docIdentification: Uri? = _state.value.docIdentification,
-        docFamily: Uri? = _state.value.docFamily,
-        docMorada: Uri? = _state.value.docMorada,
-        docRendimento: Uri? = _state.value.docRendimento,
-        docMatricula: Uri? = _state.value.docMatricula
-    ) {
-        _state.update {
-            it.copy(
-                docIdentification = docIdentification,
-                docFamily = docFamily,
-                docMorada = docMorada,
-                docRendimento = docRendimento,
-                docMatricula = docMatricula
-            )
-        }
-    }
-
-    // --- AÇÃO FINAL: REGISTAR ---
-
-    fun register() {
+    private fun checkAuthStatus() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
-
-            try {
-                registerBeneficiaryUseCase(_state.value)
-
-                // 3. Sucesso!
-                _state.update { it.copy(isLoading = false, isSuccess = true) }
-
-            } catch (e: Exception) {
-                // 4. Erro (Mostra msg ao user)
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = e.message ?: "Ocorreu um erro desconhecido."
-                    )
-                }
-                e.printStackTrace()
+            val currentUser = authRepository.getCurrentUser()
+            if (currentUser != null) {
+                // Se existe user, carregamos logo o perfil para definir a navegação
+                _state.update { it.copy(userId = currentUser.id) }
+                loadUserProfile(currentUser.id)
+                _state.update { it.copy(isLoggedIn = true) }
             }
         }
     }
 
-    // Método auxiliar para resetar o estado de erro/sucesso após navegação
+    // ==========================================================
+    // --- LÓGICA DE LOGIN & CARREGAMENTO DE PERFIL ---
+    // ==========================================================
+
+    fun login(email: String, pass: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
+
+            val result = authRepository.login(email, pass)
+
+            result.onSuccess { user ->
+                // Login Auth funcionou, agora carregamos os dados do Firestore
+                // O loadUserProfile vai preencher a Role, Status, Nome, etc.
+                loadUserProfile(user.id)
+
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isLoggedIn = true,
+                        userId = user.id
+                    )
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Erro ao fazer login."
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Esta é a função principal que determina QUEM é o utilizador.
+     * Preenche a Role (Colaborador/Beneficiário) e os Status.
+     */
+    private suspend fun loadUserProfile(userId: String) {
+        try {
+            // 1. Verificar Role (Staff vs Beneficiário)
+            // Nota: Se não tiveres o método getUserRole no repo, usa a lógica de tentar ler as coleções
+            val role = authRepository.getUserRole(userId)
+
+            if (role == "colaborador") {
+                _state.update {
+                    it.copy(
+                        userRole = "colaborador",
+                        fullName = "Colaborador",
+                        beneficiaryStatus = BeneficiaryStatus.ATIVO // Colaborador é sempre ativo
+                    )
+                }
+            } else if (role == "beneficiario") {
+                // 2. É Beneficiário: Carregar dados pessoais
+                val beneficiary = beneficiaryRepository.getBeneficiaryById(userId)
+
+                // 3. Carregar Requerimentos (para saber o estado do pedido e observações)
+                val requests = requestRepository.getRequestsByBeneficiary(userId)
+                val latestRequest = requests.maxByOrNull { it.submissionDate }
+
+                _state.update {
+                    it.copy(
+                        userRole = "beneficiario",
+                        fullName = beneficiary?.name ?: "Sem Nome",
+                        studentNumber = beneficiary?.id ?: "",
+                        email = beneficiary?.email ?: "",
+
+                        // Estado da conta do aluno
+                        beneficiaryStatus = beneficiary?.status ?: BeneficiaryStatus.ANALISE,
+
+                        // Estado do requerimento (Aprovado, Rejeitado, etc)
+                        requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
+                        requestObservations = latestRequest?.observations ?: ""
+                    )
+                }
+            } else {
+                // User autenticado mas sem registo na BD
+                throw Exception("Utilizador sem perfil associado.")
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Opcional: Logout se os dados estiverem corrompidos
+            // authRepository.signOut()
+            _state.update { it.copy(errorMessage = "Erro ao carregar perfil: ${e.message}") }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+            // Reset total do estado para evitar lixo de memória
+            _state.value = AuthState()
+        }
+    }
+
     fun resetState() {
         _state.update { it.copy(isSuccess = false, errorMessage = null) }
+    }
+
+    // ==========================================================
+    // --- LÓGICA DE REGISTO (STEPS 1, 2, 3) ---
+    // ==========================================================
+
+    fun isStep1Valid(): Boolean {
+        val s = _state.value
+        return s.fullName.isNotBlank() && s.cc.length >= 8 && s.birthDate.isNotBlank() &&
+                s.phone.length >= 9 && s.email.contains("@") && s.password.length >= 6
+    }
+
+    fun isStep2Valid(): Boolean {
+        val s = _state.value
+        return s.requestCategory != null && s.educationLevel.isNotBlank() &&
+                s.school.isNotBlank() && s.studentNumber.isNotBlank()
+    }
+
+    fun isStep3Valid(): Boolean {
+        val s = _state.value
+        return s.docIdentification != null && s.docMorada != null
+    }
+
+    fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
+        _state.update { it.copy(fullName = fullName, cc = cc, phone = phone, email = email, password = password) }
+    }
+
+    fun updateBirthDate(date: String) {
+        _state.update { it.copy(birthDate = date) }
+    }
+
+    fun updateStep2(category: RequestCategory?, education: String, dependents: Int, school: String, courseName: String, studentNumber: String) {
+        _state.update { it.copy(requestCategory = category, educationLevel = education, dependents = dependents, school = school, courseName = courseName, studentNumber = studentNumber) }
+    }
+
+    fun updateStep3(docIdentification: Uri?, docFamily: Uri?, docMorada: Uri?, docRendimento: Uri?, docMatricula: Uri?) {
+        _state.update { it.copy(docIdentification = docIdentification, docFamily = docFamily, docMorada = docMorada, docRendimento = docRendimento, docMatricula = docMatricula) }
+    }
+
+    fun register() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                // UseCase regista Auth + Firestore + Storage
+                registerBeneficiaryUseCase(_state.value)
+
+                // Após registo, carregamos o perfil para o utilizador entrar logo
+                // O ID será o que definimos no registerBeneficiaryUseCase (normalmente authRepository.getCurrentUser()?.uid)
+                val currentUser = authRepository.getCurrentUser()
+                if (currentUser != null) {
+                    loadUserProfile(currentUser.id)
+                }
+
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isSuccess = true,
+                        isLoggedIn = true,
+                        userRole = "beneficiario",
+                        beneficiaryStatus = BeneficiaryStatus.ANALISE // Default pós-registo
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, errorMessage = e.message ?: "Erro desconhecido.") }
+                e.printStackTrace()
+            }
+        }
     }
 }

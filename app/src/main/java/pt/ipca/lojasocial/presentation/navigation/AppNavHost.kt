@@ -81,27 +81,31 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                onLoginSuccessStaff = {
-                    // Se for Staff, vai sempre para a lista de requerimentos
-                    navController.navigate(AppScreen.RequerimentosList.route) {
-                        popUpTo(AppScreen.Login.route) { inclusive = true }
-                    }
-                },
-                onLoginSuccessBeneficiary = { status ->
-                    // Se for Beneficiário, a navegação depende do status
-                    if (status == BeneficiaryStatus.ATIVO) {
-                        // Se estiver ATIVO -> Vai para a Home (Entregas/Campanhas)
-                        navController.navigate(AppScreen.EntregasList.route) {
+                viewModel = viewModel, // Passa o AuthViewModel partilhado
+                onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
+
+                onLoginSuccess = {
+                    // LER O ESTADO AGORA QUE O LOGIN ACABOU
+                    val currentState = viewModel.state.value
+
+                    if (currentState.userRole == "colaborador") {
+                        navController.navigate(AppScreen.RequerimentosList.route) {
                             popUpTo(AppScreen.Login.route) { inclusive = true }
                         }
                     } else {
-                        // Se estiver INATIVO, ANALISE ou PENDENTE -> Vai para o Ecrã de Estado
-                        navController.navigate(AppScreen.RequerimentoStatus.route) {
-                            popUpTo(AppScreen.Login.route) { inclusive = true }
+                        // É Beneficiário
+                        if (currentState.beneficiaryStatus == BeneficiaryStatus.ATIVO) {
+                            navController.navigate(AppScreen.EntregasList.route) {
+                                popUpTo(AppScreen.Login.route) { inclusive = true }
+                            }
+                        } else {
+                            // Inativo / Análise / Pendente -> Ecrã de Estado
+                            navController.navigate(AppScreen.RequerimentoStatus.route) {
+                                popUpTo(AppScreen.Login.route) { inclusive = true }
+                            }
                         }
                     }
-                },
-                onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) }
+                }
             )
         }
 
@@ -132,16 +136,18 @@ fun AppNavHost(
             )
         }
 
-        // --- ECRÃ DE ESTADO (VISTA DO ALUNO) ---
+        // --- ECRÃ DE ESTADO (VISTA DO BENEFICIARIO) ---
         composable(AppScreen.RequerimentoStatus.route) {
             val state by viewModel.state.collectAsState()
 
             RequerimentoEstadoScreen(
                 status = state.requestStatus,
                 beneficiaryName = state.fullName,
-                studentNumber = state.studentNumber,
+                cc = state.cc,
                 observations = state.requestObservations,
                 onBackClick = {
+                    viewModel.logout()
+
                     navController.navigate(AppScreen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }

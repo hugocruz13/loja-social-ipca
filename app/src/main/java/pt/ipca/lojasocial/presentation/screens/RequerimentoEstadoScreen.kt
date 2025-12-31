@@ -39,7 +39,7 @@ fun RequerimentoEstadoScreen(
     onBackClick: () -> Unit,
     status: StatusType,
     beneficiaryName: String,
-    studentNumber: String,
+    cc: String,
     observations: String = ""
 ) {
     // Dados de exemplo para os documentos (apenas visualização)
@@ -69,7 +69,7 @@ fun RequerimentoEstadoScreen(
             // 1. Cabeçalho com dados dinâmicos
             ProfileHeaderCard(
                 name = beneficiaryName,
-                studentNumber = studentNumber
+                cc = cc
             )
 
             // 2. Cartão de Estado (Simples e "UI Friendly")
@@ -107,7 +107,7 @@ fun RequerimentoEstadoScreen(
 // --- COMPONENTES AUXILIARES ---
 
 @Composable
-private fun ProfileHeaderCard(name: String, studentNumber: String) {
+private fun ProfileHeaderCard(name: String, cc: String) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -152,7 +152,7 @@ private fun ProfileHeaderCard(name: String, studentNumber: String) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Nº estudante: ${studentNumber.ifBlank { "N/A" }}",
+                    text = "CC: ${cc.ifBlank { "N/A" }}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -303,7 +303,7 @@ fun PreviewIncorretos() {
         onBackClick = {},
         status = StatusType.DOCS_INCORRETOS,
         beneficiaryName = "Ana Pereira",
-        studentNumber = "12345"
+        cc = "32132132 2ZX0"
     )
 }
 
@@ -314,6 +314,6 @@ fun PreviewEmAnalise() {
         onBackClick = {},
         status = StatusType.DOCS_INCORRETOS,
         beneficiaryName = "João Silva",
-        studentNumber = "20000"
+        cc = "32132132 2ZX0"
     )
 }
