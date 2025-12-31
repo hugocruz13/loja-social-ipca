@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.use_cases.request.GetRequestByIdUseCase
-import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.models.RequestDetailUiModel
 import javax.inject.Inject
 

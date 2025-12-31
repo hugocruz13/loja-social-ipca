@@ -3,7 +3,7 @@ package pt.ipca.lojasocial.presentation.state
 import android.net.Uri
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.RequestCategory
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 data class AuthState(
     // ==========================================================

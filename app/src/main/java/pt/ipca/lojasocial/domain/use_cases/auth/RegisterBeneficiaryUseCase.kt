@@ -1,9 +1,16 @@
 package pt.ipca.lojasocial.domain.use_cases.auth
 
 import android.net.Uri
-import pt.ipca.lojasocial.domain.models.*
-import pt.ipca.lojasocial.domain.repository.*
-import pt.ipca.lojasocial.presentation.components.StatusType // Certifica-te que importas o StatusType correto
+import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.models.Request
+import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestType
+import pt.ipca.lojasocial.domain.models.StatusType
+import pt.ipca.lojasocial.domain.repository.AuthRepository
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.presentation.state.AuthState
 import java.text.SimpleDateFormat
 import java.util.Locale

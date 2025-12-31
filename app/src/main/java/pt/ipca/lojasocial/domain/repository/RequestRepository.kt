@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.domain.repository
 
 import pt.ipca.lojasocial.domain.models.Request
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 /**
  * Interface responsável pela gestão dos Pedidos de Apoio (Candidaturas).

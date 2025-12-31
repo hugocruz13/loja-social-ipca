@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.use_cases.request.GetRequestsWithDetailsUseCase
-import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.models.RequestUiModel
 import javax.inject.Inject
 

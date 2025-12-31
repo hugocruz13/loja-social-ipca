@@ -23,8 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-import pt.ipca.lojasocial.presentation.components.StatusType
 
 // Mapeamento amigável das chaves da BD para Títulos
 val docLabels = mapOf(
