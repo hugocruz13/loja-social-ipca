@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -90,35 +91,31 @@ fun EntregasScreen(
             }
 
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else if (error != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = "Erro: $error", color = Color.Red)
-                }
+                Text(text = "Erro: $error", color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
-                    items(deliveries) { delivery ->
-                        val statusType = when (delivery.status) {
+                    items(deliveries) { deliveryUiModel ->
+                        val statusType = when (deliveryUiModel.delivery.status) {
                             DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
                             DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
                             DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
                             DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
                             DeliveryStatus.UNDER_ANALYSIS -> StatusType.PENDENTE
                         }
-                        val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(delivery.scheduledDate))
+                        val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(deliveryUiModel.delivery.scheduledDate))
                         AppDeliveryDetailCard(
                             deliveryDate = formattedDate,
-                            deliveryId = delivery.id,
-                            deliveryTitle = "Entrega para ${delivery.beneficiaryId}", // You might want to fetch the beneficiary name
-                            deliveryContent = delivery.items.keys.joinToString(", "),
+                            deliveryId = deliveryUiModel.delivery.id,
+                            deliveryTitle = "Entrega para ${deliveryUiModel.beneficiaryName}",
+                            deliveryContent = deliveryUiModel.delivery.items.keys.joinToString(", "),
                             status = statusType,
-                            onEditClick = { onEditDelivery(delivery.id) },
-                            modifier = Modifier.clickable { onDeliveryClick(delivery.id) }
+                            onEditClick = { onEditDelivery(deliveryUiModel.delivery.id) },
+                            modifier = Modifier.clickable { onDeliveryClick(deliveryUiModel.delivery.id) }
                         )
                     }
                 }

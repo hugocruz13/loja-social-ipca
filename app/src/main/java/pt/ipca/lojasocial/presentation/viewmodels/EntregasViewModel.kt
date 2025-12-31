@@ -8,18 +8,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.UserRole
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
+import pt.ipca.lojasocial.presentation.models.DeliveryUiModel // Import the new UiModel
 import javax.inject.Inject
 
 @HiltViewModel
 class EntregasViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val beneficiaryRepository: BeneficiaryRepository // Inject BeneficiaryRepository
 ) : ViewModel() {
 
-    private val _deliveries = MutableStateFlow<List<Delivery>>(emptyList())
-    val deliveries: StateFlow<List<Delivery>> = _deliveries
+    private val _deliveries = MutableStateFlow<List<DeliveryUiModel>>(emptyList())
+    val deliveries: StateFlow<List<DeliveryUiModel>> = _deliveries
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -43,11 +46,19 @@ class EntregasViewModel @Inject constructor(
                     return@launch
                 }
 
-                val result = when (currentUser.role) {
+                val rawDeliveries = when (currentUser.role) {
                     UserRole.STAFF -> deliveryRepository.getDeliveries()
                     UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(currentUser.id)
                 }
-                _deliveries.value = result
+
+                val uiModels = rawDeliveries.map { delivery ->
+                    val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+                    DeliveryUiModel(
+                        delivery = delivery,
+                        beneficiaryName = beneficiary?.name ?: "Beneficiário Desconhecido"
+                    )
+                }
+                _deliveries.value = uiModels
             } catch (e: Exception) {
                 _error.value = "Falha ao carregar as entregas: ${e.message}"
             } finally {

@@ -15,6 +15,7 @@ class DeliveryRepositoryImpl @Inject constructor(
 ) : DeliveryRepository {
 
     private val collection = firestore.collection("entregas")
+    private val beneficiariesCollection = firestore.collection("beneficiarios")
 
     override suspend fun getDeliveries(): List<Delivery> {
         return try {
@@ -47,7 +48,8 @@ class DeliveryRepositoryImpl @Inject constructor(
 
     override suspend fun getDeliveriesByBeneficiary(beneficiaryId: String): List<Delivery> {
         return try {
-            val snapshot = collection.whereEqualTo("idBeneficiario", beneficiaryId).get().await()
+            val beneficiaryRef = beneficiariesCollection.document(beneficiaryId)
+            val snapshot = collection.whereEqualTo("idBeneficiario", beneficiaryRef).get().await()
             snapshot.documents.mapNotNull { doc ->
                 val deliveryDto = doc.toObject(DeliveryDto::class.java)
                 if (deliveryDto != null) {
