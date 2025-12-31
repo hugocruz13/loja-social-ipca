@@ -1,6 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.stock
 
-import pt.ipca.lojasocial.domain.models.Stock
+import pt.ipca.lojasocial.domain.models.StockItem
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Inject
 
@@ -25,9 +25,9 @@ class GetStockByCampaignUseCase @Inject constructor(
      * Executa a pesquisa de lotes de stock associados ao ID da campanha fornecido.
      *
      * @param campaignId O identificador único da campanha.
-     * @return Lista de [Stock] cuja origem foi essa campanha.
+     * @return Lista de [StockItem] cuja origem foi essa campanha.
      */
-    suspend operator fun invoke(campaignId: String): List<Stock> {
+    suspend operator fun invoke(campaignId: String): List<StockItem> {
         return repository.getItemsByCampaign(campaignId)
     }
 }

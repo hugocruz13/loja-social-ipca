@@ -1,6 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.stock
 
-import pt.ipca.lojasocial.domain.models.Stock
+import pt.ipca.lojasocial.domain.models.StockItem
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Inject
 
@@ -23,9 +23,9 @@ class GetStockItemByIdUseCase @Inject constructor(
      * Executa a pesquisa do lote de stock pelo seu identificador único.
      *
      * @param id O identificador do lote (StockItem).
-     * @return O objeto [Stock] encontrado ou `null` se não existir.
+     * @return O objeto [StockItem] encontrado ou `null` se não existir.
      */
-    suspend operator fun invoke(id: String): Stock? {
+    suspend operator fun invoke(id: String): StockItem? {
         return repository.getStockItemById(id)
     }
 }

@@ -1,6 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.stock
 
-import pt.ipca.lojasocial.domain.models.Stock
+import pt.ipca.lojasocial.domain.models.StockItem
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Inject
 
@@ -21,10 +21,10 @@ class GetStockListUseCase @Inject constructor(
     /**
      * Executa a obtenção da lista completa de itens em stock.
      *
-     * @return Lista de [Stock]. Note que cada elemento representa um lote físico
+     * @return Lista de [StockItem]. Note que cada elemento representa um lote físico
      * (com validade específica), e não apenas o tipo de produto abstrato.
      */
-    suspend operator fun invoke(): List<Stock> {
+    suspend operator fun invoke(): List<StockItem> {
         return repository.getStockItems()
     }
 }

@@ -80,7 +80,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.CampanhasList.route
+        startDestination = AppScreen.AnoLetivoList.route
     ) {
 
         composable(AppScreen.Login.route) {
@@ -307,5 +307,7 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
+
+
     }
 }

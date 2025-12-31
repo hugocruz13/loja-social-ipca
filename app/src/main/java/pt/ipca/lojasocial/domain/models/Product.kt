@@ -20,7 +20,7 @@ enum class ProductType {
  *
  * Esta entidade define "o que é" o bem (ex: "Leite Meio Gordo"), mas não guarda
  * a quantidade existente nem a validade. Para quantidades e gestão de lotes,
- * ver a entidade [Stock].
+ * ver a entidade [StockItem].
  *
  * **Invariantes sugeridas:**
  * - O `name` deve ser único para evitar duplicados no catálogo.

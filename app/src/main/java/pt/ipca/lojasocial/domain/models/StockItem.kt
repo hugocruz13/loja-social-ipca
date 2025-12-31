@@ -20,7 +20,7 @@ package pt.ipca.lojasocial.domain.models
  * @property expiryDate Data de validade do produto (timestamp). Crucial para relatórios de prioridade.
  * @property observations Observações sobre o estado físico do lote (ex: "Embalagem amolgada") ou detalhes da doação.
  */
-data class Stock(
+data class StockItem(
     val id: String,
     val productId: String,
     val campaignId: String? = null,
