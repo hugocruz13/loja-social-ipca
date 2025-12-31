@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -33,6 +34,7 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -83,7 +85,7 @@ fun AppNavHost(
             LoginScreen(
                 onLoginSuccessStaff = {
                     // Se for Staff, vai sempre para a lista de requerimentos
-                    navController.navigate(AppScreen.RequerimentosList.route) {
+                    navController.navigate(AppScreen.EntregasList.route) {
                         popUpTo(AppScreen.Login.route) { inclusive = true }
                     }
                 },
@@ -282,7 +284,9 @@ fun AppNavHost(
         }
 
         composable(AppScreen.EntregasList.route) {
+            val entregasViewModel: EntregasViewModel = hiltViewModel()
             EntregasScreen(
+                viewModel = entregasViewModel,
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate("agendar_entrega?role=colaborador") },
                 onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=colaborador") },

@@ -10,10 +10,12 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
+import pt.ipca.lojasocial.data.repository.DeliveryRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
@@ -61,8 +63,6 @@ object AppModule {
         return StorageRepositoryImpl(storage)
     }
 
-
-
     // --- REPOSITORIES ---
 
     @Provides
@@ -86,4 +86,11 @@ object AppModule {
     fun provideRequestRepository(firestore: FirebaseFirestore): RequestRepository {
         return RequestRepositoryImpl(firestore)
     }
+
+    @Provides
+    @Singleton
+    fun provideDeliveryRepository(firestore: FirebaseFirestore): DeliveryRepository {
+        return DeliveryRepositoryImpl(firestore)
+    }
+
 }
