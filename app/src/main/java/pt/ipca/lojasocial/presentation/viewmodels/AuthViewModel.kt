@@ -14,6 +14,7 @@ import pt.ipca.lojasocial.domain.models.RequestCategory
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.RegisterBeneficiaryUseCase
 import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.state.AuthState
@@ -24,7 +25,8 @@ class AuthViewModel @Inject constructor(
     private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase,
     private val authRepository: AuthRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
-    private val requestRepository: RequestRepository
+    private val requestRepository: RequestRepository,
+    private val storageRepository: StorageRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -90,6 +92,7 @@ class AuthViewModel @Inject constructor(
             // Nota: Se não tiveres o método getUserRole no repo, usa a lógica de tentar ler as coleções
             val role = authRepository.getUserRole(userId)
 
+
             if (role == "colaborador") {
                 _state.update {
                     it.copy(
@@ -118,7 +121,9 @@ class AuthViewModel @Inject constructor(
 
                         // Estado do requerimento (Aprovado, Rejeitado, etc)
                         requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
-                        requestObservations = latestRequest?.observations ?: ""
+                        requestObservations = latestRequest?.observations ?: "",
+
+                        requestDocuments = latestRequest?.documents ?: emptyMap()
                     )
                 }
             } else {
@@ -131,6 +136,65 @@ class AuthViewModel @Inject constructor(
             // Opcional: Logout se os dados estiverem corrompidos
             // authRepository.signOut()
             _state.update { it.copy(errorMessage = "Erro ao carregar perfil: ${e.message}") }
+        }
+    }
+
+    fun resubmitDocument(docKey: String, uri: Uri) {
+        val userId = _state.value.userId ?: return
+        val currentDocs = _state.value.requestDocuments
+
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                // 1. Obter o pedido atual para ter o ID
+                val requests = requestRepository.getRequestsByBeneficiary(userId)
+                val request = requests.maxByOrNull { it.submissionDate } ?: return@launch
+
+                // 2. Upload do novo ficheiro para o Storage
+                val fileName = "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
+                val downloadUrl = storageRepository.uploadFile(uri, fileName)
+
+                // 3. Atualizar o mapa localmente
+                val updatedDocs = currentDocs.toMutableMap()
+                updatedDocs[docKey] = downloadUrl // Agora este documento deixa de ser null
+
+                // 4. VERIFICAÇÃO INTELIGENTE:
+                // Verifica se AINDA existe algum valor null ou vazio no mapa inteiro.
+                // Se 'none' (nenhum) for nulo, significa que estão todos completos.
+                val allDocumentsCompleted = updatedDocs.values.none { it.isNullOrBlank() }
+
+                // Define o novo estado com base na verificação
+                val newStatus = if (allDocumentsCompleted) {
+                    StatusType.ANALISE // Tudo entregue -> Vai para análise
+                } else {
+                    StatusType.DOCS_INCORRETOS // Ainda faltam coisas -> Mantém-se no ecrã de erro
+                }
+
+                // 5. Atualizar na BD (Firebase)
+                requestRepository.updateRequestDocsAndStatus(
+                    id = request.id,
+                    documents = updatedDocs,
+                    status = newStatus
+                )
+
+                // 6. Atualizar a UI
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        requestDocuments = updatedDocs,
+                        requestStatus = newStatus
+                    )
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Erro ao enviar documento. Tente novamente."
+                    )
+                }
+            }
         }
     }
 

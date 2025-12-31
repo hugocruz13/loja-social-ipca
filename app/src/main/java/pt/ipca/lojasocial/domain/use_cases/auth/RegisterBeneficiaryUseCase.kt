@@ -30,7 +30,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
         suspend fun uploadIfPresent(uri: Uri?, docKey: String) {
             if (uri != null) {
                 // Cria nome único
-                val fileName = "documentos/$newUserId/${docKey}_${UUID.randomUUID()}"
+                val fileName = "requerimentos/$newUserId/${docKey}_${UUID.randomUUID()}"
 
                 // Faz upload e recebe o URL
                 val url = storageRepository.uploadFile(uri, fileName)

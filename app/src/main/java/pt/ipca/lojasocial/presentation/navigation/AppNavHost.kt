@@ -36,6 +36,8 @@ import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
+
+    object Dashboard : AppScreen("dashboard")
     object RegisterStep1 : AppScreen("register/step1")
     object RegisterStep2 : AppScreen("register/step2")
     object RegisterStep3 : AppScreen("register/step3")
@@ -145,12 +147,14 @@ fun AppNavHost(
                 beneficiaryName = state.fullName,
                 cc = state.cc,
                 observations = state.requestObservations,
+                documents = state.requestDocuments,
+                onResubmitDoc = { docKey, uri ->
+                    viewModel.resubmitDocument(docKey, uri)
+                },
+
                 onBackClick = {
                     viewModel.logout()
-
-                    navController.navigate(AppScreen.Login.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
+                    navController.navigate(AppScreen.Login.route) { popUpTo(0) { inclusive = true } }
                 }
             )
         }

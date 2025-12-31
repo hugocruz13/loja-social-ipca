@@ -39,6 +39,8 @@ data class AuthState(
     // Motivo de rejeição ou observações do requerimento
     val requestObservations: String = "",
 
+    val requestDocuments: Map<String, String?> = emptyMap(),
+
     // ==========================================================
     // DADOS DO FORMULÁRIO DE REGISTO (Inputs)
     // ==========================================================
