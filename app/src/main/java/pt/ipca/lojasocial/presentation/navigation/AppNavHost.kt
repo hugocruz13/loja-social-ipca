@@ -14,6 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.models.UserRole // Importante para definir o cargo
+import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel // Import do VM de Beneficiários
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
@@ -34,6 +36,9 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.screens.*
+import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
+
 
 sealed class AppScreen(val route: String) {
     object Login : AppScreen("login")
@@ -55,6 +60,9 @@ sealed class AppScreen(val route: String) {
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
     object EntregasList : AppScreen("entregaslist")
+    object ProductList : AppScreen("product_list")
+    object ProductDetail : AppScreen("product_detail/{productId}")
+    object ProductAddEdit : AppScreen("product_add_edit?id={id}")
 }
 
 @Composable
@@ -303,7 +311,7 @@ fun AppNavHost(
             AddEditCampanhaScreen(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { n, d, i, f, t -> navController.popBackStack() },
+                onSaveClick = { n, d, i, f, t ->navController.popBackStack()},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -348,7 +356,7 @@ fun AppNavHost(
                 entregaId = id,
                 isCollaborator = role == "colaborador",
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { navController.popBackStack() },
+                onSaveClick = {navController.popBackStack()},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -369,6 +377,55 @@ fun AppNavHost(
                 userRole = userRole,
                 onBackClick = { navController.popBackStack() },
                 onStatusUpdate = { entregue -> navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.ProductList.route) {
+            ProductListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
+                onAddProductClick = {},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = AppScreen.ProductDetail.route,
+            arguments = listOf(
+                navArgument("productId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+
+            ProductDetailScreen(
+                productId = productId,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { navController.navigate("product_add_edit?id=$it") },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = "product_add_edit?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+
+            val productId = backStackEntry.arguments?.getString("id")
+
+            AddEditProductScreen(
+                productId = productId,
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
