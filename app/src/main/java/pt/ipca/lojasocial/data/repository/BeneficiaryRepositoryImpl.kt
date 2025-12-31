@@ -113,7 +113,7 @@ class BeneficiaryRepositoryImpl @Inject constructor(
 
     override suspend fun updateStatus(id: String, status: BeneficiaryStatus) {
         collection.document(id)
-            .update("status", status.name)
+            .update("estado", status.name)
             .await()
     }
 }
