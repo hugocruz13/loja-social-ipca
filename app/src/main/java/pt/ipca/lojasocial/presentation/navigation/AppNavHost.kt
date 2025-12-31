@@ -21,6 +21,7 @@ import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
+import pt.ipca.lojasocial.presentation.screens.DashboardScreen
 import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.EntregasScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
@@ -87,25 +88,56 @@ fun AppNavHost(
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
 
                 onLoginSuccess = {
-                    // LER O ESTADO AGORA QUE O LOGIN ACABOU
                     val currentState = viewModel.state.value
 
                     if (currentState.userRole == "colaborador") {
-                        navController.navigate(AppScreen.RequerimentosList.route) {
+                        navController.navigate(AppScreen.Dashboard.route) {
                             popUpTo(AppScreen.Login.route) { inclusive = true }
                         }
                     } else {
-                        // É Beneficiário
+                        // Se estiver ATIVO -> Vai para Dashboard
                         if (currentState.beneficiaryStatus == BeneficiaryStatus.ATIVO) {
-                            navController.navigate(AppScreen.EntregasList.route) {
+                            navController.navigate(AppScreen.Dashboard.route) {
                                 popUpTo(AppScreen.Login.route) { inclusive = true }
                             }
-                        } else {
-                            // Inativo / Análise / Pendente -> Ecrã de Estado
+                        }
+                        // Se não estiver Ativo -> Vai para Estado do Requerimento
+                        else {
                             navController.navigate(AppScreen.RequerimentoStatus.route) {
                                 popUpTo(AppScreen.Login.route) { inclusive = true }
                             }
                         }
+                    }
+                }
+            )
+        }
+
+        // --- DASHBOARD (Home) ---
+        composable(AppScreen.Dashboard.route) {
+            val state by viewModel.state.collectAsState()
+
+            // 1. Converter a Role (String) para o Enum da UI
+            val uiRole = if (state.userRole == "colaborador") {
+                pt.ipca.lojasocial.presentation.screens.UserRole.STAFF
+            } else {
+                pt.ipca.lojasocial.presentation.screens.UserRole.BENEFICIARY
+            }
+
+            // 2. Renderizar o Ecrã
+            DashboardScreen(
+                userName = state.fullName,
+                role = uiRole,
+                onNavigateTo = { destinationKey ->
+                    when (destinationKey) {
+                        "entregas" -> navController.navigate(AppScreen.EntregasList.route)
+                        "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
+                        "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
+                        "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
+                        "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
+                        "beneficiarios" -> { /* navController.navigate(AppScreen.BeneficiariosList.route) */ }
+                        "reports" -> { /* navController.navigate(AppScreen.Reports.route) */ }
+                        "apoio" -> { /* navController.navigate(AppScreen.Support.route) */ }
+
                     }
                 }
             )
