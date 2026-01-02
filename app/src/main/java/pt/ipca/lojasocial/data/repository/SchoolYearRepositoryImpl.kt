@@ -39,15 +39,9 @@ class SchoolYearRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveSchoolYear(schoolYear: SchoolYear) {
-        // Converte Domain para DTO via Mapper
+
         val dto = schoolYear.toDto()
 
-        // Criamos um Map para o Firestore a partir do DTO para garantir os nomes corretos
-        val data = hashMapOf(
-            "dataInicio" to dto.dataInicio,
-            "dataFim" to dto.dataFim
-        )
-
-        collection.document(schoolYear.id).set(data).await()
+        collection.document(schoolYear.id).set(dto).await()
     }
 }
