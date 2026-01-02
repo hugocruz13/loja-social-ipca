@@ -2,9 +2,8 @@ package pt.ipca.lojasocial.data.mapper
 
 import pt.ipca.lojasocial.data.remote.dto.RequestDto
 import pt.ipca.lojasocial.domain.models.Request
-import pt.ipca.lojasocial.domain.models.RequestStatus
 import pt.ipca.lojasocial.domain.models.RequestType
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 fun RequestDto.toDomain(documentId: String): Request {
     return Request(
@@ -12,18 +11,20 @@ fun RequestDto.toDomain(documentId: String): Request {
         beneficiaryId = this.beneficiaryId,
         schoolYearId = this.schoolYearId,
         submissionDate = this.submissionDate,
-        documentUrls = this.documentUrls,
+        // Passamos o mapa diretamente. Se vier null do DTO, usamos emptyMap
+        documents = this.documentUrls,
+        observations = this.observations,
         // Conversão Segura de Status
         status = try {
             StatusType.valueOf(this.status)
         } catch (e: Exception) {
-            StatusType.ANALISE // Default se der erro
+            StatusType.ANALISE
         },
         // Conversão Segura de Tipo
         type = try {
             RequestType.valueOf(this.type)
         } catch (e: Exception) {
-            RequestType.FOOD // Default se der erro
+            RequestType.FOOD
         }
     )
 }
@@ -33,8 +34,9 @@ fun Request.toDto(): RequestDto {
         beneficiaryId = this.beneficiaryId,
         schoolYearId = this.schoolYearId,
         submissionDate = this.submissionDate,
-        status = this.status.name, // Guarda "SUBMITTED", "APPROVED", etc.
-        type = this.type.name,     // Guarda "FOOD", "HYGIENE", etc.
-        documentUrls = this.documentUrls
+        status = this.status.name,
+        type = this.type.name,
+        documentUrls = this.documents,
+        observations = this.observations
     )
 }

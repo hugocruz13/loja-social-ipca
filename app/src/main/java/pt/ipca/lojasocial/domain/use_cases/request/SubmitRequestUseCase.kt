@@ -12,25 +12,32 @@ class SubmitRequestUseCase @Inject constructor(
     private val storageRepository: StorageRepository
 ) {
     /**
-     * Submete um pedido. Se houver ficheiro, faz upload primeiro.
+     * Submete um pedido. Se houver ficheiro, faz upload primeiro e adiciona ao mapa.
      * @param request O objeto Request base.
      * @param fileUri O caminho do ficheiro no telemóvel (opcional).
+     * @param docKey O nome/chave do documento (ex: "comprovativo_medico"). Default é "anexo".
      */
-    suspend operator fun invoke(request: Request, fileUri: Uri?) {
+    suspend operator fun invoke(request: Request, fileUri: Uri?, docKey: String = "anexo") {
 
         var requestFinal = request
 
         // 1. Lógica de Upload (se houver ficheiro)
         if (fileUri != null) {
-            // Cria um nome seguro: "requerimentos/ID_DO_BENEFICIARIO/NOME_UNICO.pdf"
-            val fileName = "requerimentos/${request.beneficiaryId}/${UUID.randomUUID()}"
+            // Cria um nome seguro: "requerimentos/ID_DO_BENEFICIARIO/TIPO_UUID"
+            val fileName = "requerimentos/${request.beneficiaryId}/${docKey}_${UUID.randomUUID()}"
 
             // Faz upload e obtém o link
             val downloadUrl = storageRepository.uploadFile(fileUri, fileName)
 
-            // Adiciona o link à lista de documentos do pedido
-            val novaLista = request.documentUrls + downloadUrl
-            requestFinal = request.copy(documentUrls = novaLista)
+            // MUDANÇA: Trabalhar com MAPA em vez de LISTA
+            // Copiamos o mapa atual para um mutável
+            val novoMapa = request.documents.toMutableMap()
+
+            // Adicionamos/Atualizamos a entrada com a chave e o novo URL
+            novoMapa[docKey] = downloadUrl
+
+            // Atualizamos o objeto request com o novo mapa
+            requestFinal = request.copy(documents = novoMapa)
         }
 
         // 2. Gravar no Firestore

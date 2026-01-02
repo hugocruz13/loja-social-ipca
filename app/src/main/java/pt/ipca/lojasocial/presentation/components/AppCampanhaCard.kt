@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.ui.graphics.Color
+import pt.ipca.lojasocial.domain.models.StatusType
 
 @Composable
 fun AppCampanhaCard(

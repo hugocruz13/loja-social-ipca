@@ -3,92 +3,69 @@ package pt.ipca.lojasocial.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.UserRole // Importante: Importar o Enum
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.AddBeneficiaryUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
+import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase // <-- IMPORT NOVO
 import javax.inject.Inject
 
 @HiltViewModel
 class BeneficiariesViewModel @Inject constructor(
     private val getBeneficiariesUseCase: GetBeneficiariesUseCase,
-    private val addBeneficiaryUseCase: AddBeneficiaryUseCase // Injetamos também o Add para poder criar
+    private val addBeneficiaryUseCase: AddBeneficiaryUseCase,
+    // --- NOVO: Injetamos o UseCase de atualização do Passo 1 ---
+    private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase
 ) : ViewModel() {
 
-    // --- ESTADOS DA UI ---
+    // --- ESTADOS DA UI (Mantive igual) ---
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    // --- ESTADOS DE DADOS ---
-    // A lista "bruta" que vem da Base de Dados
+    // Sucesso da operação (útil para fechar o ecrã/dialog depois de guardar)
+    private val _isUpdateSuccess = MutableStateFlow(false)
+    val isUpdateSuccess: StateFlow<Boolean> = _isUpdateSuccess.asStateFlow()
+
+    // --- ESTADOS DE DADOS (Mantive igual) ---
     private val _beneficiaries = MutableStateFlow<List<Beneficiary>>(emptyList())
 
-    // --- FILTROS ---
+    // --- FILTROS (Mantive igual) ---
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _selectedYear = MutableStateFlow("2024_2025") // Default igual ao ID criado no Firebase
+    private val _selectedYear = MutableStateFlow("2024_2025")
     val selectedYear: StateFlow<String> = _selectedYear.asStateFlow()
 
     private val _selectedStatus = MutableStateFlow("")
     val selectedStatus: StateFlow<String> = _selectedStatus.asStateFlow()
 
-    /**
-     * LISTA FILTRADA (A MAGIA ACONTECE AQUI)
-     * Em vez de uma função, usamos um Flow que combina os 4 estados.
-     * Sempre que (_beneficiaries, _searchQuery, _selectedYear ou _selectedStatus) mudar,
-     * esta lista atualiza-se sozinha.
-     */
+    // Lógica da Lista Filtrada (Mantive igual)
     val filteredBeneficiaries: StateFlow<List<Beneficiary>> = combine(
-        _beneficiaries,
-        _searchQuery,
-        _selectedYear,
-        _selectedStatus
+        _beneficiaries, _searchQuery, _selectedYear, _selectedStatus
     ) { list, query, year, status ->
         list.filter { ben ->
-            // 1. Filtro de Texto (Nome ou Email)
-            val matchesQuery = query.isEmpty() ||
-                    ben.name.contains(query, ignoreCase = true) ||
-                    ben.email.contains(query, ignoreCase = true)
-
-            // 2. Filtro de Ano (Compara com o schoolYearId do Firebase)
+            val matchesQuery = query.isEmpty() || ben.name.contains(query, ignoreCase = true) || ben.email.contains(query, ignoreCase = true)
             val matchesYear = year.isEmpty() || ben.schoolYearId == year
-
-            // 3. Filtro de Status
-            val matchesStatus = status.isEmpty() ||
-                    ben.status.name.equals(status, ignoreCase = true)
-
+            val matchesStatus = status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
             matchesQuery && matchesYear && matchesStatus
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    }.stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-    // Inicializa a carga de dados
     init {
         loadBeneficiaries()
     }
 
-    /**
-     * Vai ao Firebase buscar a lista completa (Use Case Get).
-     */
+    // --- FUNÇÕES DE CARREGAMENTO (Mantive igual) ---
     fun loadBeneficiaries() {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
             try {
-                // Chama o Use Case que conecta ao RepositoryImpl -> Firebase
                 val result = getBeneficiariesUseCase()
                 _beneficiaries.value = result
             } catch (e: Exception) {
@@ -99,16 +76,11 @@ class BeneficiariesViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Adiciona um novo beneficiário (Use Case Add).
-     * Útil para chamar quando clicas no botão "Salvar" de um formulário.
-     */
     fun addBeneficiary(beneficiary: Beneficiary) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 addBeneficiaryUseCase(beneficiary)
-                // Após adicionar com sucesso, recarregamos a lista para aparecer o novo
                 loadBeneficiaries()
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao adicionar: ${e.message}"
@@ -118,21 +90,49 @@ class BeneficiariesViewModel @Inject constructor(
         }
     }
 
-    // --- EVENTOS DA UI (Setters) ---
+    // --- NOVA FUNÇÃO: ATUALIZAR PERFIL (PASSO 2) ---
+    /**
+     * Esta função conecta a UI ao UseCase que criaste.
+     * Ela recebe os dados e deixa o UseCase decidir o que pode ser guardado com base na Role.
+     */
+    fun updateBeneficiaryProfile(
+        role: UserRole,          // Quem está a tentar editar? (STAFF ou BENEFICIARY)
+        original: Beneficiary,   // O beneficiário como está na DB antes de editar
+        modified: Beneficiary    // Os novos dados vindos do formulário
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            _isUpdateSuccess.value = false // Reset
 
-    fun onSearchQueryChange(newQuery: String) {
-        _searchQuery.value = newQuery
+            // Chama o UseCase do Passo 1
+            val result = updateBeneficiaryUseCase(
+                role = role,
+                original = original,
+                modified = modified
+            )
+
+            result.onSuccess {
+                // Se correu bem, recarrega a lista para mostrar os dados novos
+                loadBeneficiaries()
+                _isUpdateSuccess.value = true
+            }.onFailure { e ->
+                _errorMessage.value = "Erro ao atualizar: ${e.message}"
+            }
+
+            _isLoading.value = false
+        }
     }
 
-    fun onYearSelected(year: String) {
-        _selectedYear.value = year
-    }
-
-    fun onStatusSelected(status: String) {
-        _selectedStatus.value = status
-    }
-
-    fun clearError() {
+    // Função auxiliar para limpar o estado de sucesso (ex: depois de navegar para trás)
+    fun resetUpdateStatus() {
+        _isUpdateSuccess.value = false
         _errorMessage.value = null
     }
+
+    // --- EVENTOS DA UI (Mantive igual) ---
+    fun onSearchQueryChange(newQuery: String) { _searchQuery.value = newQuery }
+    fun onYearSelected(year: String) { _selectedYear.value = year }
+    fun onStatusSelected(status: String) { _selectedStatus.value = status }
+    fun clearError() { _errorMessage.value = null }
 }

@@ -10,12 +10,14 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
+import pt.ipca.lojasocial.data.repository.CommunicationRepositoryImpl
 import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StockRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
@@ -50,19 +52,14 @@ object AppModule {
     @Singleton
     fun provideFirebaseAuthDataSource(
         auth: FirebaseAuth,
+        store: FirebaseFirestore
     ): FirebaseAuthDataSource {
-        return FirebaseAuthDataSource(auth)
+        return FirebaseAuthDataSource(auth, store)
     }
 
     @Provides
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
-
-    @Provides
-    @Singleton
-    fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
-        return StorageRepositoryImpl(storage)
-    }
 
     @Provides
     @Singleton
@@ -77,9 +74,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAuthRepository(
-        dataSource: FirebaseAuthDataSource
+        dataSource: FirebaseAuthDataSource,
+        firestore: FirebaseFirestore
     ): AuthRepository {
-        return AuthRepositoryImpl(dataSource)
+        return AuthRepositoryImpl(dataSource, firestore)
     }
 
     @Provides
@@ -100,5 +98,18 @@ object AppModule {
     @Singleton
     fun provideStockRepository(firestore: FirebaseFirestore): StockRepository {
         return StockRepositoryImpl(firestore)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideCommunicationRepository(firestore: FirebaseFirestore): CommunicationRepository {
+        return CommunicationRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
+        return StorageRepositoryImpl(storage)
     }
 }

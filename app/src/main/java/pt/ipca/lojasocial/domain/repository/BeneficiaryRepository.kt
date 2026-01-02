@@ -1,6 +1,7 @@
 package pt.ipca.lojasocial.domain.repository
 
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 
 /**
  * Interface responsável pela gestão e persistência dos dados dos Beneficiários.
@@ -30,6 +31,15 @@ interface BeneficiaryRepository {
     suspend fun getBeneficiaryById(id: String): Beneficiary?
 
     /**
+     * Obtém os detalhes de um beneficiário específico através do seu UID de autenticação.
+     *
+     * @param uid O UID do utilizador do Firebase Auth.
+     * @return [Beneficiary] se encontrado.
+     * @throws Exception se não for encontrado.
+     */
+    suspend fun getBeneficiaryByUid(uid: String): Beneficiary
+
+    /**
      * Regista um novo beneficiário no sistema.
      *
      * Cumpre o requisito **RF01** (Registo de nome, nº aluno, curso, etc.).
@@ -57,4 +67,7 @@ interface BeneficiaryRepository {
      * @return Lista de [Beneficiary] associados a esse ano letivo.
      */
     suspend fun getBeneficiariesBySchoolYear(schoolYear: String): List<Beneficiary>
+
+    suspend fun updateStatus(id: String, status: BeneficiaryStatus)
+
 }

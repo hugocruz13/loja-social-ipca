@@ -7,6 +7,7 @@ import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
 import pt.ipca.lojasocial.data.remote.dto.BeneficiaryDto
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,6 +42,7 @@ class BeneficiaryRepositoryImpl @Inject constructor(
     override suspend fun getBeneficiaryById(id: String): Beneficiary? {
         return try {
             val doc = collection.document(id).get().await()
+
             if (doc.exists()) {
                 doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
             } else {
@@ -50,6 +52,16 @@ class BeneficiaryRepositoryImpl @Inject constructor(
             e.printStackTrace()
             null
         }
+    }
+
+    override suspend fun getBeneficiaryByUid(uid: String): Beneficiary {
+        val snapshot = collection.whereEqualTo("userId", uid).limit(1).get().await()
+        if (snapshot.isEmpty) {
+            throw Exception("Beneficiary profile not found for UID: $uid")
+        }
+        val doc = snapshot.documents.first()
+        return doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
+            ?: throw Exception("Failed to parse beneficiary data")
     }
 
     /**
@@ -97,5 +109,11 @@ class BeneficiaryRepositoryImpl @Inject constructor(
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    override suspend fun updateStatus(id: String, status: BeneficiaryStatus) {
+        collection.document(id)
+            .update("estado", status.name)
+            .await()
     }
 }

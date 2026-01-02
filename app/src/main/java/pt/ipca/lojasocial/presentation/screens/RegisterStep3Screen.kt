@@ -20,6 +20,7 @@ import pt.ipca.lojasocial.presentation.components.AppFilePickerField
 import pt.ipca.lojasocial.presentation.components.AppNoteBox
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.state.AuthState
 
 @Composable
 fun RegisterStep3Screen(
@@ -176,7 +177,7 @@ fun RegisterStep3Screen(
 // Função auxiliar mantida fora (ou podes colocar dentro do composable se preferires)
 private fun updateStep3Fields(
     viewModel: AuthViewModel,
-    state: RegistrationState,
+    state: AuthState,
     docIdentification: Uri? = state.docIdentification,
     docFamily: Uri? = state.docFamily,
     docMorada: Uri? = state.docMorada,
