@@ -9,21 +9,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.presentation.components.AppAuthSwitcher
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppLogo
 import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.LoginUiState
 
 
 @Composable
 fun LoginScreen(
+    viewModel: AuthViewModel,
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val state by viewModel.state.collectAsState()
 
-
+    LaunchedEffect(state.isLoggedIn, state.isLoading) {
+        // Só avança se estiver logado E o load do perfil tiver acabado
+        if (state.isLoggedIn && !state.isLoading) {
+            onLoginSuccess()
+        }
+    }
 
     Scaffold(
     ) { paddingValues ->
@@ -49,9 +60,6 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
             )
 
-
-
-
             Spacer(modifier = Modifier.height(32.dp))
 
             AppTextField(
@@ -59,7 +67,8 @@ fun LoginScreen(
                 onValueChange = { email = it },
                 label = "Email",
                 placeholder = "Introduza o seu email",
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                isError = state.errorMessage != null
             )
             AppTextField(
                 value = password,
@@ -67,20 +76,36 @@ fun LoginScreen(
                 label = "Palavra-passe",
                 placeholder = "Introduza a sua password",
                 keyboardType = KeyboardType.Password,
-                // labelColor = accentGreen,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                isError = state.errorMessage != null
             )
 
+            if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            AppButton(
-                text = "Login",
-                onClick = onLoginSuccess,
-                containerColor = Color(0XFF00713C),
-                enabled = email.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            )
 
-
+            if (state.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(56.dp),
+                    color = Color(0XFF00713C)
+                )
+            } else {
+                AppButton(
+                    text = "Login",
+                    onClick = { viewModel.login(email, password) },
+                    containerColor = Color(0XFF00713C),
+                    enabled = email.isNotBlank() && password.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                )
+            }
         }
     }
 }

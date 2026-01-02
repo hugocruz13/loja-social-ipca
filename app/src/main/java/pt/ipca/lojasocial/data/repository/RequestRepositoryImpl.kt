@@ -7,7 +7,7 @@ import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
 import pt.ipca.lojasocial.data.remote.dto.RequestDto
 import pt.ipca.lojasocial.domain.models.Request
-import pt.ipca.lojasocial.domain.models.RequestStatus
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,7 +47,7 @@ class RequestRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getRequestsByYear(schoolYearId: String, status: RequestStatus?): List<Request> {
+    override suspend fun getRequestsByYear(schoolYearId: String, status: StatusType?): List<Request> {
         return try {
             var query = collection.whereEqualTo("idAnoLetivo", schoolYearId)
 
@@ -72,10 +72,27 @@ class RequestRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateStatus(id: String, newStatus: RequestStatus) {
-        // Atualiza apenas o campo 'estado' sem mexer no resto
+    override suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String) {
         collection.document(id)
-            .update("estado", newStatus.name)
+            .update(mapOf(
+                "estado" to status.name,
+                "observacoes" to observation
+            ))
+            .await()
+    }
+
+    override suspend fun updateRequestDocsAndStatus(
+        id: String,
+        documents: Map<String, String?>,
+        status: StatusType
+    ) {
+        val updates = mapOf(
+            "documentosUrl" to documents,
+            "estado" to status.name
+        )
+
+        collection.document(id)
+            .update(updates)
             .await()
     }
 }

@@ -5,6 +5,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -31,6 +33,10 @@ import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.screens.*
+import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
+
 import pt.ipca.lojasocial.presentation.screens.RequestStatus
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +68,8 @@ sealed class AppScreen(val route: String) {
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
     object EntregasList : AppScreen("entregaslist")
+    object ProductDetail : AppScreen("product_detail/{productId}")
+    object ProductAddEdit : AppScreen("product_add_edit?id={id}")
     object ProductType : AppScreen("add_product_type")
     object ProductList : AppScreen("products_list")
     object ManageStaff : AppScreen("manage_staff")
@@ -90,27 +98,8 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.ManageStaff.route
+        startDestination = AppScreen.Login.route
     ) {
-
-        composable("logs_list") {
-            LogsListScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable("manage_staff") {
-            ManageStaffScreen(
-                onBackClick = { navController.popBackStack() },
-                onAddStaffClick = { navController.navigate("add_staff") },
-            )
-        }
-
-        composable("add_staff") {
-            AddStaffScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
 
         composable(AppScreen.Login.route) {
             LoginScreen(
@@ -167,9 +156,14 @@ fun AppNavHost(
             )
         }
 
-        composable(AppScreen.Notification.route) {
-            NotificationsScreen(
+        // --- GESTÃO DE REQUERIMENTOS (VISTA DO STAFF) ---
+        composable(AppScreen.RequerimentosList.route) {
+            RequerimentosScreen(
                 onBackClick = { navController.popBackStack() },
+                onRequerimentoClick = { id ->
+                    // Navega para o detalhe passando o ID na rota
+                    navController.navigate("requerimentodetails?id=$id")
+                },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -205,7 +199,8 @@ fun AppNavHost(
                 }
             )
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
+            val idString = backStackEntry.arguments?.getString("id")
+            val id = idString?.toIntOrNull()
 
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
@@ -252,33 +247,31 @@ fun AppNavHost(
         }
 
         composable(AppScreen.CampanhasList.route) {
-
-            val campanhasVm: CampanhasViewModel = hiltViewModel()
-
-            LaunchedEffect(Unit) {
-                campanhasVm.loadCampanhas()
-            }
-
             CampanhasScreen(
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate("campanha_add_edit") },
                 onCampanhaClick = { id -> navController.navigate("campanha_detail/$id") },
                 navItems = globalNavItems,
-                onNavigate = onNavigate,
-                viewModel = campanhasVm // Passa o VM aqui
+                onNavigate = onNavigate
             )
         }
 
-        composable(route = "campanha_add_edit?id={id}") { backStackEntry ->
+        composable(
+            route = "campanha_add_edit?id={id}",
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")
-            val viewModel: CampanhasViewModel = hiltViewModel()
 
             AddEditCampanhaScreen(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { nome, desc, inicio, fim, tipo, uri ->
-                    viewModel.saveCampanha(id, nome, desc, inicio, fim, tipo, uri)
-                },
+                onSaveClick = { n, d, i, f, t ->navController.popBackStack()},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -343,24 +336,6 @@ fun AppNavHost(
                 userRole = role,
                 onBackClick = { navController.popBackStack() },
                 onStatusUpdate = { entregue ->navController.popBackStack()},
-                navItems = globalNavItems,
-                onNavigate = onNavigate
-            )
-        }
-
-
-        composable("products_list") {
-            ProductListScreen(
-                onBackClick = { navController.popBackStack() },
-                onProductClick = { /* ... */ },
-                onAddProductClick = {
-                    // Vai para a página de registo de produto (quantidade/validade)
-                    navController.navigate("registar_produto_stock")
-                },
-                onAddNewTypeClick = {
-                    // Vai para a página de registar NOVO BEM (foto/categoria)
-                    navController.navigate("add_product_type")
-                },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )

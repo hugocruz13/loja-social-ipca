@@ -6,34 +6,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.use_cases.auth.LoginUserUseCase
+import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiaryByIdUseCase
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import javax.inject.Inject
-
-//--------------------------------------------
-// Snippet de código exemplo com a lógica de navegaçao para o uiState entre Staff e Beneficiary
-//---------------------------------------------
-//when (val state = loginState) {
-//    is LoginUiState.SuccessStaff -> {
-//        navController.navigate("staff_dashboard") {
-//            popUpTo("login") { inclusive = true }
-//        }
-//    }
-//    is LoginUiState.SuccessBeneficiary -> {
-//        navController.navigate("beneficiary_home") {
-//            popUpTo("login") { inclusive = true }
-//        }
-//    }
-//    is LoginUiState.Error -> {
-//        // Mostrar erro
-//    }
-//    else -> { /* ... */ }
-//}
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUserUseCase: LoginUserUseCase
+    private val loginUserUseCase: LoginUserUseCase,
+    private val getBeneficiaryByIdUseCase: GetBeneficiaryByIdUseCase,
+    private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Initial)
@@ -45,9 +31,25 @@ class LoginViewModel @Inject constructor(
 
             loginUserUseCase(email, password)
                 .onSuccess { user ->
-                    _uiState.value = when (user.role) {
-                        UserRole.STAFF -> LoginUiState.SuccessStaff(user)
-                        UserRole.BENEFICIARY -> LoginUiState.SuccessBeneficiary(user)
+
+                    updateFcmToken(user.id)
+
+                    when (user.role) {
+                        UserRole.STAFF -> {
+                            _uiState.value = LoginUiState.SuccessStaff(user)
+                        }
+                        UserRole.BENEFICIARY -> {
+                            // Após o login do beneficiário, vamos buscar o seu status
+                            try {
+                                val beneficiary = getBeneficiaryByIdUseCase(user.id)
+                                _uiState.value = LoginUiState.SuccessBeneficiary(user,
+                                    beneficiary?.status ?: BeneficiaryStatus.INATIVO
+                                )
+                            } catch (e: Exception) {
+                                // Se não encontrar o perfil de beneficiário, assume PENDENTE
+                                _uiState.value = LoginUiState.SuccessBeneficiary(user, BeneficiaryStatus.INATIVO)
+                            }
+                        }
                     }
                 }
                 .onFailure { error ->
@@ -57,12 +59,23 @@ class LoginViewModel @Inject constructor(
                 }
         }
     }
+
+    private fun updateFcmToken(userId: String) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            viewModelScope.launch {
+                // A tua função saveFcmToken inteligente trata de saber em que coleção guardar
+                communicationRepository.saveFcmToken(userId, token)
+            }
+        }
+    }
+
 }
 
 sealed interface LoginUiState {
     object Initial : LoginUiState
     object Loading : LoginUiState
     data class SuccessStaff(val user: User) : LoginUiState
-    data class SuccessBeneficiary(val user: User) : LoginUiState
+    // Adicionamos o status ao estado de sucesso do beneficiário
+    data class SuccessBeneficiary(val user: User, val status: BeneficiaryStatus) : LoginUiState
     data class Error(val message: String) : LoginUiState
 }

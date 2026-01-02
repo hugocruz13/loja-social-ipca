@@ -31,4 +31,14 @@ class StorageRepositoryImpl @Inject constructor(
             throw Exception("Falha no upload da imagem: ${e.message}")
         }
     }
+
+    override suspend fun deleteFile(fileUrl: String) {
+        try {
+            val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(fileUrl)
+            storageRef.delete().await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Opcional: Não lançar erro se o ficheiro já não existir
+        }
+    }
 }
