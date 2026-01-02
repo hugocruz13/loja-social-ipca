@@ -1,6 +1,6 @@
 package pt.ipca.lojasocial.domain.repository
 
-import pt.ipca.lojasocial.domain.models.StockItem
+import pt.ipca.lojasocial.domain.models.Stock
 
 /**
  * Interface responsável pela gestão do Inventário Físico (Stock).
@@ -20,26 +20,26 @@ interface StockRepository {
      *
      * Permite uma visão geral do que existe em armazém.
      *
-     * @return Lista de [StockItem].
+     * @return Lista de [Stock].
      */
-    suspend fun getStockItems(): List<StockItem>
+    suspend fun getStockItems(): List<Stock>
 
     /**
      * Obtém os detalhes de um lote específico de stock.
      *
      * @param id O identificador único do lote.
-     * @return [StockItem] se encontrado, ou `null` caso contrário.
+     * @return [Stock] se encontrado, ou `null` caso contrário.
      */
-    suspend fun getStockItemById(id: String): StockItem?
+    suspend fun getStockItemById(id: String): Stock?
 
     /**
      * Regista a entrada física de bens no armazém.
      *
      * Cumpre os requisitos **RF05** (Doação individual) e **RF06** (Entrada via Campanha).
      *
-     * @param item O objeto [StockItem] contendo a quantidade, validade e origem.
+     * @param item O objeto [Stock] contendo a quantidade, validade e origem.
      */
-    suspend fun addStockItem(item: StockItem)
+    suspend fun addStockItem(item: Stock)
 
 
     // --- Gestão de Stock e Validades ---
@@ -74,9 +74,9 @@ interface StockRepository {
      * - **RF25**: Relatórios para priorização de saídas (FEFO - First Expired, First Out).
      *
      * @param timestamp A data limite para a pesquisa.
-     * @return Lista de [StockItem] em risco de expirar ou já expirados.
+     * @return Lista de [Stock] em risco de expirar ou já expirados.
      */
-    suspend fun getItemsExpiringBefore(timestamp: Long): List<StockItem>
+    suspend fun getItemsExpiringBefore(timestamp: Long): List<Stock>
 
     /**
      * Identifica todo o stock angariado através de uma campanha específica.
@@ -85,7 +85,7 @@ interface StockRepository {
      * e avaliar o sucesso das mesmas.
      *
      * @param campaignId O identificador da campanha.
-     * @return Lista de [StockItem] associados a essa campanha.
+     * @return Lista de [Stock] associados a essa campanha.
      */
-    suspend fun getItemsByCampaign(campaignId: String): List<StockItem>
+    suspend fun getItemsByCampaign(campaignId: String): List<Stock>
 }
