@@ -37,8 +37,6 @@ import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 import java.util.UUID
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampanhaDetailScreen(
     campanhaId: String,
@@ -63,17 +61,20 @@ fun CampanhaDetailScreen(
     }
 
     val stockWithProducts = remember(stockList, products) {
-        stockList.mapNotNull { stock ->
-            val product = products.find { it.id == stock.productId }
-            product?.let {
-                StockWithProductUiModel(
-                    stockId = stock.id,
-                    productName = it.name,
-                    quantity = stock.quantity
-                )
+        stockList
+            .groupBy { it.productId }
+            .mapNotNull { (productId, stocksDoMesmoProduto) ->
+                val product = products.find { it.id == productId }
+                product?.let {
+                    StockWithProductUiModel(
+                        stockId = productId,
+                        productName = it.name,
+                        quantity = stocksDoMesmoProduto.sumOf { it.quantity }
+                    )
+                }
             }
-        }
     }
+
 
     Scaffold(
         topBar = {
