@@ -36,6 +36,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
+import pt.ipca.lojasocial.presentation.navigation.AppScreen
+import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
+import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
 sealed class AppScreen(val route: String) {
@@ -56,6 +59,8 @@ sealed class AppScreen(val route: String) {
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
     object EntregasList : AppScreen("entregaslist")
+    object ProductType : AppScreen("add_product_type")
+    object ProductList : AppScreen("products_list")
 }
 
 @Composable
@@ -80,7 +85,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.AnoLetivoList.route
+        startDestination = AppScreen.ProductList.route
     ) {
 
         composable(AppScreen.Login.route) {
@@ -129,6 +134,12 @@ fun AppNavHost(
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable("add_product_type") {
+            AddProductTypeScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -303,6 +314,24 @@ fun AppNavHost(
                 userRole = role,
                 onBackClick = { navController.popBackStack() },
                 onStatusUpdate = { entregue ->navController.popBackStack()},
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+
+        composable("products_list") {
+            ProductListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { /* ... */ },
+                onAddProductClick = {
+                    // Vai para a página de registo de produto (quantidade/validade)
+                    navController.navigate("registar_produto_stock")
+                },
+                onAddNewTypeClick = {
+                    // Vai para a página de registar NOVO BEM (foto/categoria)
+                    navController.navigate("add_product_type")
+                },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
