@@ -24,7 +24,6 @@ import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
 import pt.ipca.lojasocial.presentation.screens.DashboardScreen
-import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.EntregasScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
@@ -36,7 +35,9 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
+import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 sealed class AppScreen(val route: String) {
     object Dashboard : AppScreen("dashboard")
@@ -63,6 +64,7 @@ sealed class AppScreen(val route: String) {
     object ProductList : AppScreen("products_list")
     object ManageStaff : AppScreen("manage_staff")
     object LogsList : AppScreen("logs_list")
+    object EntregaAddEdit : AppScreen("agendar_entrega?id={id}&role={role}")
 }
 
 @Composable
