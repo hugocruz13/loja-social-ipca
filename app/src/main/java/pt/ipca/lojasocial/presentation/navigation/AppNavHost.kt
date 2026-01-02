@@ -39,6 +39,7 @@ import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.navigation.AppScreen
 import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
 import pt.ipca.lojasocial.presentation.screens.AddStaffScreen
+import pt.ipca.lojasocial.presentation.screens.LogsListScreen
 import pt.ipca.lojasocial.presentation.screens.ManageStaffScreen
 import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
@@ -64,6 +65,7 @@ sealed class AppScreen(val route: String) {
     object ProductType : AppScreen("add_product_type")
     object ProductList : AppScreen("products_list")
     object ManageStaff : AppScreen("manage_staff")
+    object LogsList : AppScreen("logs_list")
 }
 
 @Composable
@@ -88,8 +90,14 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.ManageStaff.route
+        startDestination = AppScreen.CampanhasList.route
     ) {
+
+        composable("logs_list") {
+            LogsListScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
 
         composable("manage_staff") {
             ManageStaffScreen(

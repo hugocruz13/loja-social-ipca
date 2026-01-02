@@ -8,9 +8,12 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 import pt.ipca.lojasocial.domain.models.CampaignType
@@ -35,6 +38,8 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -205,7 +210,13 @@ class CampanhasViewModel @Inject constructor(
                     imageUrl = downloadUrl ?: ""
                 )
 
-                if (id == null) addCampaignUseCase(campaign) else updateCampaignUseCase(campaign)
+                if (id == null){
+                    addCampaignUseCase(campaign)
+                    saveLog("Nova Campanha", "Criou a campanha: $nome")
+                } else {
+                    updateCampaignUseCase(campaign)
+                    saveLog("Edição Campanha", "Alterou dados da campanha: $nome")
+                }
 
                 _isSaveSuccess.emit(true)
 
@@ -214,6 +225,20 @@ class CampanhasViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private suspend fun saveLog(acao: String, detalhe: String) {
+        try {
+            val log = hashMapOf(
+                "acao" to acao,
+                "detalhe" to detalhe,
+                "utilizador" to (auth.currentUser?.email ?: "Sistema"),
+                "timestamp" to System.currentTimeMillis()
+            )
+            firestore.collection("logs").add(log).await()
+        } catch (e: Exception) {
+            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
         }
     }
 

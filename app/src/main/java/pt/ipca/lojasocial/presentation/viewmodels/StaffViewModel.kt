@@ -65,6 +65,11 @@ class StaffViewModel @Inject constructor(
                     .set(dadosColaborador)
                     .await()
 
+                saveLog(
+                    acao = "Novo Colaborador",
+                    detalhe = "Criou a conta para: $nome ($email)"
+                )
+
                 _isSaveSuccess.emit(true)
             } catch (e: Exception) {
                 android.util.Log.e("STAFF_ERROR", e.message.toString())
@@ -77,9 +82,37 @@ class StaffViewModel @Inject constructor(
     // Ativar ou Desativar colaborador
     fun toggleStatus(uid: String, currentStatus: Boolean) {
         viewModelScope.launch {
-            firestore.collection("colaboradores")
-                .document(uid)
-                .update("ativo", !currentStatus)
+            try {
+                firestore.collection("colaboradores")
+                    .document(uid)
+                    .update("ativo", !currentStatus)
+                    .await()
+
+                val nomeColaborador = _colaboradores.value.find { it.uid == uid }?.nome ?: "Desconhecido"
+                val novoEstado = if (!currentStatus) "Ativado" else "Desativado"
+
+                // --- LOG: Alteração de Estado ---
+                saveLog(
+                    acao = "Alteração de Acesso",
+                    detalhe = "$novoEstado o colaborador: $nomeColaborador"
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("STAFF_LOG_ERROR", e.message.toString())
+            }
+        }
+    }
+
+    private suspend fun saveLog(acao: String, detalhe: String) {
+        try {
+            val log = hashMapOf(
+                "acao" to acao,
+                "detalhe" to detalhe,
+                "utilizador" to (auth.currentUser?.email ?: "Sistema"),
+                "timestamp" to System.currentTimeMillis()
+            )
+            firestore.collection("logs").add(log).await()
+        } catch (e: Exception) {
+            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,8 @@ import com.google.firebase.firestore.ListenerRegistration
 
 @HiltViewModel
 class AnosLetivosViewModel @Inject constructor(
-    private val firestore: com.google.firebase.firestore.FirebaseFirestore
+    private val firestore: com.google.firebase.firestore.FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -110,6 +112,12 @@ class AnosLetivosViewModel @Inject constructor(
                     .set(data)
                     .await()
 
+                val acao = if (idExistente == null) "Novo Ano Letivo" else "Edição Ano Letivo"
+                saveLog(
+                    acao = acao,
+                    detalhe = "Ano Letivo: ${docId.replace("_", "/")}"
+                )
+
                 _isSaveSuccess.emit(true)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -150,5 +158,19 @@ class AnosLetivosViewModel @Inject constructor(
                 cal.timeInMillis
             } else 0L
         } catch (e: Exception) { 0L }
+    }
+
+    private suspend fun saveLog(acao: String, detalhe: String) {
+        try {
+            val log = hashMapOf(
+                "acao" to acao,
+                "detalhe" to detalhe,
+                "utilizador" to (auth.currentUser?.email ?: "Desconhecido"),
+                "timestamp" to System.currentTimeMillis()
+            )
+            firestore.collection("logs").add(log).await()
+        } catch (e: Exception) {
+            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
+        }
     }
 }
