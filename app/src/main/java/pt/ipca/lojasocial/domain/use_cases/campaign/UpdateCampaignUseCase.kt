@@ -5,10 +5,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
+import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 
 class UpdateCampaignUseCase @Inject constructor(
     private val repository: CampaignRepository,
+    private val saveLogUseCase: SaveLogUseCase,
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
@@ -16,13 +18,10 @@ class UpdateCampaignUseCase @Inject constructor(
         // 1. Atualizar no repositório
         repository.updateCampaign(campaign)
 
-        // 2. Registar o Log de Auditoria
-        val log = hashMapOf(
-            "acao" to "Edição Campanha",
-            "detalhe" to "Alterou dados da campanha: ${campaign.title}",
-            "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-            "timestamp" to System.currentTimeMillis()
+        saveLogUseCase(
+            acao = "Edição Campanha",
+            detalhe = "Alterou dados da campanha: ${campaign.title}",
+            utilizador = auth.currentUser?.email ?: "Sistema"
         )
-        firestore.collection("logs").add(log).await()
     }
 }

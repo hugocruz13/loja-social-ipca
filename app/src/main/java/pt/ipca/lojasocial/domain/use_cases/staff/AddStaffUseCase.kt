@@ -5,10 +5,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Colaborador
+import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 
 class AddStaffUseCase @Inject constructor(
     private val repository: StaffRepository,
+    private val saveLogUseCase: SaveLogUseCase,
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
@@ -24,12 +26,10 @@ class AddStaffUseCase @Inject constructor(
 
         repository.createStaffMember(novoColaborador)
 
-        val log = hashMapOf(
-            "acao" to "Novo Colaborador",
-            "detalhe" to "Criou a conta para: $nome ($email)",
-            "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-            "timestamp" to System.currentTimeMillis()
+        saveLogUseCase(
+            acao = "Novo Colaborador",
+            detalhe = "Criou a conta para: $nome ($email)",
+            utilizador = auth.currentUser?.email ?: "Sistema"
         )
-        firestore.collection("logs").add(log).await()
     }
 }

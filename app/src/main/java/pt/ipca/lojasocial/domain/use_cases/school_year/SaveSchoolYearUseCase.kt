@@ -2,13 +2,14 @@ package pt.ipca.lojasocial.domain.use_cases.school_year
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.SchoolYear
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
+import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 
 class SaveSchoolYearUseCase @Inject constructor(
     private val repository: SchoolYearRepository,
+    private val saveLogUseCase: SaveLogUseCase,
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
@@ -16,13 +17,13 @@ class SaveSchoolYearUseCase @Inject constructor(
         repository.saveSchoolYear(schoolYear)
 
         val acao = if (isEdition) "Edição Ano Letivo" else "Novo Ano Letivo"
-        val log = hashMapOf(
-            "acao" to acao,
-            "detalhe" to "Configuração do período: ${schoolYear.label}",
-            "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-            "timestamp" to System.currentTimeMillis()
-        )
+        val detalhe = "Configuração do período: ${schoolYear.label}"
+        val utilizador = auth.currentUser?.email ?: "Sistema"
 
-        firestore.collection("logs").add(log).await()
+        saveLogUseCase(
+            acao = acao,
+            detalhe = detalhe,
+            utilizador = utilizador
+        )
     }
 }

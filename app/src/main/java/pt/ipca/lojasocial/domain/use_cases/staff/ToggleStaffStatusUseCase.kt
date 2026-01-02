@@ -4,10 +4,12 @@ import pt.ipca.lojasocial.domain.repository.StaffRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
+import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 
 class ToggleStaffStatusUseCase @Inject constructor(
     private val repository: StaffRepository,
+    private val saveLogUseCase: SaveLogUseCase,
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
@@ -16,12 +18,10 @@ class ToggleStaffStatusUseCase @Inject constructor(
         repository.updateStaffStatus(uid, novoEstado)
 
         val estadoTexto = if (novoEstado) "Ativado" else "Desativado"
-        val log = hashMapOf(
-            "acao" to "Alteração de Acesso",
-            "detalhe" to "$estadoTexto o colaborador: $nome",
-            "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-            "timestamp" to System.currentTimeMillis()
+        saveLogUseCase(
+            acao = "Alteração de Acesso",
+            detalhe = "$estadoTexto o colaborador: $nome",
+            utilizador = auth.currentUser?.email ?: "Sistema"
         )
-        firestore.collection("logs").add(log).await()
     }
 }
