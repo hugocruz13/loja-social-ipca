@@ -6,8 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ fun AnoLetivoListItem(
     yearLabel: String,
     isCurrentYear: Boolean = false,
     onClick: () -> Unit,
+    onDownloadClick: () -> Unit, // <--- Novo parâmetro para a ação de download
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
     val iconColor = if (isCurrentYear) Color(0XFF00713C) else MaterialTheme.colorScheme.onSurfaceVariant
@@ -31,8 +33,6 @@ fun AnoLetivoListItem(
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
-
-    circleBackgroundColor
 
     val currentYearStatus = StatusType.ATUAL
 
@@ -43,10 +43,13 @@ fun AnoLetivoListItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // --- LADO ESQUERDO (Ícone Escola + Texto) ---
             Row(verticalAlignment = Alignment.CenterVertically) {
 
                 Box(
@@ -75,17 +78,28 @@ fun AnoLetivoListItem(
                 }
             }
 
+            // --- LADO DIREITO (Badge + Download + Seta) ---
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isCurrentYear) {
                     AppStatusBadge(status = currentYearStatus)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
+
+                // --- BOTÃO DE DOWNLOAD NOVO ---
+                IconButton(onClick = onDownloadClick) {
+                    Icon(
+                        imageVector = Icons.Filled.Download,
+                        contentDescription = "Download documento",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                // -----------------------------
 
                 Icon(
                     imageVector = Icons.Filled.ChevronRight,
-                    contentDescription = "Selecionar ou Ver Detalhes",
+                    contentDescription = "Ver Detalhes",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -100,7 +114,8 @@ fun AnoLetivoListItemCurrentPreview() {
         AnoLetivoListItem(
             yearLabel = "2024/2025",
             isCurrentYear = true,
-            onClick = {}
+            onClick = {},
+            onDownloadClick = {}
         )
     }
 }
@@ -112,7 +127,8 @@ fun AnoLetivoListItemCompletedPreview() {
         AnoLetivoListItem(
             yearLabel = "2023/2024",
             isCurrentYear = false,
-            onClick = {}
+            onClick = {},
+            onDownloadClick = {}
         )
     }
 }
