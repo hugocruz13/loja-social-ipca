@@ -84,7 +84,8 @@ fun AnoLetivoListScreen(
                     AnoLetivoListItem(
                         yearLabel = ano.label,
                         isCurrentYear = ano.isCurrent,
-                        onClick = { onYearClick(ano) }
+                        onClick = { onYearClick(ano) },
+                        onDownloadClick = { /* Ação de download vazia */ }
                     )
                 }
             }
