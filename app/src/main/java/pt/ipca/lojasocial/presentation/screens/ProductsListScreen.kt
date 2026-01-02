@@ -1,31 +1,35 @@
 package pt.ipca.lojasocial.presentation.screens.products
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.presentation.components.*
-
 
 data class ProductItem(
     val name: String,
     val id: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
-
 )
-
 
 @Composable
 fun ProductListScreen(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
     onAddProductClick: () -> Unit,
+    onDownloadReportClick: () -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit
 ) {
@@ -43,11 +47,6 @@ fun ProductListScreen(
     )
 
     val backgroundColor = Color(0xFFF8F9FA)
-    val navItems = listOf(
-        BottomNavItem("home", Icons.Filled.Home, "Home"),
-        BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-        BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-    )
 
     Scaffold(
         topBar = {
@@ -65,8 +64,7 @@ fun ProductListScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         containerColor = backgroundColor
@@ -90,18 +88,24 @@ fun ProductListScreen(
                     placeholder = "Procurar produto"
                 )
 
+                // --- LINHA DE FILTROS E BOTÃO DOWNLOAD ---
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    // Alinhamento vertical importante para ficarem todos na mesma linha base
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Dropdown Ano
                     AppFilterDropdown(
-                        label = "Ano Letivo",
+                        label = "Ano",
                         selectedValue = selectedYear,
                         options = years,
                         onOptionSelected = { selectedYear = it },
                         leadingIcon = Icons.Default.CalendarToday,
                         modifier = Modifier.weight(1f)
                     )
+
+                    // Dropdown Status
                     AppFilterDropdown(
                         label = "Status",
                         selectedValue = selectedStatus,
@@ -110,6 +114,24 @@ fun ProductListScreen(
                         leadingIcon = Icons.Default.Tune,
                         modifier = Modifier.weight(1f)
                     )
+
+                    // --- BOTÃO DOWNLOAD (Estilo "Dropbox" igual aos filtros) ---
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp)) // Mesmo arredondamento
+                            .background(Color(0xFFF0F2F5)) // Mesma cor de fundo cinza
+                            .clickable(onClick = onDownloadReportClick)
+                            .padding(12.dp), // Mesmo padding interno para manter a altura igual
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Baixar Relatório",
+                            tint = Color.Black, // Mesma cor de ícone (Preto)
+                            modifier = Modifier.size(20.dp) // Mesmo tamanho de ícone (20.dp)
+                        )
+                    }
+                    // -----------------------------------------------------------
                 }
             }
 
@@ -131,3 +153,23 @@ fun ProductListScreen(
     }
 }
 
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun ProductListScreenPreview() {
+    val dummyNavItems = listOf(
+        BottomNavItem("home", Icons.Filled.Home, "Home"),
+        BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
+        BottomNavItem("settings", Icons.Filled.Settings, "Configurações")
+    )
+
+    MaterialTheme {
+        ProductListScreen(
+            onBackClick = { },
+            onProductClick = { },
+            onAddProductClick = { },
+            onDownloadReportClick = { },
+            navItems = dummyNavItems,
+            onNavigate = { }
+        )
+    }
+}
