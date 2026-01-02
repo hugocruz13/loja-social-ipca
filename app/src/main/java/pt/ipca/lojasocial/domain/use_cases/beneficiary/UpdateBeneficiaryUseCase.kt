@@ -1,6 +1,7 @@
 package pt.ipca.lojasocial.domain.use_cases.beneficiary
 
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import javax.inject.Inject
 
@@ -19,14 +20,35 @@ import javax.inject.Inject
 class UpdateBeneficiaryUseCase @Inject constructor(
     private val repository: BeneficiaryRepository
 ) {
-
     /**
-     * Executa a persistência das alterações no registo do beneficiário.
-     *
-     * @param beneficiary O objeto [Beneficiary] contendo os dados novos/corrigidos.
-     * **Nota Técnica:** O campo `id` deve corresponder ao registo original para garantir que a atualização ocorre na entidade correta.
+     * Atualiza o perfil aplicando regras de segurança baseadas no cargo (Role).
      */
-    suspend operator fun invoke(beneficiary: Beneficiary) {
-        repository.updateBeneficiary(beneficiary)
+    suspend operator fun invoke(
+        role: UserRole,
+        original: Beneficiary,
+        modified: Beneficiary
+    ): Result<Unit> {
+        return try {
+            // REGRA DE NEGÓCIO:
+            val finalDataToSave = when (role) {
+                UserRole.BENEFICIARY -> {
+                    // Beneficiário: Ignora alterações de nome/ID. Só aceita telefone e email novos.
+                    original.copy(
+                        phoneNumber = modified.phoneNumber,
+                        email = modified.email
+                    )
+                }
+                UserRole.STAFF -> {
+                    // Staff: Pode alterar todos os dados passados no objeto modified.
+                    modified
+                }
+            }
+
+            // Persiste na base de dados
+            repository.updateBeneficiary(finalDataToSave)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

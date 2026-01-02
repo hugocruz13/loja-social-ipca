@@ -3,6 +3,7 @@ package pt.ipca.lojasocial.presentation.viewmodels
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,7 @@ import pt.ipca.lojasocial.domain.models.RequestCategory
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.RegisterBeneficiaryUseCase
@@ -26,7 +28,8 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
     private val requestRepository: RequestRepository,
-    private val storageRepository: StorageRepository
+    private val storageRepository: StorageRepository,
+    private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -41,10 +44,22 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             val currentUser = authRepository.getCurrentUser()
             if (currentUser != null) {
-                // Se existe user, carregamos logo o perfil para definir a navegação
+                // 1. App abriu e já havia login: Atualiza Token
+                updateFcmToken(currentUser.id)
+
                 _state.update { it.copy(userId = currentUser.id) }
                 loadUserProfile(currentUser.id)
                 _state.update { it.copy(isLoggedIn = true) }
+            }
+        }
+    }
+
+    // Função centralizada para guardar o token
+    private fun updateFcmToken(userId: String) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            viewModelScope.launch {
+                // O repositório trata de guardar na coleção certa (Beneficiários ou Colaboradores)
+                communicationRepository.saveFcmToken(userId, token)
             }
         }
     }
@@ -60,8 +75,9 @@ class AuthViewModel @Inject constructor(
             val result = authRepository.login(email, pass)
 
             result.onSuccess { user ->
-                // Login Auth funcionou, agora carregamos os dados do Firestore
-                // O loadUserProfile vai preencher a Role, Status, Nome, etc.
+                // 2. Login Manual efetuado: Atualiza Token
+                updateFcmToken(user.id)
+
                 loadUserProfile(user.id)
 
                 _state.update {
@@ -82,30 +98,20 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Esta é a função principal que determina QUEM é o utilizador.
-     * Preenche a Role (Colaborador/Beneficiário) e os Status.
-     */
     private suspend fun loadUserProfile(userId: String) {
         try {
-            // 1. Verificar Role (Staff vs Beneficiário)
-            // Nota: Se não tiveres o método getUserRole no repo, usa a lógica de tentar ler as coleções
             val role = authRepository.getUserRole(userId)
-
 
             if (role == "colaborador") {
                 _state.update {
                     it.copy(
                         userRole = "colaborador",
                         fullName = "Colaborador",
-                        beneficiaryStatus = BeneficiaryStatus.ATIVO // Colaborador é sempre ativo
+                        beneficiaryStatus = BeneficiaryStatus.ATIVO
                     )
                 }
             } else if (role == "beneficiario") {
-                // 2. É Beneficiário: Carregar dados pessoais
                 val beneficiary = beneficiaryRepository.getBeneficiaryById(userId)
-
-                // 3. Carregar Requerimentos (para saber o estado do pedido e observações)
                 val requests = requestRepository.getRequestsByBeneficiary(userId)
                 val latestRequest = requests.maxByOrNull { it.submissionDate }
 
@@ -115,26 +121,18 @@ class AuthViewModel @Inject constructor(
                         fullName = beneficiary?.name ?: "Sem Nome",
                         studentNumber = beneficiary?.id ?: "",
                         email = beneficiary?.email ?: "",
-
-                        // Estado da conta do aluno
                         beneficiaryStatus = beneficiary?.status ?: BeneficiaryStatus.ANALISE,
-
-                        // Estado do requerimento (Aprovado, Rejeitado, etc)
                         requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
                         requestObservations = latestRequest?.observations ?: "",
-
                         requestDocuments = latestRequest?.documents ?: emptyMap()
                     )
                 }
             } else {
-                // User autenticado mas sem registo na BD
                 throw Exception("Utilizador sem perfil associado.")
             }
 
         } catch (e: Exception) {
             e.printStackTrace()
-            // Opcional: Logout se os dados estiverem corrompidos
-            // authRepository.signOut()
             _state.update { it.copy(errorMessage = "Erro ao carregar perfil: ${e.message}") }
         }
     }
@@ -146,38 +144,29 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                // 1. Obter o pedido atual para ter o ID
                 val requests = requestRepository.getRequestsByBeneficiary(userId)
                 val request = requests.maxByOrNull { it.submissionDate } ?: return@launch
 
-                // 2. Upload do novo ficheiro para o Storage
                 val fileName = "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
                 val downloadUrl = storageRepository.uploadFile(uri, fileName)
 
-                // 3. Atualizar o mapa localmente
                 val updatedDocs = currentDocs.toMutableMap()
-                updatedDocs[docKey] = downloadUrl // Agora este documento deixa de ser null
+                updatedDocs[docKey] = downloadUrl
 
-                // 4. VERIFICAÇÃO INTELIGENTE:
-                // Verifica se AINDA existe algum valor null ou vazio no mapa inteiro.
-                // Se 'none' (nenhum) for nulo, significa que estão todos completos.
                 val allDocumentsCompleted = updatedDocs.values.none { it.isNullOrBlank() }
 
-                // Define o novo estado com base na verificação
                 val newStatus = if (allDocumentsCompleted) {
-                    StatusType.ANALISE // Tudo entregue -> Vai para análise
+                    StatusType.ANALISE
                 } else {
-                    StatusType.DOCS_INCORRETOS // Ainda faltam coisas -> Mantém-se no ecrã de erro
+                    StatusType.DOCS_INCORRETOS
                 }
 
-                // 5. Atualizar na BD (Firebase)
                 requestRepository.updateRequestDocsAndStatus(
                     id = request.id,
                     documents = updatedDocs,
                     status = newStatus
                 )
 
-                // 6. Atualizar a UI
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -201,7 +190,6 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             authRepository.logout()
-            // Reset total do estado para evitar lixo de memória
             _state.value = AuthState()
         }
     }
@@ -251,13 +239,14 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                // UseCase regista Auth + Firestore + Storage
+                // 1. Regista o utilizador no Firebase Auth, Firestore e guarda ficheiros
                 registerBeneficiaryUseCase(_state.value)
 
-                // Após registo, carregamos o perfil para o utilizador entrar logo
-                // O ID será o que definimos no registerBeneficiaryUseCase (normalmente authRepository.getCurrentUser()?.uid)
+                // 2. Verifica se o user foi criado
                 val currentUser = authRepository.getCurrentUser()
                 if (currentUser != null) {
+                    updateFcmToken(currentUser.id)
+
                     loadUserProfile(currentUser.id)
                 }
 
@@ -267,7 +256,7 @@ class AuthViewModel @Inject constructor(
                         isSuccess = true,
                         isLoggedIn = true,
                         userRole = "beneficiario",
-                        beneficiaryStatus = BeneficiaryStatus.ANALISE // Default pós-registo
+                        beneficiaryStatus = BeneficiaryStatus.ANALISE
                     )
                 }
             } catch (e: Exception) {
