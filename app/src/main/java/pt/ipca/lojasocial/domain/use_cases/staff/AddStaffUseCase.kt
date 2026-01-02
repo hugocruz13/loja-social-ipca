@@ -4,6 +4,7 @@ import pt.ipca.lojasocial.domain.repository.StaffRepository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.tasks.await
+import pt.ipca.lojasocial.domain.models.Colaborador
 import javax.inject.Inject
 
 class AddStaffUseCase @Inject constructor(
@@ -12,17 +13,17 @@ class AddStaffUseCase @Inject constructor(
     private val auth: FirebaseAuth
 ) {
     suspend operator fun invoke(nome: String, email: String, cargo: String, permissao: String) {
-        val dados = hashMapOf(
-            "ativo" to true,
-            "cargo" to cargo,
-            "email" to email,
-            "nome" to nome,
-            "permissao" to permissao
+        val novoColaborador = Colaborador(
+            uid = "",
+            nome = nome,
+            email = email,
+            cargo = cargo,
+            permissao = permissao,
+            ativo = true
         )
 
-        repository.createStaffMember(email, dados)
+        repository.createStaffMember(novoColaborador)
 
-        // Log de Auditoria
         val log = hashMapOf(
             "acao" to "Novo Colaborador",
             "detalhe" to "Criou a conta para: $nome ($email)",

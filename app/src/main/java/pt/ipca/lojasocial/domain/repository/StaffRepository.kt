@@ -5,6 +5,6 @@ import pt.ipca.lojasocial.domain.models.Colaborador
 
 interface StaffRepository {
     fun getStaff(): Flow<List<Colaborador>>
-    suspend fun createStaffMember(email: String, dados: Map<String, Any>): String
+    suspend fun createStaffMember(colaborador: Colaborador): String
     suspend fun updateStaffStatus(uid: String, status: Boolean)
 }
