@@ -7,11 +7,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,19 +26,54 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.StatusType
+import pt.ipca.lojasocial.domain.models.Product
+import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.models.StockWithProductUiModel
+import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
+import java.util.UUID
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampanhaDetailScreen(
     campanhaId: String,
     onBackClick: () -> Unit,
     onEditClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    stockViewModel: StockViewModel = hiltViewModel(),
+    productViewModel: ProductViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+    var showAddProductSheet by remember { mutableStateOf(false) }
     val accentGreen = Color(0XFF00713C)
+
+    val stockList by stockViewModel.stockList.collectAsState()
+    val products by productViewModel.filteredProducts.collectAsState()
+    val isLoading by stockViewModel.isLoading.collectAsState()
+
+    LaunchedEffect(campanhaId) {
+        stockViewModel.loadStockByCampaign(campanhaId)
+        productViewModel.loadProducts()
+    }
+
+    val stockWithProducts = remember(stockList, products) {
+        stockList.mapNotNull { stock ->
+            val product = products.find { it.id == stock.productId }
+            product?.let {
+                StockWithProductUiModel(
+                    stockId = stock.id,
+                    productName = it.name,
+                    quantity = stock.quantity
+                )
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -105,29 +147,46 @@ fun CampanhaDetailScreen(
                 }
             }
 
-            DetailSection(title = "Produtos Associados") {
-                Column {
-                    DeliveryProductItem(
-                        productName = "Arroz",
-                        quantity = 200,
-                        unit = "units"
-                    )
-                    HorizontalDivider(color = Color(0xFFF1F1F1))
+            SectionWithAdd(
+                title = "Produtos Associados",
+                onAddClick = {
+                    productViewModel.loadProducts()
+                    showAddProductSheet = true}
+            ) {
 
-                    DeliveryProductItem(
-                        productName = "Papel Higiénico",
-                        quantity = 500,
-                        unit = "units"
-                    )
-                    HorizontalDivider(color = Color(0xFFF1F1F1))
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
 
-                    DeliveryProductItem(
-                        productName = "Bolachas",
-                        quantity = 150,
-                        unit = "units"
-                    )
+                    stockWithProducts.isEmpty() -> {
+                        Text(
+                            text = "Nenhum produto associado a esta campanha.",
+                            color = Color.Gray
+                        )
+                    }
+
+                    else -> {
+                        Column {
+                            stockWithProducts.forEachIndexed { index, item ->
+                                DeliveryProductItem(
+                                    productName = item.productName,
+                                    quantity = item.quantity,
+                                    unit = "unidades"
+                                )
+
+                                if (index < stockWithProducts.lastIndex) {
+                                    HorizontalDivider(color = Color(0xFFF1F1F1))
+                                }
+                            }
+                        }
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             DetailSection(title = "Associações") {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -161,6 +220,49 @@ fun DetailSection(title: String, content: @Composable () -> Unit) {
         }
     }
 }
+
+@Composable
+fun SectionWithAdd(
+    title: String,
+    onAddClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
+            )
+
+            IconButton(onClick = onAddClick) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Adicionar",
+                    tint = Color(0XFF00713C)
+                )
+            }
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                content()
+            }
+        }
+    }
+}
+
 
 @Composable
 fun TimelineItem(label: String, value: String) {

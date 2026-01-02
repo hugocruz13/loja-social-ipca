@@ -35,7 +35,7 @@ fun CampanhasScreen(
 
     val campanhas = listOf(
         CampanhaModel(
-            "1", "Campanha Inverno", "Campanha para produtos de limpeza.",
+            "1b653418-6f8a-4be2-9920-3a94f3ac6a09", "Campanha Inverno", "Campanha para produtos de limpeza.",
             StatusType.ATIVA, Icons.Filled.CleaningServices
         ),
         CampanhaModel(
