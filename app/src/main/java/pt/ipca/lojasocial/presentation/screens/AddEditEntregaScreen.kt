@@ -1,6 +1,9 @@
 package pt.ipca.lojasocial.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -10,7 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
 
 @Composable
 fun AddEditEntregaScreen(
@@ -19,34 +24,31 @@ fun AddEditEntregaScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: AddEditEntregaViewModel = hiltViewModel()
 ) {
-    var beneficiario by remember { mutableStateOf("") }
-    var data by remember { mutableStateOf("") }
-    var hora by remember { mutableStateOf("") }
-    var notas by remember { mutableStateOf("") }
-    var selectedRepeticao by remember { mutableStateOf("Mensalmente") }
+    val uiState by viewModel.uiState.collectAsState()
 
-    val productList = remember { mutableStateListOf<DeliveryProduct>() }
+    val productList = uiState.selectedProducts.mapNotNull { (productId, quantity) ->
+        uiState.availableProducts.find { it.id == productId }?.let { product ->
+            DeliveryProduct(id = product.id, name = product.name, quantity = quantity)
+        }
+    }
+
 
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
 
     LaunchedEffect(entregaId) {
         if (entregaId != null) {
-            data = "09/15/2024"
-            hora = "10:30 AM"
-            notas = "Introduza uma nota..."
-            productList.clear()
-            productList.add(DeliveryProduct("1", "Cesta Básica", 1))
-            productList.add(DeliveryProduct("2", "Kit Limpeza", 2))
+            viewModel.loadDelivery(entregaId)
         }
     }
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Agendar Entrega",
+                title = if (entregaId == null) "Agendar Entrega" else "Editar Entrega",
                 onBackClick = onBackClick
             )
         },
@@ -71,10 +73,23 @@ fun AddEditEntregaScreen(
             if (isCollaborator) {
                 Text("Beneficiário", fontWeight = FontWeight.Bold)
                 AppSearchBar(
-                    query = beneficiario,
-                    onQueryChange = { beneficiario = it },
+                    query = uiState.beneficiaryQuery,
+                    onQueryChange = viewModel::onBeneficiaryQueryChange,
                     placeholder = "Procurar beneficiário"
                 )
+                if (uiState.searchedBeneficiaries.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                        items(uiState.searchedBeneficiaries) { beneficiary ->
+                            Text(
+                                text = beneficiary.name,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.onBeneficiarySelected(beneficiary) }
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             Text("Data & Repetição", fontWeight = FontWeight.Bold)
@@ -84,8 +99,8 @@ fun AddEditEntregaScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AppTextField(label = "Data", value = data, onValueChange = { data = it }, placeholder = "mm/dd/yyyy")
-                    AppTextField(label = "Hora", value = hora, onValueChange = { hora = it }, placeholder = "10:30 AM")
+                    AppTextField(label = "Data", value = uiState.date, onValueChange = viewModel::onDateChange, placeholder = "dd/mm/yyyy")
+                    AppTextField(label = "Hora", value = uiState.time, onValueChange = viewModel::onTimeChange, placeholder = "HH:mm")
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
@@ -95,9 +110,9 @@ fun AddEditEntregaScreen(
                                 repeticoes.take(2).forEach { repo ->
                                     AppButton(
                                         text = repo,
-                                        onClick = { selectedRepeticao = repo },
+                                        onClick = { viewModel.onRepetitionChange(repo) },
                                         modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(selectedRepeticao == repo) accentGreen else Color(0xFFF1F1F5),
+                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
                                 }
                             }
@@ -105,9 +120,9 @@ fun AddEditEntregaScreen(
                                 repeticoes.takeLast(2).forEach { repo ->
                                     AppButton(
                                         text = repo,
-                                        onClick = { selectedRepeticao = repo },
+                                        onClick = { viewModel.onRepetitionChange(repo) },
                                         modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(selectedRepeticao == repo) accentGreen else Color(0xFFF1F1F5),
+                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
                                 }
                             }
@@ -116,9 +131,7 @@ fun AddEditEntregaScreen(
                 }
             }
 
-            DeliveryProductHeader(onAddProductClick = {
-                productList.add(DeliveryProduct(productList.size.toString(), "Novo Produto", 1))
-            })
+            DeliveryProductHeader(onAddProductClick = viewModel::onAddProduct)
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,10 +144,9 @@ fun AddEditEntregaScreen(
                         QuantitySelectorItem(
                             product = product,
                             onQuantityChange = { newQty ->
-                                val idx = productList.indexOfFirst { it.id == product.id }
-                                if (idx != -1) productList[idx] = productList[idx].copy(quantity = newQty)
+                                viewModel.onProductQuantityChange(product.id, newQty)
                             },
-                            onRemove = { productList.removeAll { it.id == product.id } },
+                            onRemove = { viewModel.onProductQuantityChange(product.id, 0) },
                             showDivider = index < productList.lastIndex
                         )
                     }
@@ -143,8 +155,8 @@ fun AddEditEntregaScreen(
 
             Text("Notas", fontWeight = FontWeight.Bold)
             AppTextField(
-                value = notas,
-                onValueChange = { notas = it },
+                value = uiState.observations,
+                onValueChange = viewModel::onObservationsChange,
                 label = "",
                 placeholder = "Introduza uma nota...",
                 modifier = Modifier.height(120.dp),
@@ -152,7 +164,10 @@ fun AddEditEntregaScreen(
 
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
-                onClick = onSaveClick,
+                onClick = {
+                    viewModel.saveDelivery()
+                    onSaveClick()
+                },
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )

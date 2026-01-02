@@ -35,7 +35,13 @@ class DeliveryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addDelivery(delivery: Delivery) {
-        TODO("Not yet implemented")
+        try {
+            val deliveryDto = DeliveryMapper.toDto(delivery, firestore)
+            collection.document(delivery.id).set(deliveryDto).await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error adding delivery: ${e.message}", e)
+            throw e
+        }
     }
 
     override suspend fun getDeliveryById(id: String): Delivery? {

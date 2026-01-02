@@ -37,5 +37,6 @@ data class Product(
     val name: String,
     val type: ProductType,
     val photoUrl: String? = null,
-    val observations: String? = null
+    val observations: String? = null,
+    val quantity: Int
 )
