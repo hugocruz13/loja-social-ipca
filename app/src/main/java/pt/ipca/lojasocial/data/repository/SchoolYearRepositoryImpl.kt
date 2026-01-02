@@ -1,10 +1,14 @@
 package pt.ipca.lojasocial.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import pt.ipca.lojasocial.data.mapper.toDomain
+import pt.ipca.lojasocial.data.mapper.toDto
+import pt.ipca.lojasocial.data.remote.dto.SchoolYearDto
 import pt.ipca.lojasocial.domain.models.SchoolYear
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import javax.inject.Inject
@@ -20,39 +24,30 @@ class SchoolYearRepositoryImpl @Inject constructor(
             if (error != null) { close(error); return@addSnapshotListener }
 
             val list = snapshot?.documents?.mapNotNull { doc ->
-                SchoolYear(
-                    id = doc.id,
-                    label = doc.id.replace("_", "/"),
-                    startDate = doc.getLong("dataInicio") ?: 0L,
-                    endDate = doc.getLong("dataFim") ?: 0L
-                )
+                // Converte para DTO e depois para Domain via Mapper
+                doc.toObject<SchoolYearDto>()?.toDomain()
             } ?: emptyList()
+
             trySend(list)
         }
         awaitClose { listener.remove() }
     }
 
     override suspend fun getSchoolYearById(id: String): SchoolYear? {
-        return try {
-            val doc = collection.document(id).get().await()
-            if (doc.exists()) {
-                SchoolYear(
-                    id = doc.id,
-                    label = doc.id.replace("_", "/"),
-                    startDate = doc.getLong("dataInicio") ?: 0L,
-                    endDate = doc.getLong("dataFim") ?: 0L
-                )
-            } else null
-        } catch (e: Exception) {
-            null
-        }
+        val doc = collection.document(id).get().await()
+        return doc.toObject<SchoolYearDto>()?.toDomain()
     }
 
     override suspend fun saveSchoolYear(schoolYear: SchoolYear) {
+        // Converte Domain para DTO via Mapper
+        val dto = schoolYear.toDto()
+
+        // Criamos um Map para o Firestore a partir do DTO para garantir os nomes corretos
         val data = hashMapOf(
-            "dataInicio" to schoolYear.startDate,
-            "dataFim" to schoolYear.endDate
+            "dataInicio" to dto.dataInicio,
+            "dataFim" to dto.dataFim
         )
+
         collection.document(schoolYear.id).set(data).await()
     }
 }
