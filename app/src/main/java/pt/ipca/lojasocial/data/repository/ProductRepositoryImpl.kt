@@ -17,6 +17,13 @@ class ProductRepositoryImpl @Inject constructor(
 
     private val collection = firestore.collection("bens")
 
+    private fun generateProductId(name: String): String {
+        return "bem_" + name
+            .lowercase()
+            .trim()
+    }
+
+
     /**
      * Obtém todos os produtos.
      * Mapeia cada documento para o objeto de domínio Product.
@@ -52,12 +59,11 @@ class ProductRepositoryImpl @Inject constructor(
     /**
      * Adiciona um produto ao catálogo.
      * O ID do documento é gerado automaticamente baseado no nome do produto.
-     * Padrão: "bem" + nome minúsculo sem espaços (ex: "bemleitemeiogordo").
      */
     override suspend fun addProduct(product: Product) {
         try {
             val dto = product.toDto()
-            val documentId = "bem${product.name.lowercase().trim().replace(" ", "")}"
+            val documentId = generateProductId(product.name)
             collection.document(documentId).set(dto).await()
 
         } catch (e: Exception) {

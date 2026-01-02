@@ -1,13 +1,28 @@
 package pt.ipca.lojasocial.data.remote.dto
 
+import com.google.firebase.firestore.PropertyName
 
 /**
- * Representação do produto na base de dados (ex: Firebase).
- * O ID geralmente é o nome do documento, por isso não está aqui dentro.
+ * Objeto de Transferência de Dados (DTO) para Produtos.
+ *
+ * Representa a estrutura do documento armazenado no Firestore (coleção "produtos").
+ * O ID do produto corresponde normalmente ao ID do documento, por isso não é incluído aqui.
+ *
+ * O tipo do produto ([ProductType]) é armazenado como String.
+ * A conversão para enum é feita no Mapper.
  */
 data class ProductDto(
-    val name: String = "",
-    val type: String = "", // O enum é salvo como String
-    val photoUrl: String? = null,
-    val observations: String? = null
+
+    @get:PropertyName("nome") @set:PropertyName("nome")
+    var name: String = "",
+
+    // Enum ProductType guardado como String (FOOD, HYGIENE, CLEANING, OTHER)
+    @get:PropertyName("tipo") @set:PropertyName("tipo")
+    var type: String = "",
+
+    @get:PropertyName("fotoUrl") @set:PropertyName("fotoUrl")
+    var photoUrl: String? = null,
+
+    @get:PropertyName("observacoes") @set:PropertyName("observacoes")
+    var observations: String? = null
 )

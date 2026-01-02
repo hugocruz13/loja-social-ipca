@@ -89,7 +89,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                viewModel = viewModel, // Passa o AuthViewModel partilhado
+                viewModel = viewModel,
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
 
                 onLoginSuccess = {
@@ -138,7 +138,7 @@ fun AppNavHost(
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
                         "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
-                        "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
+                        "stock" ->  navController.navigate(AppScreen.ProductList.route)
                         "beneficiarios" -> { /* navController.navigate(AppScreen.BeneficiariosList.route) */ }
                         "reports" -> { /* navController.navigate(AppScreen.Reports.route) */ }
                         "apoio" -> { /* navController.navigate(AppScreen.Support.route) */ }
@@ -372,7 +372,7 @@ fun AppNavHost(
             ProductListScreen(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
-                onAddProductClick = {},
+                onAddProductClick = { navController.navigate(AppScreen.ProductAddEdit.route)},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
