@@ -38,6 +38,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.navigation.AppScreen
 import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
+import pt.ipca.lojasocial.presentation.screens.AddStaffScreen
+import pt.ipca.lojasocial.presentation.screens.ManageStaffScreen
 import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
@@ -61,6 +63,7 @@ sealed class AppScreen(val route: String) {
     object EntregasList : AppScreen("entregaslist")
     object ProductType : AppScreen("add_product_type")
     object ProductList : AppScreen("products_list")
+    object ManageStaff : AppScreen("manage_staff")
 }
 
 @Composable
@@ -85,8 +88,21 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.ProductList.route
+        startDestination = AppScreen.ManageStaff.route
     ) {
+
+        composable("manage_staff") {
+            ManageStaffScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddStaffClick = { navController.navigate("add_staff") },
+            )
+        }
+
+        composable("add_staff") {
+            AddStaffScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
 
         composable(AppScreen.Login.route) {
             LoginScreen(
