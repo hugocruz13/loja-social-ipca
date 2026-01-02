@@ -1,32 +1,28 @@
 package pt.ipca.lojasocial.domain.use_cases.campaign
 
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import javax.inject.Inject
 
-/**
- * Caso de Uso responsável pela edição dos dados informativos de uma campanha.
- *
- * Este componente permite alterar as propriedades descritivas da campanha,
- * distinguindo-se do [UpdateCampaignStatusUseCase] que gere apenas o ciclo de vida.
- *
- * **Cenários de Uso:**
- * - Correção de erros ortográficos no título ou descrição.
- * - Prolongamento da data de fim de uma campanha (extensão do prazo).
- * - Alteração da lista de categorias de produtos aceites.
- */
 class UpdateCampaignUseCase @Inject constructor(
-    private val repository: CampaignRepository
+    private val repository: CampaignRepository,
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) {
-
-    /**
-     * Executa a atualização dos dados da campanha.
-     *
-     * @param campaign O objeto [Campaign] com os dados editados.
-     * **Nota:** O `id` da campanha deve permanecer inalterado para garantir que a atualização
-     * incide sobre o registo correto.
-     */
     suspend operator fun invoke(campaign: Campaign) {
+        // 1. Atualizar no repositório
         repository.updateCampaign(campaign)
+
+        // 2. Registar o Log de Auditoria
+        val log = hashMapOf(
+            "acao" to "Edição Campanha",
+            "detalhe" to "Alterou dados da campanha: ${campaign.title}",
+            "utilizador" to (auth.currentUser?.email ?: "Sistema"),
+            "timestamp" to System.currentTimeMillis()
+        )
+        firestore.collection("logs").add(log).await()
     }
 }

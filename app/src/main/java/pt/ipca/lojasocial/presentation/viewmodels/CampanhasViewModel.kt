@@ -173,17 +173,11 @@ class CampanhasViewModel @Inject constructor(
             try {
                 val campanhaAtual = if (id != null) getCampaignByIdUseCase(id) else null
 
-                val startTs = if (dataInicioStr.isBlank() && campanhaAtual != null) {
-                    campanhaAtual.startDate
-                } else {
-                    parseDateToLong(dataInicioStr)
-                }
+                val startTs = if (dataInicioStr.isBlank() && campanhaAtual != null)
+                    campanhaAtual.startDate else parseDateToLong(dataInicioStr)
 
-                val endTs = if (dataFimStr.isBlank() && campanhaAtual != null) {
-                    campanhaAtual.endDate
-                } else {
-                    parseDateToLong(dataFimStr)
-                }
+                val endTs = if (dataFimStr.isBlank() && campanhaAtual != null)
+                    campanhaAtual.endDate else parseDateToLong(dataFimStr)
 
                 var downloadUrl: String? = campanhaAtual?.imageUrl
 
@@ -192,6 +186,7 @@ class CampanhasViewModel @Inject constructor(
                     downloadUrl = uploadImageUseCase(imageUri, fileName)
                 }
 
+                // Cálculo de estado (Regra de negócio que poderia estar num UseCase de validação)
                 val hojeTs = clearTime(System.currentTimeMillis())
                 val statusCalculado = when {
                     endTs < hojeTs -> CampaignStatus.INACTIVE
@@ -205,23 +200,22 @@ class CampanhasViewModel @Inject constructor(
                     description = descricao,
                     startDate = startTs,
                     endDate = endTs,
-                    type = if (tipo == CampaignType.INTERNAL) CampaignType.INTERNAL else CampaignType.EXTERNAL,
+                    type = tipo,
                     status = statusCalculado,
                     imageUrl = downloadUrl ?: ""
                 )
 
-                if (id == null){
+                // A lógica de Log agora acontece dentro destes invokes
+                if (id == null) {
                     addCampaignUseCase(campaign)
-                    saveLog("Nova Campanha", "Criou a campanha: $nome")
                 } else {
                     updateCampaignUseCase(campaign)
-                    saveLog("Edição Campanha", "Alterou dados da campanha: $nome")
                 }
 
                 _isSaveSuccess.emit(true)
 
             } catch (e: Exception) {
-                android.util.Log.e("SAVE_ERROR", "Erro fatal ao guardar no Firestore: ${e.message}")
+                android.util.Log.e("SAVE_ERROR", e.message.toString())
             } finally {
                 _isLoading.value = false
             }
