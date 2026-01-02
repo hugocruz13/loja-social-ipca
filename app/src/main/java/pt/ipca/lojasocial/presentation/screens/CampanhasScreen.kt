@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 

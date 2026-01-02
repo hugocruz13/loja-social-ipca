@@ -22,9 +22,8 @@ import pt.ipca.lojasocial.domain.use_cases.campaign.AddCampaignUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
-import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.screens.CampanhaModel
-import pt.ipca.lojasocial.presentation.screens.formatLongToString
+import pt.ipca.lojasocial.domain.models.StatusType
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject

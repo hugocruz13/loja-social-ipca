@@ -67,12 +67,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
-        return StorageRepositoryImpl(storage)
-    }
-
-    @Provides
-    @Singleton
     fun provideCampaignRepository(firestore: FirebaseFirestore): CampaignRepository {
         return CampaignRepositoryImpl(firestore)
     }
