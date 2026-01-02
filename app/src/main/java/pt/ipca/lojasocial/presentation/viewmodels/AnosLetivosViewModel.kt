@@ -5,22 +5,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import pt.ipca.lojasocial.presentation.screens.AnoLetivo
+import pt.ipca.lojasocial.domain.models.SchoolYear
+import pt.ipca.lojasocial.domain.use_cases.school_year.GetSchoolYearByIdUseCase
+import pt.ipca.lojasocial.domain.use_cases.school_year.GetSchoolYearsUseCase
+import pt.ipca.lojasocial.domain.use_cases.school_year.SaveSchoolYearUseCase
+import java.text.SimpleDateFormat
+import java.util.*
 import javax.inject.Inject
-import com.google.firebase.firestore.ListenerRegistration
 
 @HiltViewModel
 class AnosLetivosViewModel @Inject constructor(
-    private val firestore: com.google.firebase.firestore.FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val getSchoolYearsUseCase: GetSchoolYearsUseCase,
+    private val saveSchoolYearUseCase: SaveSchoolYearUseCase,
+    private val getSchoolYearByIdUseCase: GetSchoolYearByIdUseCase
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -29,65 +29,23 @@ class AnosLetivosViewModel @Inject constructor(
     private val _isSaveSuccess = MutableSharedFlow<Boolean>()
     val isSaveSuccess = _isSaveSuccess.asSharedFlow()
 
-    private val _anosLetivos = MutableStateFlow<List<AnoLetivo>>(emptyList())
-    val anosLetivos = _anosLetivos.asStateFlow()
-
-    private var listenerRegistration: ListenerRegistration? = null
-
     var dataInicioInput by mutableStateOf("")
     var dataFimInput by mutableStateOf("")
 
-    init {
-        observeAnosLetivos()
-    }
-
-    private fun observeAnosLetivos() {
-        _isLoading.value = true
-
-        listenerRegistration = firestore.collection("anos_letivos")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    android.util.Log.e("FIREBASE", "Erro no listener: ${error.message}")
-                    _isLoading.value = false
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null) {
-                    val hoje = System.currentTimeMillis()
-                    val list = snapshot.documents.mapNotNull { doc ->
-                        val inicio = doc.getLong("dataInicio") ?: 0L
-                        val fim = doc.getLong("dataFim") ?: 0L
-                        val eOAtual = hoje in inicio..fim
-
-                        AnoLetivo(
-                            id = doc.id,
-                            label = doc.id.replace("_", "/"),
-                            isCurrent = eOAtual
-                        )
-                    }
-                    // Atualiza o StateFlow e a UI reage automaticamente
-                    _anosLetivos.value = list.sortedByDescending { it.label }
-                }
-                _isLoading.value = false
-            }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        listenerRegistration?.remove()
-    }
+    val anosLetivos = getSchoolYearsUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun loadAnoLetivoPorId(id: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val doc = firestore.collection("anos_letivos").document(id).get().await()
-                if (doc.exists()) {
-                    dataInicioInput = formatLongToString(doc.getLong("dataInicio") ?: 0L)
-                    dataFimInput = formatLongToString(doc.getLong("dataFim") ?: 0L)
+                val year = getSchoolYearByIdUseCase(id)
+                if (year != null) {
+                    dataInicioInput = formatLongToString(year.startDate)
+                    dataFimInput = formatLongToString(year.endDate)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("LOAD_ANO", "Erro: ${e.message}")
+                android.util.Log.e("LOAD_ERROR", e.message.toString())
             } finally {
                 _isLoading.value = false
             }
@@ -102,22 +60,14 @@ class AnosLetivosViewModel @Inject constructor(
                 val endTs = parseDateToLong(dataFimStr)
                 val docId = idExistente ?: generateSchoolYearId(dataInicioStr, dataFimStr)
 
-                val data = hashMapOf(
-                    "dataInicio" to startTs,
-                    "dataFim" to endTs
+                val schoolYear = SchoolYear(
+                    id = docId,
+                    label = docId.replace("_", "/"),
+                    startDate = startTs,
+                    endDate = endTs
                 )
 
-                firestore.collection("anos_letivos")
-                    .document(docId)
-                    .set(data)
-                    .await()
-
-                val acao = if (idExistente == null) "Novo Ano Letivo" else "Edição Ano Letivo"
-                saveLog(
-                    acao = acao,
-                    detalhe = "Ano Letivo: ${docId.replace("_", "/")}"
-                )
-
+                saveSchoolYearUseCase(schoolYear)
                 _isSaveSuccess.emit(true)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -129,8 +79,8 @@ class AnosLetivosViewModel @Inject constructor(
 
     private fun formatLongToString(timestamp: Long): String {
         if (timestamp == 0L) return ""
-        val sdf = java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.getDefault())
-        return sdf.format(java.util.Date(timestamp))
+        val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+        return sdf.format(Date(timestamp))
     }
 
     private fun generateSchoolYearId(start: String, end: String): String {
@@ -139,38 +89,28 @@ class AnosLetivosViewModel @Inject constructor(
             val endYear = end.split("/")[2]
             "${startYear}_$endYear"
         } catch (e: Exception) {
-            java.util.UUID.randomUUID().toString()
+            UUID.randomUUID().toString()
         }
     }
 
     private fun parseDateToLong(dateStr: String): Long {
         if (dateStr.isBlank()) return 0L
         return try {
-            val sdf = java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.getDefault())
+            val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
             val date = sdf.parse(dateStr)
-            val cal = java.util.Calendar.getInstance()
+            val cal = Calendar.getInstance()
             if (date != null) {
                 cal.time = date
-                cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-                cal.set(java.util.Calendar.MINUTE, 0)
-                cal.set(java.util.Calendar.SECOND, 0)
-                cal.set(java.util.Calendar.MILLISECOND, 0)
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
                 cal.timeInMillis
             } else 0L
         } catch (e: Exception) { 0L }
     }
-
-    private suspend fun saveLog(acao: String, detalhe: String) {
-        try {
-            val log = hashMapOf(
-                "acao" to acao,
-                "detalhe" to detalhe,
-                "utilizador" to (auth.currentUser?.email ?: "Desconhecido"),
-                "timestamp" to System.currentTimeMillis()
-            )
-            firestore.collection("logs").add(log).await()
-        } catch (e: Exception) {
-            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
-        }
-    }
 }
+
+
+
+

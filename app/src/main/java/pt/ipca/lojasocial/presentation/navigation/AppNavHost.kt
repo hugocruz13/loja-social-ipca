@@ -90,7 +90,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.CampanhasList.route
+        startDestination = AppScreen.AnoLetivoList.route
     ) {
 
         composable("logs_list") {
@@ -197,10 +197,15 @@ fun AppNavHost(
 
         composable(
             route = "anoletivoaddedit?id={id}",
-            arguments = listOf(navArgument("id") {nullable = true; defaultValue = null})
+            arguments = listOf(
+                navArgument("id") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("id")
-
 
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
