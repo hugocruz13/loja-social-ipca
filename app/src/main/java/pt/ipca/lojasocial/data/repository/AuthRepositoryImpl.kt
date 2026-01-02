@@ -6,13 +6,16 @@ import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import javax.inject.Inject
 import pt.ipca.lojasocial.domain.models.User
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 //-----------------------------------
 // Implementação das funções definidas na interface AuthRepository deve usar os atributos
 // e devolver o resultado correto como definido na interface
 //-----------------------------------
 class AuthRepositoryImpl @Inject constructor(
-    private val remoteDataSource: FirebaseAuthDataSource
+    private val remoteDataSource: FirebaseAuthDataSource,
+    private val firestore: FirebaseFirestore
 ): AuthRepository {
     override suspend fun login(email: String, password: String): Result<User> {
         return try {
@@ -68,6 +71,28 @@ class AuthRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun getUserRole(uid: String): String? {
+        return try {
+            // 1. Verifica na coleção de COLABORADORES
+            val docColab = firestore.collection("colaboradores").document(uid).get().await()
+            if (docColab.exists()) {
+                return "colaborador"
+            }
+
+            // 2. Verifica na coleção de BENEFICIÁRIOS
+            val docBen = firestore.collection("beneficiarios").document(uid).get().await()
+            if (docBen.exists()) {
+                return "beneficiario"
+            }
+
+            // 3. Não encontrou em lado nenhum
+            null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 }

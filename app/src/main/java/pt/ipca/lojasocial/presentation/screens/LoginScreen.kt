@@ -1,6 +1,5 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import android.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,31 +11,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
-import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.presentation.components.AppAuthSwitcher
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppLogo
 import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.LoginUiState
-import pt.ipca.lojasocial.presentation.viewmodels.LoginViewModel
 
 
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = hiltViewModel(),
-    onLoginSuccessStaff: () -> Unit,
-    onLoginSuccessBeneficiary: (status: BeneficiaryStatus) -> Unit,
+    viewModel: AuthViewModel,
+    onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val uiState by viewModel.uiState.collectAsState()
+    val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(uiState) {
-        when (val state = uiState) {
-            is LoginUiState.SuccessStaff -> onLoginSuccessStaff()
-            is LoginUiState.SuccessBeneficiary -> onLoginSuccessBeneficiary(state.status)
-            else -> { /* Não faz nada nos outros estados */ }
+    LaunchedEffect(state.isLoggedIn, state.isLoading) {
+        // Só avança se estiver logado E o load do perfil tiver acabado
+        if (state.isLoggedIn && !state.isLoading) {
+            onLoginSuccess()
         }
     }
 
@@ -72,7 +68,7 @@ fun LoginScreen(
                 label = "Email",
                 placeholder = "Introduza o seu email",
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                isError = uiState is LoginUiState.Error
+                isError = state.errorMessage != null
             )
             AppTextField(
                 value = password,
@@ -81,12 +77,12 @@ fun LoginScreen(
                 placeholder = "Introduza a sua password",
                 keyboardType = KeyboardType.Password,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                isError = uiState is LoginUiState.Error
+                isError = state.errorMessage != null
             )
 
-            if (uiState is LoginUiState.Error) {
+            if (state.errorMessage != null) {
                 Text(
-                    text = (uiState as LoginUiState.Error).message,
+                    text = state.errorMessage!!,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -96,7 +92,7 @@ fun LoginScreen(
             }
 
 
-            if (uiState is LoginUiState.Loading) {
+            if (state.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(56.dp),
                     color = Color(0XFF00713C)

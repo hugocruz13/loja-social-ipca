@@ -7,8 +7,8 @@ import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
 import pt.ipca.lojasocial.data.remote.dto.RequestDto
 import pt.ipca.lojasocial.domain.models.Request
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.RequestRepository
-import pt.ipca.lojasocial.presentation.components.StatusType
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel

@@ -3,7 +3,7 @@ package pt.ipca.lojasocial.presentation.state
 import android.net.Uri
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.RequestCategory
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 data class AuthState(
     // ==========================================================
@@ -38,6 +38,8 @@ data class AuthState(
 
     // Motivo de rejeição ou observações do requerimento
     val requestObservations: String = "",
+
+    val requestDocuments: Map<String, String?> = emptyMap(),
 
     // ==========================================================
     // DADOS DO FORMULÁRIO DE REGISTO (Inputs)

@@ -28,4 +28,5 @@ interface AuthRepository {
      * @return [User] se existe sessão ativa, ou null caso contrário
      */
     suspend fun getCurrentUser(): User?
+    suspend fun getUserRole(uid: String): String?
 }

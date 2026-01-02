@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.domain.models
 
-import pt.ipca.lojasocial.presentation.components.StatusType
 import java.util.UUID
+
 
 /**
  * Define o tipo de apoio solicitado.

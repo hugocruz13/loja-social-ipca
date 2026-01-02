@@ -42,6 +42,7 @@ class BeneficiaryRepositoryImpl @Inject constructor(
     override suspend fun getBeneficiaryById(id: String): Beneficiary? {
         return try {
             val doc = collection.document(id).get().await()
+
             if (doc.exists()) {
                 doc.toObject(BeneficiaryDto::class.java)?.toDomain(doc.id)
             } else {
@@ -112,7 +113,7 @@ class BeneficiaryRepositoryImpl @Inject constructor(
 
     override suspend fun updateStatus(id: String, status: BeneficiaryStatus) {
         collection.document(id)
-            .update("status", status.name)
+            .update("estado", status.name)
             .await()
     }
 }

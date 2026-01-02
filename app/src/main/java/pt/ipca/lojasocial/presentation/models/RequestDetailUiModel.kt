@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.presentation.models
 
 import pt.ipca.lojasocial.domain.models.RequestType
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 data class RequestDetailUiModel(
     val id: String,

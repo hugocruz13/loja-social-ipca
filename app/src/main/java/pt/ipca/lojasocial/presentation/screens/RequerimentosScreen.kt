@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.viewmodels.RequerimentosViewModel
 

@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.presentation.models
-import pt.ipca.lojasocial.presentation.components.StatusType
+
+import pt.ipca.lojasocial.domain.models.StatusType
 
 data class RequestUiModel(
     val requestId: String,

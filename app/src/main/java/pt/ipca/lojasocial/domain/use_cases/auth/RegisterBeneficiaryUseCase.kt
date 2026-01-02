@@ -1,9 +1,16 @@
 package pt.ipca.lojasocial.domain.use_cases.auth
 
 import android.net.Uri
-import pt.ipca.lojasocial.domain.models.*
-import pt.ipca.lojasocial.domain.repository.*
-import pt.ipca.lojasocial.presentation.components.StatusType // Certifica-te que importas o StatusType correto
+import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.models.Request
+import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestType
+import pt.ipca.lojasocial.domain.models.StatusType
+import pt.ipca.lojasocial.domain.repository.AuthRepository
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.presentation.state.AuthState
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -30,7 +37,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
         suspend fun uploadIfPresent(uri: Uri?, docKey: String) {
             if (uri != null) {
                 // Cria nome único
-                val fileName = "documentos/$newUserId/${docKey}_${UUID.randomUUID()}"
+                val fileName = "requerimentos/$newUserId/${docKey}_${UUID.randomUUID()}"
 
                 // Faz upload e recebe o URL
                 val url = storageRepository.uploadFile(uri, fileName)
@@ -68,9 +75,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
             id = UUID.randomUUID().toString(),
             beneficiaryId = newUserId,
             schoolYearId = "2024_2025",
-
-            // Usa o novo Enum (PENDENTE ou ANALISE, conforme o que definiste no StatusType)
-            status = StatusType.PENDENTE,
+            status = StatusType.ANALISE,
 
             type = mapCategoryToType(state.requestCategory),
 

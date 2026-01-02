@@ -3,7 +3,7 @@ package pt.ipca.lojasocial.data.mapper
 import pt.ipca.lojasocial.data.remote.dto.RequestDto
 import pt.ipca.lojasocial.domain.models.Request
 import pt.ipca.lojasocial.domain.models.RequestType
-import pt.ipca.lojasocial.presentation.components.StatusType
+import pt.ipca.lojasocial.domain.models.StatusType
 
 fun RequestDto.toDomain(documentId: String): Request {
     return Request(

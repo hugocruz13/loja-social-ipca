@@ -1,5 +1,9 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.domain.models.UserRole.BENEFICIARY
+import pt.ipca.lojasocial.domain.models.UserRole.STAFF
+
+
 /**
  * Tipos de utilizador no sistema.
  *
