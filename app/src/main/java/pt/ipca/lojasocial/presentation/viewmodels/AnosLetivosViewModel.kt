@@ -67,7 +67,7 @@ class AnosLetivosViewModel @Inject constructor(
                     endDate = endTs
                 )
 
-                saveSchoolYearUseCase(schoolYear)
+                saveSchoolYearUseCase(schoolYear, isEdition = idExistente != null)
                 _isSaveSuccess.emit(true)
             } catch (e: Exception) {
                 e.printStackTrace()

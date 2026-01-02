@@ -11,6 +11,7 @@ import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
 import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
+import pt.ipca.lojasocial.data.repository.LogRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StaffRepositoryImpl
@@ -18,6 +19,7 @@ import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
+import pt.ipca.lojasocial.domain.repository.LogRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StaffRepository
@@ -110,4 +112,10 @@ object AppModule {
         firestore: FirebaseFirestore,
         auth: FirebaseAuth
     ): StaffRepository = StaffRepositoryImpl(firestore, auth)
+
+    @Provides
+    @Singleton
+    fun provideLogRepository(firestore: FirebaseFirestore): LogRepository {
+        return LogRepositoryImpl(firestore)
+    }
 }

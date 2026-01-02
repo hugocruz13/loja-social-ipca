@@ -15,7 +15,6 @@ class ToggleStaffStatusUseCase @Inject constructor(
         val novoEstado = !currentStatus
         repository.updateStaffStatus(uid, novoEstado)
 
-        // Log de Auditoria
         val estadoTexto = if (novoEstado) "Ativado" else "Desativado"
         val log = hashMapOf(
             "acao" to "Alteração de Acesso",

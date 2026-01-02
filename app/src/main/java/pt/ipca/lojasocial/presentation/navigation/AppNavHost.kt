@@ -90,7 +90,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.ManageStaff.route
+        startDestination = AppScreen.LogsList.route
     ) {
 
         composable("logs_list") {

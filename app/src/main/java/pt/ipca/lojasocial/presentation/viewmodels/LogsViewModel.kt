@@ -1,44 +1,26 @@
 package pt.ipca.lojasocial.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import pt.ipca.lojasocial.domain.models.AppLog
+import pt.ipca.lojasocial.domain.use_cases.log.GetLogsUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class LogsViewModel @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val getLogsUseCase: GetLogsUseCase
 ) : ViewModel() {
 
-    private val _logs = MutableStateFlow<List<AppLog>>(emptyList())
-    val logs: StateFlow<List<AppLog>> = _logs
-
     private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        fetchLogs()
-    }
-
-    private fun fetchLogs() {
-        firestore.collection("logs")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    _isLoading.value = false
-                    return@addSnapshotListener
-                }
-
-                val list = snapshot?.documents?.mapNotNull { doc ->
-                    doc.toObject(AppLog::class.java)?.copy(id = doc.id)
-                } ?: emptyList()
-
-                _logs.value = list
-                _isLoading.value = false
-            }
-    }
+    val logs: StateFlow<List<AppLog>> = getLogsUseCase()
+        .onEach { _isLoading.value = false }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 }
