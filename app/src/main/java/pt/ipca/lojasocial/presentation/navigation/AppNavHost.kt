@@ -90,7 +90,7 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppScreen.AnoLetivoList.route
+        startDestination = AppScreen.ManageStaff.route
     ) {
 
         composable("logs_list") {
