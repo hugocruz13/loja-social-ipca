@@ -19,6 +19,7 @@ import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StaffRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
+import pt.ipca.lojasocial.data.repository.StockRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
@@ -30,6 +31,7 @@ import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StaffRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
+import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Singleton
 
 /**
@@ -110,6 +112,12 @@ object AppModule {
     @Singleton
     fun provideProductRepository(firestore: FirebaseFirestore): ProductRepository {
         return ProductRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStockRepository(firestore: FirebaseFirestore): StockRepository {
+        return StockRepositoryImpl(firestore)
     }
 
     @Provides

@@ -45,6 +45,16 @@ fun AddEditEntregaScreen(
         }
     }
 
+    if (uiState.isProductPickerDialogVisible) {
+        ProductPickerDialog(
+            products = uiState.availableProducts,
+            selectedProducts = uiState.selectedProducts,
+            onProductQuantityChange = viewModel::onProductQuantityChange,
+            onDismiss = viewModel::hideProductPickerDialog,
+            onConfirm = viewModel::hideProductPickerDialog
+        )
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -131,7 +141,7 @@ fun AddEditEntregaScreen(
                 }
             }
 
-            DeliveryProductHeader(onAddProductClick = viewModel::onAddProduct)
+            DeliveryProductHeader(onAddProductClick = viewModel::showProductPickerDialog)
 
             Card(
                 modifier = Modifier.fillMaxWidth(),

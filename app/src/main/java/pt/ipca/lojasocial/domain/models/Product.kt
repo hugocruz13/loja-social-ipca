@@ -44,5 +44,4 @@ data class Product(
     val type: ProductType,
     val photoUrl: String? = null,
     val observations: String? = null,
-    val quantity: Int
 )
