@@ -262,12 +262,11 @@ fun AppNavHost(
             )
         ) { backStackEntry ->
             val idString = backStackEntry.arguments?.getString("id")
-            val id = idString?.toIntOrNull()
+            val id = backStackEntry.arguments?.getString("id")
 
             AddEditAnoLetivoScreen(
                 anoLetivoId = id,
                 onBackClick = { navController.popBackStack() },
-                onSaveClick = { dataInicio, dataFim -> navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
