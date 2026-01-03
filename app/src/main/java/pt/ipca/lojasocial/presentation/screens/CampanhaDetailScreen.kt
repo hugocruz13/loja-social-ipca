@@ -49,6 +49,9 @@ fun CampanhaDetailScreen(
 ) {
     val scrollState = rememberScrollState()
     var showAddProductSheet by remember { mutableStateOf(false) }
+    var showAddStockDialog by remember { mutableStateOf(false) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
+
     val accentGreen = Color(0XFF00713C)
 
     val stockList by stockViewModel.stockList.collectAsState()
@@ -112,7 +115,6 @@ fun CampanhaDetailScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column {
-                    // Placeholder para a imagem (como na imagem_bc8fcf.png)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -198,6 +200,31 @@ fun CampanhaDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+
+        if (showAddProductSheet) {
+            AddProductDialog(
+                products = products,
+                onDismiss = { showAddProductSheet = false },
+                onProductSelected = { product ->
+                    selectedProduct = product
+                    showAddProductSheet = false
+                    showAddStockDialog = true
+                }
+            )
+        }
+
+        if (showAddStockDialog && selectedProduct != null) {
+            AddStockDialog(
+                product = selectedProduct!!,
+                campaignId = campanhaId,
+                onDismiss = { showAddStockDialog = false },
+                onConfirm = { stock ->
+                    stockViewModel.addStockItem(stock)
+                    showAddStockDialog = false
+                }
+            )
+        }
+
     }
 }
 
