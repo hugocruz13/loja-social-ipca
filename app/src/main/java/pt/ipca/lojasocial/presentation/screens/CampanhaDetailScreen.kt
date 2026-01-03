@@ -62,8 +62,12 @@ fun CampanhaDetailScreen(
         productViewModel.loadProducts()
     }
 
-    val stockWithProducts = remember(stockList, products) {
-        stockList
+    val campaignStock = remember(stockList, campanhaId) {
+        stockList.filter { it.campaignId == campanhaId }
+    }
+
+    val stockWithProducts = remember(campaignStock, products) {
+        campaignStock
             .groupBy { it.productId }
             .mapNotNull { (productId, stocksDoMesmoProduto) ->
                 val product = products.find { it.id == productId }
