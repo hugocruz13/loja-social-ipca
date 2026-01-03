@@ -36,7 +36,7 @@ import java.util.Locale
 @Composable
 fun AddStockDialog(
     product: Product,
-    campaignId: String,
+    campaignId: String?,
     onDismiss: () -> Unit,
     onConfirm: (Stock) -> Unit
 ) {

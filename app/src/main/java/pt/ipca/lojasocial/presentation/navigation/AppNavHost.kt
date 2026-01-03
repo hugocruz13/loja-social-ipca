@@ -58,7 +58,6 @@ sealed class AppScreen(val route: String) {
     object EntregasList : AppScreen("entregaslist")
     object ProductList : AppScreen("product_list")
     object ProductDetail : AppScreen("product_detail/{productId}")
-    object ProductAddEdit : AppScreen("product_add_edit?id={id}")
 }
 
 @Composable
@@ -371,7 +370,6 @@ fun AppNavHost(
             ProductListScreen(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
-                onAddProductClick = { navController.navigate(AppScreen.ProductAddEdit.route)},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )

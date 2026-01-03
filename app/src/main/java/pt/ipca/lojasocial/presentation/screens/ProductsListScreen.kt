@@ -21,7 +21,6 @@ import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 fun ProductListScreen(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
-    onAddProductClick: () -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     stockViewModel: StockViewModel = hiltViewModel(),
@@ -33,6 +32,10 @@ fun ProductListScreen(
 
     val years = listOf("2023-2024", "2024-2025", "2025-2026")
     val statusOptions = listOf("Ativo", "Inativo", "Pendente")
+
+    var showAddProductSheet by remember { mutableStateOf(false) }
+    var showAddStockDialog by remember { mutableStateOf(false) }
+    var selectedProduct by remember { mutableStateOf<pt.ipca.lojasocial.domain.models.Product?>(null) }
 
 
     val backgroundColor = Color(0xFFF8F9FA)
@@ -70,7 +73,10 @@ fun ProductListScreen(
         },
         floatingActionButton = {
             AdicionarButton(
-                onClick = onAddProductClick
+                onClick = {
+                    productViewModel.loadProducts()
+                    showAddProductSheet = true
+                }
             )
         },
         bottomBar = {
@@ -140,6 +146,32 @@ fun ProductListScreen(
                 }
             }
         }
+
+        if (showAddProductSheet) {
+            AddProductDialog(
+                products = products,
+                onDismiss = { showAddProductSheet = false },
+                onProductSelected = { product ->
+                    selectedProduct = product
+                    showAddProductSheet = false
+                    showAddStockDialog = true
+                }
+            )
+        }
+
+        if (showAddStockDialog && selectedProduct != null) {
+            AddStockDialog(
+                product = selectedProduct!!,
+                campaignId = null,
+                onDismiss = { showAddStockDialog = false },
+                onConfirm = { stock ->
+                    stockViewModel.addStockItem(stock)
+                    showAddStockDialog = false
+                }
+            )
+        }
+
+
     }
 }
 
