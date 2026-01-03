@@ -60,9 +60,15 @@ fun ProductDetailScreen(
 
     Scaffold(
         topBar = {
-            AppTopBar(
+            ProductDetailTopBar(
                 title = "Detalhe Produto",
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                onDeleteClick = {
+                    stock?.id?.let { id ->
+                        stockViewModel.deleteStockItem(id)
+                        onBackClick()
+                    }
+                }
             )
         },
         floatingActionButton = {
