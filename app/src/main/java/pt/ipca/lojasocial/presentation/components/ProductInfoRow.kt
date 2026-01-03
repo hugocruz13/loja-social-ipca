@@ -73,7 +73,7 @@ fun ProductDetailsListPreview(
     lastDelivery: String,
     expiry: String,
     code: String,
-    campaign: String? = null
+    campaign: String?
 ) {
     val highlightColor = Color(0xFFFF9800)
 
@@ -119,7 +119,7 @@ fun ProductDetailsListPreview(
         ProductInfoRow(
             icon = Icons.Filled.Link,
             label = "Campanha Associada",
-            value = campaign ?: "Nenhuma"
+            value = campaign?.takeLast(6) ?: "Nenhuma"
         )
 
         HorizontalDivider()

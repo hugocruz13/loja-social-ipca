@@ -5,3 +5,10 @@ data class StockWithProductUiModel (
     val productName: String,
     val quantity: Int
 )
+
+data class StockUiModel(
+    val stockId: String,
+    val productId: String,
+    val productName: String,
+    val quantity: Int
+)

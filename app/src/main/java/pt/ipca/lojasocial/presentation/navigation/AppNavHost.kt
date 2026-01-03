@@ -35,7 +35,6 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
-import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 
 
 sealed class AppScreen(val route: String) {
