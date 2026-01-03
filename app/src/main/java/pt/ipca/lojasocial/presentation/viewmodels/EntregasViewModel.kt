@@ -83,7 +83,8 @@ class EntregasViewModel @Inject constructor(
         _selectedFilter.value = filter
     }
 
-    private fun loadDeliveries() {
+    // Tornada pública para permitir refresh manual
+    fun loadDeliveries() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -100,7 +101,10 @@ class EntregasViewModel @Inject constructor(
                     UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(currentUser.id)
                 }
 
-                val uiModels = rawDeliveries.map { delivery ->
+                // Ordenação: Data mais próxima primeiro
+                val sortedDeliveries = rawDeliveries.sortedBy { it.scheduledDate }
+
+                val uiModels = sortedDeliveries.map { delivery ->
                     val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
                     DeliveryUiModel(
                         delivery = delivery,

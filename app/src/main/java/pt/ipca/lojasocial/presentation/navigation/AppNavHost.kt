@@ -38,6 +38,7 @@ import pt.ipca.lojasocial.presentation.screens.*
 import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
 
 sealed class AppScreen(val route: String) {
     object Dashboard : AppScreen("dashboard")
@@ -336,12 +337,40 @@ fun AppNavHost(
 
         composable(AppScreen.EntregasList.route) {
             val entregasViewModel: EntregasViewModel = hiltViewModel()
+            
+            // Recarrega as entregas sempre que este ecrã for exibido
+            LaunchedEffect(Unit) {
+                entregasViewModel.loadDeliveries()
+            }
+            
             EntregasScreen(
                 viewModel = entregasViewModel,
                 onBackClick = { navController.popBackStack() },
                 onAddClick = { navController.navigate("agendar_entrega?role=colaborador") },
                 onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=colaborador") },
                 onDeliveryClick = { id -> navController.navigate("entrega_detail/$id/colaborador") },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = "entrega_detail/{entregaId}/{userRole}",
+            arguments = listOf(
+                navArgument("entregaId") { type = NavType.StringType },
+                navArgument("userRole") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val entregaId = backStackEntry.arguments?.getString("entregaId") ?: ""
+            val userRole = backStackEntry.arguments?.getString("userRole") ?: "colaborador"
+            val viewModel: EntregaDetailViewModel = hiltViewModel()
+
+            EntregaDetailScreen(
+                entregaId = entregaId,
+                userRole = userRole,
+                viewModel = viewModel,
+                onBackClick = { navController.popBackStack() },
+                //onStatusUpdate = { /* Implement status update callback if needed at navigation level */ },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
