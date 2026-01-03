@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.clickable
@@ -16,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditEntregaScreen(
     entregaId: String? = null,
@@ -35,9 +40,61 @@ fun AddEditEntregaScreen(
         }
     }
 
-
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
+
+    // --- Date Picker State ---
+    val datePickerState = rememberDatePickerState()
+    if (uiState.isDatePickerDialogVisible) {
+        DatePickerDialog(
+            onDismissRequest = viewModel::hideDatePickerDialog,
+            confirmButton = {
+                Button(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        viewModel.onDateChange(sdf.format(Date(millis)))
+                    }
+                    viewModel.hideDatePickerDialog()
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = viewModel::hideDatePickerDialog) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    // --- Time Picker State ---
+    val timePickerState = rememberTimePickerState()
+    if (uiState.isTimePickerDialogVisible) {
+        // Simple AlertDialog wrapper for the TimePicker
+        AlertDialog(
+            onDismissRequest = viewModel::hideTimePickerDialog,
+            title = { Text("Selecionar Hora") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val time = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour, timePickerState.minute)
+                    viewModel.onTimeChange(time)
+                    viewModel.hideTimePickerDialog()
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = viewModel::hideTimePickerDialog) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     LaunchedEffect(entregaId) {
         if (entregaId != null) {
@@ -66,8 +123,7 @@ fun AddEditEntregaScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->
@@ -79,7 +135,6 @@ fun AddEditEntregaScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // SEÇÃO: Beneficiário (Apenas Colaborador)
             if (isCollaborator) {
                 Text("Beneficiário", fontWeight = FontWeight.Bold)
                 AppSearchBar(
@@ -109,8 +164,15 @@ fun AddEditEntregaScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AppTextField(label = "Data", value = uiState.date, onValueChange = viewModel::onDateChange, placeholder = "dd/mm/yyyy")
-                    AppTextField(label = "Hora", value = uiState.time, onValueChange = viewModel::onTimeChange, placeholder = "HH:mm")
+                    // --- Clickable Text Fields ---
+                    Box {
+                        AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy")
+                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showDatePickerDialog))
+                    }
+                    Box {
+                        AppTextField(label = "Hora", value = uiState.time, onValueChange = {}, placeholder = "HH:mm")
+                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showTimePickerDialog))
+                    }
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)

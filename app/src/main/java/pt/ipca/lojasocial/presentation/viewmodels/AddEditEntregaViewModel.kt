@@ -41,7 +41,9 @@ data class AddEditEntregaUiState(
     val selectedProducts: Map<String, Int> = emptyMap(),
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
-    val isProductPickerDialogVisible: Boolean = false
+    val isProductPickerDialogVisible: Boolean = false,
+    val isDatePickerDialogVisible: Boolean = false,
+    val isTimePickerDialogVisible: Boolean = false
 )
 
 @HiltViewModel
@@ -165,6 +167,22 @@ class AddEditEntregaViewModel @Inject constructor(
         _uiState.update { it.copy(isProductPickerDialogVisible = false) }
     }
 
+    fun showDatePickerDialog() {
+        _uiState.update { it.copy(isDatePickerDialogVisible = true) }
+    }
+
+    fun hideDatePickerDialog() {
+        _uiState.update { it.copy(isDatePickerDialogVisible = false) }
+    }
+
+    fun showTimePickerDialog() {
+        _uiState.update { it.copy(isTimePickerDialogVisible = true) }
+    }
+
+    fun hideTimePickerDialog() {
+        _uiState.update { it.copy(isTimePickerDialogVisible = false) }
+    }
+
     fun saveDelivery() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
@@ -199,8 +217,6 @@ class AddEditEntregaViewModel @Inject constructor(
 
 
             val calendar = Calendar.getInstance()
-            // In a real app, parse date and time from UI state
-            // val scheduledDate = ...
 
             val baseDelivery = Delivery(
                 id = "", // Will be set later
