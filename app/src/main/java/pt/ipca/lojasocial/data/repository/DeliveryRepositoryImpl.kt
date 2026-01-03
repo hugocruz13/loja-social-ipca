@@ -4,6 +4,8 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.mapper.DeliveryMapper
+import pt.ipca.lojasocial.data.mapper.toDomain
+import pt.ipca.lojasocial.data.remote.dto.BeneficiaryDto
 import pt.ipca.lojasocial.data.remote.dto.DeliveryDto
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
@@ -45,7 +47,23 @@ class DeliveryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getDeliveryById(id: String): Delivery? {
-        TODO("Not yet implemented")
+        return try{
+            val doc = collection.document(id).get().await()
+            if (doc.exists()) {
+                val deliveryDto = doc.toObject(DeliveryDto::class.java)
+                if (deliveryDto != null) {
+                    DeliveryMapper.toDomain(id, deliveryDto)
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
+        }
+        catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error getting delivery by ID: ${e.message}", e)
+            null
+        }
     }
 
     override suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery> {

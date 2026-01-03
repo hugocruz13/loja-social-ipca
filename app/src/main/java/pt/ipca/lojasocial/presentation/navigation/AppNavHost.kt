@@ -359,6 +359,7 @@ fun AppNavHost(
             val viewModel: AddEditEntregaViewModel = hiltViewModel()
 
             AddEditEntregaScreen(
+                entregaId = id, // Pass the extracted ID here
                 viewModel = viewModel,
                 isCollaborator = role == "colaborador",
                 onBackClick = { navController.popBackStack() },
