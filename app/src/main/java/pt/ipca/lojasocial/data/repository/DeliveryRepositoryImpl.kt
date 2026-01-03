@@ -4,8 +4,6 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.mapper.DeliveryMapper
-import pt.ipca.lojasocial.data.mapper.toDomain
-import pt.ipca.lojasocial.data.remote.dto.BeneficiaryDto
 import pt.ipca.lojasocial.data.remote.dto.DeliveryDto
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
@@ -47,7 +45,7 @@ class DeliveryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getDeliveryById(id: String): Delivery? {
-        return try{
+        return try {
             val doc = collection.document(id).get().await()
             if (doc.exists()) {
                 val deliveryDto = doc.toObject(DeliveryDto::class.java)
@@ -59,15 +57,31 @@ class DeliveryRepositoryImpl @Inject constructor(
             } else {
                 null
             }
-        }
-        catch (e: Exception) {
+        } catch (e: Exception) {
             Log.e("DeliveryRepositoryImpl", "Error getting delivery by ID: ${e.message}", e)
             null
         }
     }
 
     override suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery> {
-        TODO("Not yet implemented")
+        return try {
+            val snapshot = collection
+                .whereLessThanOrEqualTo("dataHoraPlaneada", timestampLimit)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                val deliveryDto = doc.toObject(DeliveryDto::class.java)
+                if (deliveryDto != null) {
+                    DeliveryMapper.toDomain(doc.id, deliveryDto)
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error getting upcoming deliveries: ${e.message}", e)
+            emptyList()
+        }
     }
 
     override suspend fun getDeliveriesByBeneficiary(beneficiaryId: String): List<Delivery> {
@@ -89,14 +103,54 @@ class DeliveryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteDelivery(id: String) {
-        TODO("Not yet implemented")
+        try {
+            collection.document(id).delete().await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error deleting delivery: ${e.message}", e)
+            throw e
+        }
     }
 
     override suspend fun updateDeliveryStatus(id: String, status: DeliveryStatus) {
-        TODO("Not yet implemented")
+        try {
+            val statusString = when (status) {
+                DeliveryStatus.SCHEDULED -> "AGENDADA"
+                DeliveryStatus.DELIVERED -> "ENTREGUE"
+                DeliveryStatus.CANCELLED -> "CANCELADA"
+                DeliveryStatus.REJECTED -> "REJEITADA"
+                DeliveryStatus.UNDER_ANALYSIS -> "EM_ANALISE"
+            }
+            collection.document(id).update("estado", statusString).await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error updating delivery status: ${e.message}", e)
+            throw e
+        }
     }
 
     override suspend fun updateDeliveryItems(id: String, items: Map<String, Int>) {
-        TODO("Not yet implemented")
+        try {
+            collection.document(id).update("produtosEntregues", items).await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error updating delivery items: ${e.message}", e)
+            throw e
+        }
+    }
+
+    override suspend fun updateDeliveryDate(id: String, timestamp: Long) {
+        try {
+            collection.document(id).update("dataHoraPlaneada", timestamp).await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error updating delivery date: ${e.message}", e)
+            throw e
+        }
+    }
+
+    override suspend fun updateDeliveryObservations(id: String, observations: String) {
+        try {
+            collection.document(id).update("observacoes", observations).await()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepositoryImpl", "Error updating delivery observations: ${e.message}", e)
+            throw e
+        }
     }
 }

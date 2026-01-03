@@ -144,23 +144,37 @@ fun AddEditEntregaScreen(
         ) {
             if (isCollaborator) {
                 Text("Beneficiário", fontWeight = FontWeight.Bold)
-                AppSearchBar(
-                    query = uiState.beneficiaryQuery,
-                    onQueryChange = viewModel::onBeneficiaryQueryChange,
-                    placeholder = "Procurar beneficiário"
-                )
-                if (uiState.searchedBeneficiaries.isNotEmpty()) {
-                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                        items(uiState.searchedBeneficiaries) { beneficiary ->
-                            Text(
-                                text = beneficiary.name,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.onBeneficiarySelected(beneficiary) }
-                                    .padding(16.dp)
-                            )
+                
+                if (entregaId == null) {
+                    // MODO CRIAÇÃO: Permite pesquisar
+                    AppSearchBar(
+                        query = uiState.beneficiaryQuery,
+                        onQueryChange = viewModel::onBeneficiaryQueryChange,
+                        placeholder = "Procurar beneficiário"
+                    )
+                    if (uiState.searchedBeneficiaries.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(uiState.searchedBeneficiaries) { beneficiary ->
+                                Text(
+                                    text = beneficiary.name,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.onBeneficiarySelected(beneficiary) }
+                                        .padding(16.dp)
+                                )
+                            }
                         }
                     }
+                } else {
+                    // MODO EDIÇÃO: Apenas leitura
+                    AppTextField(
+                        value = uiState.beneficiaryQuery, // O loadDelivery preenche isto com o nome
+                        onValueChange = {},
+                        label = "Nome do Beneficiário",
+                        placeholder = "", // Adicionado placeholder obrigatório
+                        readOnly = true,
+                        enabled = false // Visualmente desativado
+                    )
                 }
             }
 
@@ -172,11 +186,11 @@ fun AddEditEntregaScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box {
-                        AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy")
+                        AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy", readOnly = true)
                         Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showDatePickerDialog))
                     }
                     Box {
-                        AppTextField(label = "Hora", value = uiState.time, onValueChange = {}, placeholder = "HH:mm")
+                        AppTextField(label = "Hora", value = uiState.time, onValueChange = {}, placeholder = "HH:mm", readOnly = true)
                         Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showTimePickerDialog))
                     }
 
@@ -189,6 +203,7 @@ fun AddEditEntregaScreen(
                                     AppButton(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
+                                        enabled = entregaId == null, // Desativado na edição
                                         modifier = Modifier.weight(1f).height(40.dp),
                                         containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
@@ -199,6 +214,7 @@ fun AddEditEntregaScreen(
                                     AppButton(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
+                                        enabled = entregaId == null, // Desativado na edição
                                         modifier = Modifier.weight(1f).height(40.dp),
                                         containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
@@ -242,7 +258,7 @@ fun AddEditEntregaScreen(
 
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
-                onClick = viewModel::saveDelivery, // Changed
+                onClick = viewModel::saveDelivery,
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )

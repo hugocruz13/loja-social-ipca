@@ -215,20 +215,6 @@ class AddEditEntregaViewModel @Inject constructor(
                 return@launch
             }
 
-            Log.d(TAG, "Starting saveDelivery. Editing: $isEditing. Repetition: ${currentState.repetition}")
-
-            val baseDelivery = Delivery(
-                id = currentState.deliveryId ?: "",
-                beneficiaryId = currentState.selectedBeneficiary.id,
-                date = System.currentTimeMillis(),
-                scheduledDate = 0,
-                status = DeliveryStatus.SCHEDULED,
-                items = currentState.selectedProducts,
-                observations = currentState.observations,
-                createdBy = currentUser.id
-            )
-
-            val deliveriesToCreateOrUpdate = mutableListOf<Delivery>()
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val initialDate: Date = try {
                 sdf.parse("${currentState.date} ${currentState.time}") ?: run {
@@ -241,13 +227,44 @@ class AddEditEntregaViewModel @Inject constructor(
                 _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
                 return@launch
             }
-
             val calendar = Calendar.getInstance().apply { time = initialDate }
 
             if (isEditing) {
-                deliveriesToCreateOrUpdate.add(baseDelivery.copy(scheduledDate = calendar.timeInMillis))
+                // --- LÓGICA DE EDIÇÃO ---
+                val id = currentState.deliveryId!!
+                Log.d(TAG, "Editing delivery $id. Updating Date, Obs, Items. Ignoring Beneficiary.")
+                try {
+                    // Update Date
+                    deliveryRepository.updateDeliveryDate(id, calendar.timeInMillis)
+                    // Update Observations
+                    deliveryRepository.updateDeliveryObservations(id, currentState.observations)
+                    // Update Items
+                    deliveryRepository.updateDeliveryItems(id, currentState.selectedProducts)
+
+                    Log.i(TAG, "Successfully updated delivery $id")
+                    _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to update delivery $id", e)
+                    _uiState.update { it.copy(isSaving = false) }
+                }
+
             } else {
-                deliveriesToCreateOrUpdate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+                // --- LÓGICA DE CRIAÇÃO ---
+                Log.d(TAG, "Creating new delivery. Repetition: ${currentState.repetition}")
+
+                val baseDelivery = Delivery(
+                    id = "",
+                    beneficiaryId = currentState.selectedBeneficiary.id,
+                    date = System.currentTimeMillis(),
+                    scheduledDate = 0,
+                    status = DeliveryStatus.SCHEDULED,
+                    items = currentState.selectedProducts,
+                    observations = currentState.observations,
+                    createdBy = currentUser.id
+                )
+
+                val deliveriesToCreate = mutableListOf<Delivery>()
+                deliveriesToCreate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
 
                 if (currentState.repetition != "Não repetir") {
                     try {
@@ -270,7 +287,7 @@ class AddEditEntregaViewModel @Inject constructor(
                                     Log.d(TAG, "Next repetition date ${calendar.time} is after school year end. Stopping.")
                                     break
                                 }
-                                deliveriesToCreateOrUpdate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+                                deliveriesToCreate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
                             }
                         } else {
                             Log.w(TAG, "Cannot repeat delivery: No current school year found.")
@@ -279,22 +296,18 @@ class AddEditEntregaViewModel @Inject constructor(
                         Log.e(TAG, "Error during repetition logic", e)
                     }
                 }
-            }
 
-            try {
-                Log.d(TAG, "Attempting to save ${deliveriesToCreateOrUpdate.size} delivery/deliveries.")
-                deliveriesToCreateOrUpdate.forEach { delivery ->
-                    if (isEditing) {
-                        // deliveryRepository.updateDelivery(delivery) // TODO: Implement update
-                    } else {
+                try {
+                    Log.d(TAG, "Attempting to save ${deliveriesToCreate.size} delivery/deliveries.")
+                    deliveriesToCreate.forEach { delivery ->
                         deliveryRepository.addDelivery(delivery)
                     }
+                    _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                    Log.i(TAG, "Successfully saved ${deliveriesToCreate.size} deliveries.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to save deliveries to repository", e)
+                    _uiState.update { it.copy(isSaving = false) }
                 }
-                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
-                Log.i(TAG, "Successfully saved ${deliveriesToCreateOrUpdate.size} deliveries.")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to save deliveries to repository", e)
-                _uiState.update { it.copy(isSaving = false) }
             }
         }
     }
