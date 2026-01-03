@@ -35,8 +35,9 @@ fun ProductListScreen(
 
     var showAddProductSheet by remember { mutableStateOf(false) }
     var showAddStockDialog by remember { mutableStateOf(false) }
-    var selectedProduct by remember { mutableStateOf<pt.ipca.lojasocial.domain.models.Product?>(null) }
+    var showCreateProductDialog by remember { mutableStateOf(false) }
 
+    var selectedProduct by remember { mutableStateOf<pt.ipca.lojasocial.domain.models.Product?>(null) }
 
     val backgroundColor = Color(0xFFF8F9FA)
 
@@ -63,7 +64,6 @@ fun ProductListScreen(
         }
     }
 
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -83,7 +83,8 @@ fun ProductListScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
+                onItemSelected = { item ->
+                    onNavigate(item.route)
                 }
             )
         },
@@ -133,7 +134,11 @@ fun ProductListScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 16.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(stockUiList) { product ->
@@ -147,6 +152,7 @@ fun ProductListScreen(
             }
         }
 
+        // LISTA DE PRODUTOS
         if (showAddProductSheet) {
             AddProductDialog(
                 products = products,
@@ -155,10 +161,15 @@ fun ProductListScreen(
                     selectedProduct = product
                     showAddProductSheet = false
                     showAddStockDialog = true
+                },
+                onAddProductClick = {
+                    showAddProductSheet = false
+                    showCreateProductDialog = true
                 }
             )
         }
 
+        // ADICIONAR STOCK
         if (showAddStockDialog && selectedProduct != null) {
             AddStockDialog(
                 product = selectedProduct!!,
@@ -171,7 +182,22 @@ fun ProductListScreen(
             )
         }
 
-
+        // CRIAR PRODUTO
+        if (showCreateProductDialog) {
+            AddNewProductDialog(
+                onDismiss = { showCreateProductDialog = false },
+                onConfirm = { newProduct, imageUri ->
+                    productViewModel.addProduct(
+                        product = newProduct,
+                        imageUri = imageUri
+                    )
+                    productViewModel.loadProducts()
+                    showCreateProductDialog = false
+                    showAddProductSheet = false
+                }
+            )
+        }
     }
 }
+
 

@@ -18,9 +18,14 @@ class ProductRepositoryImpl @Inject constructor(
     private val collection = firestore.collection("bens")
 
     private fun generateProductId(name: String): String {
-        return "bem_" + name
+        val normalized = java.text.Normalizer
+            .normalize(name.trim(), java.text.Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
             .lowercase()
-            .trim()
+            .replace(Regex("[^a-z0-9 ]"), "")
+            .replace(Regex("\\s+"), "_")
+
+        return "bens_$normalized"
     }
 
 

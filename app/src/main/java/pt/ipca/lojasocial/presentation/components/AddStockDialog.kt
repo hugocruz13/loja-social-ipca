@@ -6,15 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,16 +67,16 @@ fun AddStockDialog(
 
                 Spacer(Modifier.height(20.dp))
 
-                OutlinedTextField(
+                AppTextField(
                     value = quantity,
                     onValueChange = { quantity = it },
-                    label = { Text("Quantidade") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
+                    label = "Quantidade",
+                    placeholder = "Insira a quantidade",
+                    keyboardType = KeyboardType.Number,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 )
-
-                Spacer(Modifier.height(12.dp))
 
                 AppDatePickerField(
                     label = "Validade",
@@ -93,22 +87,21 @@ fun AddStockDialog(
                     placeholder = "dd/mm/yyyy",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp)
+                        .padding(bottom = 16.dp)
                 )
 
-
-                OutlinedTextField(
+                AppTextField(
                     value = observations,
                     onValueChange = { observations = it },
-                    label = { Text("Observações") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    maxLines = 3
+                    label = "Observações",
+                    placeholder = "Observações (opcional)",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
                 )
 
-                Spacer(Modifier.height(24.dp))
-
-                Button(
+                AppButton(
+                    text = "Confirmar",
                     onClick = {
                         val stock = Stock(
                             id = UUID.randomUUID().toString(),
@@ -121,14 +114,12 @@ fun AddStockDialog(
                         )
                         onConfirm(stock)
                     },
+                    enabled = quantity.isNotBlank() && expiryDate.isNotBlank(),
+                    containerColor = Color(0XFF00713C),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    enabled = quantity.isNotBlank() && expiryDate != null
-                ) {
-                    Text("Confirmar")
-                }
+                        .height(56.dp)
+                )
             }
         }
     }

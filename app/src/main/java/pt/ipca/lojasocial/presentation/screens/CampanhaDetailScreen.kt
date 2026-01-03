@@ -29,13 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.models.Product
-import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.models.StockWithProductUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
-import java.util.UUID
-
 
 @Composable
 fun CampanhaDetailScreen(
@@ -48,8 +45,10 @@ fun CampanhaDetailScreen(
     productViewModel: ProductViewModel = hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
+
     var showAddProductSheet by remember { mutableStateOf(false) }
     var showAddStockDialog by remember { mutableStateOf(false) }
+    var showCreateProductDialog by remember { mutableStateOf(false) }
     var selectedProduct by remember { mutableStateOf<Product?>(null) }
 
     val accentGreen = Color(0XFF00713C)
@@ -78,10 +77,12 @@ fun CampanhaDetailScreen(
             }
     }
 
-
     Scaffold(
         topBar = {
-            AppTopBar(title = "Detalhe Campanha", onBackClick = onBackClick)
+            AppTopBar(
+                title = "Detalhe Campanha",
+                onBackClick = onBackClick
+            )
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -97,11 +98,13 @@ fun CampanhaDetailScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
+                onItemSelected = { item ->
+                    onNavigate(item.route)
                 }
             )
         }
     ) { paddingValues ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -109,6 +112,7 @@ fun CampanhaDetailScreen(
                 .verticalScroll(scrollState)
                 .background(Color(0xFFF8F9FA))
         ) {
+
             Card(
                 modifier = Modifier.padding(16.dp),
                 shape = RoundedCornerShape(24.dp),
@@ -128,7 +132,7 @@ fun CampanhaDetailScreen(
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(Modifier.height(8.dp))
                         AppStatusBadge(status = StatusType.ATIVA)
                     }
                 }
@@ -136,7 +140,7 @@ fun CampanhaDetailScreen(
 
             DetailSection(title = "Descrição") {
                 Text(
-                    text = "Esta campanha visa fornecer mantimentos essenciais a famílias vulneráveis, focando-se em bens alimentares e produtos de primeira necessidade.",
+                    text = "Esta campanha visa fornecer mantimentos essenciais a famílias vulneráveis.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     lineHeight = 20.sp
@@ -145,8 +149,8 @@ fun CampanhaDetailScreen(
 
             DetailSection(title = "Timeline") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TimelineItem(label = "Data Início", value = "01 Dez, 2025")
-                    TimelineItem(label = "Data Fim", value = "10 Jan, 2026")
+                    TimelineItem("Data Início", "01 Dez, 2025")
+                    TimelineItem("Data Fim", "10 Jan, 2026")
                 }
             }
 
@@ -154,9 +158,9 @@ fun CampanhaDetailScreen(
                 title = "Produtos Associados",
                 onAddClick = {
                     productViewModel.loadProducts()
-                    showAddProductSheet = true}
+                    showAddProductSheet = true
+                }
             ) {
-
                 when {
                     isLoading -> {
                         CircularProgressIndicator(
@@ -189,18 +193,19 @@ fun CampanhaDetailScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
             DetailSection(title = "Associações") {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AssociationItem(label = "Linked to:", value = "Annual Food Drive")
-                    AssociationItem(label = "Partner:", value = "Global Aid Foundation")
+                    AssociationItem("Linked to:", "Annual Food Drive")
+                    AssociationItem("Partner:", "Global Aid Foundation")
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
+        // 🔹 LISTA DE PRODUTOS
         if (showAddProductSheet) {
             AddProductDialog(
                 products = products,
@@ -209,10 +214,15 @@ fun CampanhaDetailScreen(
                     selectedProduct = product
                     showAddProductSheet = false
                     showAddStockDialog = true
+                },
+                onAddProductClick = {
+                    showAddProductSheet = false
+                    showCreateProductDialog = true
                 }
             )
         }
 
+        // 🔹 ADICIONAR STOCK
         if (showAddStockDialog && selectedProduct != null) {
             AddStockDialog(
                 product = selectedProduct!!,
@@ -225,8 +235,24 @@ fun CampanhaDetailScreen(
             )
         }
 
+
+        if (showCreateProductDialog) {
+            AddNewProductDialog(
+                onDismiss = { showCreateProductDialog = false },
+                onConfirm = { newProduct, imageUri ->
+                    productViewModel.addProduct(
+                        product = newProduct,
+                        imageUri = imageUri
+                    )
+                    productViewModel.loadProducts()
+                    showCreateProductDialog = false
+                    showAddProductSheet = false
+                }
+            )
+        }
     }
 }
+
 
 @Composable
 fun DetailSection(title: String, content: @Composable () -> Unit) {
