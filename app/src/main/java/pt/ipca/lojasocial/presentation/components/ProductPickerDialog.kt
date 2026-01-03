@@ -1,95 +1,164 @@
 package pt.ipca.lojasocial.presentation.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import pt.ipca.lojasocial.domain.models.Product
 
 @Composable
 fun ProductPickerDialog(
     products: List<Product>,
     selectedProducts: Map<String, Int>,
+    stockLimits: Map<String, Int>, // New parameter
     onProductQuantityChange: (productId: String, quantity: Int) -> Unit,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
 ) {
-    // A temporary state to hold changes until the user clicks "Confirm"
     var tempSelectedProducts by remember { mutableStateOf(selectedProducts) }
+    val accentGreen = Color(0XFF00713C)
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Selecionar Produtos") },
-        text = {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(products) { index, product ->
-                    val quantity = tempSelectedProducts[product.id] ?: 0
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA))
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Selecionar Produtos",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2B2B2B)
+                )
 
-                    // Create a DeliveryProduct on the fly to pass to the QuantitySelectorItem
-                    val deliveryProduct = DeliveryProduct(
-                        id = product.id,
-                        name = product.name,
-                        quantity = quantity
-                    )
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(products) { product ->
+                        val quantity = tempSelectedProducts[product.id] ?: 0
+                        val stockLimit = stockLimits[product.id] ?: 0
 
-                    QuantitySelectorItem(
-                        product = deliveryProduct,
-                        onQuantityChange = { newQuantity ->
-                            val updatedMap = tempSelectedProducts.toMutableMap()
-                            if (newQuantity > 0) {
-                                updatedMap[product.id] = newQuantity
-                            } else {
-                                updatedMap.remove(product.id)
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                AsyncImage(
+                                    model = product.photoUrl,
+                                    contentDescription = product.name,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(64.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(product.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                    Text(product.type.name, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            if (quantity > 0) {
+                                                val updatedMap = tempSelectedProducts.toMutableMap()
+                                                updatedMap[product.id] = quantity - 1
+                                                if (updatedMap[product.id] == 0) {
+                                                    updatedMap.remove(product.id)
+                                                }
+                                                tempSelectedProducts = updatedMap
+                                            }
+                                        },
+                                        enabled = quantity > 0
+                                    ) {
+                                        Icon(Icons.Default.Remove, contentDescription = "Remover")
+                                    }
+                                    Text(quantity.toString(), modifier = Modifier.padding(horizontal = 4.dp))
+                                    IconButton(
+                                        onClick = {
+                                            val updatedMap = tempSelectedProducts.toMutableMap()
+                                            updatedMap[product.id] = quantity + 1
+                                            tempSelectedProducts = updatedMap
+                                        },
+                                        enabled = quantity < stockLimit // Disable if limit is reached
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = "Adicionar",
+                                            tint = if (quantity < stockLimit) accentGreen else Color.Gray
+                                        )
+                                    }
+                                }
                             }
-                            tempSelectedProducts = updatedMap
-                        },
-                        // The remove button inside the selector will just set the quantity to 0
-                        onRemove = {
-                            val updatedMap = tempSelectedProducts.toMutableMap()
-                            updatedMap.remove(product.id)
-                            tempSelectedProducts = updatedMap
-                        },
-                        showDivider = index < products.lastIndex,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                // Apply all changes at once on confirm
-                tempSelectedProducts.forEach { (productId, quantity) ->
-                    onProductQuantityChange(productId, quantity)
-                }
-                // Also remove products that were deselected
-                selectedProducts.keys.forEach { productId ->
-                    if (!tempSelectedProducts.containsKey(productId)) {
-                        onProductQuantityChange(productId, 0)
+                            // Warning message
+                            if (quantity >= stockLimit) {
+                                Text(
+                                    "Máximo de ${stockLimit} atingido",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
+                                )
+                            }
+                        }
                     }
                 }
-                onConfirm()
-            }) {
-                Text("Confirmar")
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismiss) {
-                Text("Cancelar")
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Button(
+                        onClick = {
+                            tempSelectedProducts.forEach { (productId, quantity) ->
+                                onProductQuantityChange(productId, quantity)
+                            }
+                            selectedProducts.keys.forEach { productId ->
+                                if (!tempSelectedProducts.containsKey(productId)) {
+                                    onProductQuantityChange(productId, 0)
+                                }
+                            }
+                            onConfirm()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = accentGreen)
+                    ) {
+                        Text("Confirmar")
+                    }
+                }
             }
         }
-    )
+    }
 }

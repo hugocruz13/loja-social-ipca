@@ -43,6 +43,13 @@ fun AddEditEntregaScreen(
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
 
+    // --- Navigation Effect ---
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            onSaveClick()
+        }
+    }
+
     // --- Date Picker State ---
     val datePickerState = rememberDatePickerState()
     if (uiState.isDatePickerDialogVisible) {
@@ -72,7 +79,6 @@ fun AddEditEntregaScreen(
     // --- Time Picker State ---
     val timePickerState = rememberTimePickerState()
     if (uiState.isTimePickerDialogVisible) {
-        // Simple AlertDialog wrapper for the TimePicker
         AlertDialog(
             onDismissRequest = viewModel::hideTimePickerDialog,
             title = { Text("Selecionar Hora") },
@@ -106,6 +112,7 @@ fun AddEditEntregaScreen(
         ProductPickerDialog(
             products = uiState.availableProducts,
             selectedProducts = uiState.selectedProducts,
+            stockLimits = uiState.productStockLimits, // Pass the limits here
             onProductQuantityChange = viewModel::onProductQuantityChange,
             onDismiss = viewModel::hideProductPickerDialog,
             onConfirm = viewModel::hideProductPickerDialog
@@ -164,7 +171,6 @@ fun AddEditEntregaScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // --- Clickable Text Fields ---
                     Box {
                         AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy")
                         Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showDatePickerDialog))
@@ -176,7 +182,7 @@ fun AddEditEntregaScreen(
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes = listOf("Não repetir", "Semanalmente", "Mensalmente", "Semestral")
+                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
@@ -236,10 +242,7 @@ fun AddEditEntregaScreen(
 
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
-                onClick = {
-                    viewModel.saveDelivery()
-                    onSaveClick()
-                },
+                onClick = viewModel::saveDelivery, // Changed
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )

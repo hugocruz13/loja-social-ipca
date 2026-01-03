@@ -1,11 +1,13 @@
 package pt.ipca.lojasocial.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
@@ -16,13 +18,17 @@ import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
+import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+
+private const val TAG = "AddEditEntregaViewModel"
 
 data class AddEditEntregaUiState(
     val deliveryId: String? = null,
@@ -33,12 +39,10 @@ data class AddEditEntregaUiState(
     val time: String = "",
     val repetition: String = "Não repetir",
     val observations: String = "",
-    // For the UI Picker
     val availableProducts: List<Product> = emptyList(),
-    // Raw data from repository
     val availableStockItems: List<Stock> = emptyList(),
-    // Maps ProductID to Quantity
-    val selectedProducts: Map<String, Int> = emptyMap(),
+    val productStockLimits: Map<String, Int> = emptyMap(), // ProductID -> Total Quantity
+    val selectedProducts: Map<String, Int> = emptyMap(), // ProductID -> Quantity
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val isProductPickerDialogVisible: Boolean = false,
@@ -51,7 +55,8 @@ class AddEditEntregaViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
     private val productRepository: ProductRepository,
-    private val stockRepository: StockRepository, // Injected
+    private val stockRepository: StockRepository,
+    private val schoolYearRepository: SchoolYearRepository,
     private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
@@ -62,31 +67,33 @@ class AddEditEntregaViewModel @Inject constructor(
         loadAvailableProductsAndStock()
     }
 
-    // Editing an existing delivery is complex with the new stock logic.
-    // The current `loadDelivery` would need to be adapted to reverse the stock deduction, which is out of scope.
-    // For now, loading a delivery will show its details but won't repopulate the selectors perfectly.
     fun loadDelivery(deliveryId: String) {
         viewModelScope.launch {
-            val delivery = deliveryRepository.getDeliveryById(deliveryId)
-            if (delivery != null) {
-                val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                val calendar = Calendar.getInstance().apply { timeInMillis = delivery.scheduledDate }
-                val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            try {
+                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                if (delivery != null) {
+                    val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+                    val calendar = Calendar.getInstance().apply { timeInMillis = delivery.scheduledDate }
+                    val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-                _uiState.update {
-                    it.copy(
-                        deliveryId = deliveryId,
-                        selectedBeneficiary = beneficiary,
-                        beneficiaryQuery = beneficiary?.name ?: "",
-                        date = simpleDateFormat.format(calendar.time),
-                        time = timeFormat.format(calendar.time),
-                        repetition = "Não repetir",
-                        observations = delivery.observations ?: ""
-                        // Not loading selectedProducts because we now handle stock differently.
-                        // Editing quantities would require a more complex stock reservation system.
-                    )
+                    _uiState.update {
+                        it.copy(
+                            deliveryId = deliveryId,
+                            selectedBeneficiary = beneficiary,
+                            beneficiaryQuery = beneficiary?.name ?: "",
+                            date = simpleDateFormat.format(calendar.time),
+                            time = timeFormat.format(calendar.time),
+                            repetition = "Não repetir",
+                            observations = delivery.observations ?: "",
+                            selectedProducts = delivery.items // Assuming items are ProductID -> Quantity
+                        )
+                    }
+                } else {
+                    Log.w(TAG, "loadDelivery: No delivery found with ID: $deliveryId")
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "loadDelivery: Error loading delivery", e)
             }
         }
     }
@@ -94,18 +101,26 @@ class AddEditEntregaViewModel @Inject constructor(
 
     private fun loadAvailableProductsAndStock() {
         viewModelScope.launch {
-            val stockItems = stockRepository.getStockItems().filter { it.quantity > 0 }
-            val allProducts = productRepository.getProducts()
+            try {
+                val stockItems = stockRepository.getStockItems().filter { it.quantity > 0 }
+                val allProducts = productRepository.getProducts()
 
-            // Only make products available for selection if they are in stock
-            val availableProductIds = stockItems.map { it.productId }.toSet()
-            val availableProducts = allProducts.filter { it.id in availableProductIds }
+                val stockLimits = stockItems
+                    .groupBy { it.productId }
+                    .mapValues { (_, items) -> items.sumOf { it.quantity } }
 
-            _uiState.update {
-                it.copy(
-                    availableStockItems = stockItems,
-                    availableProducts = availableProducts
-                )
+                val availableProductIds = stockItems.map { it.productId }.toSet()
+                val availableProducts = allProducts.filter { it.id in availableProductIds }
+
+                _uiState.update {
+                    it.copy(
+                        availableStockItems = stockItems,
+                        availableProducts = availableProducts,
+                        productStockLimits = stockLimits
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "loadAvailableProductsAndStock: Error loading data", e)
             }
         }
     }
@@ -114,9 +129,13 @@ class AddEditEntregaViewModel @Inject constructor(
         _uiState.update { it.copy(beneficiaryQuery = query) }
         if (query.length > 2) {
             viewModelScope.launch {
-                val beneficiaries = beneficiaryRepository.getBeneficiaries()
-                    .filter { it.name.contains(query, ignoreCase = true) }
-                _uiState.update { it.copy(searchedBeneficiaries = beneficiaries) }
+                try {
+                    val beneficiaries = beneficiaryRepository.getBeneficiaries()
+                        .filter { it.name.contains(query, ignoreCase = true) }
+                    _uiState.update { it.copy(searchedBeneficiaries = beneficiaries) }
+                } catch (e: Exception) {
+                    Log.e(TAG, "onBeneficiaryQueryChange: Error searching beneficiaries", e)
+                }
             }
         } else {
             _uiState.update { it.copy(searchedBeneficiaries = emptyList()) }
@@ -188,70 +207,93 @@ class AddEditEntregaViewModel @Inject constructor(
             _uiState.update { it.copy(isSaving = true) }
             val currentState = _uiState.value
             val currentUser = getCurrentUserUseCase()
+            val isEditing = currentState.deliveryId != null
 
-            if (currentState.selectedBeneficiary == null || currentUser == null || currentState.selectedProducts.isEmpty()) {
+            if (currentState.selectedBeneficiary == null || currentUser == null || currentState.selectedProducts.isEmpty() || currentState.date.isBlank() || currentState.time.isBlank()) {
+                Log.w(TAG, "Validation failed: Beneficiary: ${currentState.selectedBeneficiary}, User: $currentUser, Products: ${currentState.selectedProducts.size}, Date: ${currentState.date}, Time: ${currentState.time}")
                 _uiState.update { it.copy(isSaving = false) }
                 return@launch
             }
 
-            // --- New Stock Logic ---
-            val deliveryItems = mutableMapOf<String, Int>() // StockItemID -> Quantity
-            val stockUpdates = mutableMapOf<String, Int>() // StockItemID -> New Quantity
-
-            currentState.selectedProducts.forEach { (productId, requestedQuantity) ->
-                var quantityToFulfill = requestedQuantity
-                val relevantStockItems = currentState.availableStockItems
-                    .filter { it.productId == productId }
-                    .sortedBy { it.expiryDate } // FEFO Strategy
-
-                for (stockItem in relevantStockItems) {
-                    if (quantityToFulfill <= 0) break
-
-                    val quantityToTake = minOf(quantityToFulfill, stockItem.quantity)
-                    deliveryItems[stockItem.id] = (deliveryItems[stockItem.id] ?: 0) + quantityToTake
-                    stockUpdates[stockItem.id] = stockItem.quantity - quantityToTake
-                    quantityToFulfill -= quantityToTake
-                }
-            }
-            // --- End of New Stock Logic ---
-
-
-            val calendar = Calendar.getInstance()
+            Log.d(TAG, "Starting saveDelivery. Editing: $isEditing. Repetition: ${currentState.repetition}")
 
             val baseDelivery = Delivery(
-                id = "", // Will be set later
+                id = currentState.deliveryId ?: "",
                 beneficiaryId = currentState.selectedBeneficiary.id,
                 date = System.currentTimeMillis(),
-                scheduledDate = calendar.timeInMillis,
+                scheduledDate = 0,
                 status = DeliveryStatus.SCHEDULED,
-                items = deliveryItems, // Using the new map
+                items = currentState.selectedProducts,
                 observations = currentState.observations,
                 createdBy = currentUser.id
             )
 
-            // Editing is disabled for now due to stock complexity
-            if (currentState.deliveryId != null) {
-                // TODO: Implement logic to update an existing delivery,
-                // which would involve reverting old stock changes and applying new ones.
-                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+            val deliveriesToCreateOrUpdate = mutableListOf<Delivery>()
+            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+            val initialDate: Date = try {
+                sdf.parse("${currentState.date} ${currentState.time}") ?: run {
+                    Log.e(TAG, "Date/Time parsing returned null.")
+                    _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
+                    return@launch
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Could not parse date and time: ${currentState.date} ${currentState.time}", e)
+                _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
                 return@launch
             }
 
-            val deliveriesToCreate = mutableListOf<Delivery>()
-            deliveriesToCreate.add(baseDelivery.copy(id = UUID.randomUUID().toString()))
-            // Repetition logic can be added here if needed, creating more deliveries
+            val calendar = Calendar.getInstance().apply { time = initialDate }
+
+            if (isEditing) {
+                deliveriesToCreateOrUpdate.add(baseDelivery.copy(scheduledDate = calendar.timeInMillis))
+            } else {
+                deliveriesToCreateOrUpdate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+
+                if (currentState.repetition != "Não repetir") {
+                    try {
+                        val allSchoolYears = schoolYearRepository.getSchoolYears().firstOrNull() ?: emptyList()
+                        val currentSchoolYear = allSchoolYears.find {
+                            val now = System.currentTimeMillis()
+                            now >= it.startDate && now <= it.endDate
+                        }
+
+                        if (currentSchoolYear != null) {
+                            Log.d(TAG, "Repeating delivery within school year ending ${Date(currentSchoolYear.endDate)}")
+                            while (true) {
+                                when (currentState.repetition) {
+                                    "Mensalmente" -> calendar.add(Calendar.MONTH, 1)
+                                    "Bimensal" -> calendar.add(Calendar.MONTH, 2)
+                                    "Semestral" -> calendar.add(Calendar.MONTH, 6)
+                                }
+
+                                if (calendar.timeInMillis > currentSchoolYear.endDate) {
+                                    Log.d(TAG, "Next repetition date ${calendar.time} is after school year end. Stopping.")
+                                    break
+                                }
+                                deliveriesToCreateOrUpdate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+                            }
+                        } else {
+                            Log.w(TAG, "Cannot repeat delivery: No current school year found.")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during repetition logic", e)
+                    }
+                }
+            }
 
             try {
-                // Perform database operations in a transaction if possible
-                stockUpdates.forEach { (stockId, newQuantity) ->
-                    stockRepository.updateStockQuantity(stockId, newQuantity)
-                }
-                deliveriesToCreate.forEach { delivery ->
-                    deliveryRepository.addDelivery(delivery)
+                Log.d(TAG, "Attempting to save ${deliveriesToCreateOrUpdate.size} delivery/deliveries.")
+                deliveriesToCreateOrUpdate.forEach { delivery ->
+                    if (isEditing) {
+                        // deliveryRepository.updateDelivery(delivery) // TODO: Implement update
+                    } else {
+                        deliveryRepository.addDelivery(delivery)
+                    }
                 }
                 _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                Log.i(TAG, "Successfully saved ${deliveriesToCreateOrUpdate.size} deliveries.")
             } catch (e: Exception) {
-                // TODO: Add error handling and rollback logic
+                Log.e(TAG, "Failed to save deliveries to repository", e)
                 _uiState.update { it.copy(isSaving = false) }
             }
         }

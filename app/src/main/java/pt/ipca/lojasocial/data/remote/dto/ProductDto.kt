@@ -10,6 +10,7 @@ data class ProductDto(
     @get:PropertyName("nome") @set:PropertyName("nome")
     var name: String = "",
     val type: String = "", // O enum é salvo como String
-    val photoUrl: String? = null,
+    @get:PropertyName("fotoUrl") @set:PropertyName("fotoUrl")
+    var photoUrl: String? = null,
     val observations: String? = null
 )
