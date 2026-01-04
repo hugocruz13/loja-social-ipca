@@ -8,7 +8,6 @@ class AddStockItemUseCase @Inject constructor(
     private val repository: StockRepository
 ) {
     suspend operator fun invoke(item: Stock) {
-        // Validação básica (Quantidade positiva)
         if (item.quantity <= 0) throw IllegalArgumentException("Quantidade deve ser maior que 0")
 
         repository.addStockItem(item)

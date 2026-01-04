@@ -17,28 +17,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
-import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
-import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
-import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
-import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
-import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
-import pt.ipca.lojasocial.presentation.screens.DashboardScreen
-import pt.ipca.lojasocial.presentation.screens.EntregasScreen
-import pt.ipca.lojasocial.presentation.screens.LoginScreen
-import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
-import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
-import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
-import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
-import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
-import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
 import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
-import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 sealed class AppScreen(val route: String) {
     object Dashboard : AppScreen("dashboard")
@@ -53,13 +37,13 @@ sealed class AppScreen(val route: String) {
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
     object RequerimentosList : AppScreen("requerimentoslist")
     object RequerimentoDetails : AppScreen("requerimentodetails?id={id}")
-
     object RequerimentoStatus : AppScreen("request_status")
     object CampanhasList : AppScreen("campanhaslist")
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
     object CampanhaDetail : AppScreen("campanha_detail/{campanhaId}")
     object EntregasList : AppScreen("entregaslist")
     object ProductDetail : AppScreen("product_detail/{productId}")
+    object StockEditQuantity : AppScreen("stock_edit_quantity/{stockId}")
     object ProductAddEdit : AppScreen("product_add_edit?id={id}")
     object ProductType : AppScreen("add_product_type")
     object ProductList : AppScreen("products_list")
@@ -95,7 +79,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                viewModel = viewModel, // Passa o AuthViewModel partilhado
+                viewModel = viewModel,
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
 
                 onLoginSuccess = {
@@ -144,6 +128,7 @@ fun AppNavHost(
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
                         "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
+                        "stock" ->  navController.navigate(AppScreen.ProductList.route)
                         "profile" -> navController.navigate(AppScreen.Profile.route)
                         "notification" -> navController.navigate(AppScreen.Notification.route)
                         "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
@@ -249,7 +234,7 @@ fun AppNavHost(
         composable(AppScreen.Profile.route) {
             val authState by viewModel.state.collectAsState()
             // Injetar o ViewModel correto para o Perfil
-            val beneficiariesViewModel: pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel = hiltViewModel()
+            val beneficiariesViewModel: pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel = hiltViewModel()
 
             // Converter Role
             val userRoleEnum = if (authState.userRole == "colaborador") {
@@ -313,10 +298,10 @@ fun AppNavHost(
             )
         ) { backStackEntry ->
             val idString = backStackEntry.arguments?.getString("id")
-            val id = idString?.toIntOrNull()
+            val id = idString?.toIntOrNull() // Nota: Se AnoLetivoId for String, retirar toIntOrNull
 
             AddEditAnoLetivoScreen(
-                anoLetivoId = id as String?,
+                anoLetivoId = idString, // Assumindo que AddEditAnoLetivoScreen aceita String?
                 onBackClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
@@ -415,7 +400,54 @@ fun AppNavHost(
                 userRole = userRole,
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
+                onStatusUpdate = { entregue -> navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.ProductList.route) {
+            ProductListScreen(
+                onBackClick = { navController.popBackStack() },
+                onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
+                navItems = globalNavItems,
+                onNavigate = onNavigate,
+                onDownloadReportClick = { /* Implementar download */ }
+            )
+        }
+
+        composable(
+            route = AppScreen.ProductDetail.route,
+            arguments = listOf(
+                navArgument("productId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId") ?: ""
+
+            ProductDetailScreen(
+                productId = productId,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { stockId -> navController.navigate("stock_edit_quantity/$stockId")},
                 //onStatusUpdate = { /* Implement status update callback if needed at navigation level */ },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(
+            route = AppScreen.StockEditQuantity.route,
+            arguments = listOf(
+                navArgument("stockId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val stockId = backStackEntry.arguments!!.getString("stockId")!!
+
+            AddEditProductScreen(
+                stockId = stockId,
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -442,5 +474,6 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
+
     }
 }

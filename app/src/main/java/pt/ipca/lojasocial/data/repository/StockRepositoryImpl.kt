@@ -46,12 +46,34 @@ class StockRepositoryImpl @Inject constructor(
 
     override suspend fun addStockItem(item: Stock) {
         try {
-            val stockDto = item.toDto()
-            collection.document(item.id).set(stockDto).await()
+            val snapshot = collection
+                .whereEqualTo("productId", item.productId)
+                .whereEqualTo("expiryDate", item.expiryDate)
+                .limit(1)
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
+                val doc = snapshot.documents.first()
+                val currentQuantity = doc.getLong("quantity") ?: 0
+
+                collection
+                    .document(doc.id)
+                    .update("quantity", currentQuantity + item.quantity)
+                    .await()
+            } else {
+                val stockDto = item.toDto()
+                collection
+                    .document(item.id)
+                    .set(stockDto)
+                    .await()
+            }
+
         } catch (e: Exception) {
             throw e
         }
     }
+
 
     override suspend fun updateStockQuantity(id: String, newQuantity: Int) {
         try {
