@@ -24,7 +24,9 @@ class LogRepositoryImpl @Inject constructor(
         val listener = collection
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
-                if (error != null) { close(error); return@addSnapshotListener }
+                if (error != null) {
+                    close(error); return@addSnapshotListener
+                }
 
                 val list = snapshot?.documents?.mapNotNull { doc ->
                     doc.toObject<AppLogDto>()?.toDomain()
@@ -39,7 +41,6 @@ class LogRepositoryImpl @Inject constructor(
         val dto = log.toDto()
         collection.add(dto).await()
     }
-
 
 
 }

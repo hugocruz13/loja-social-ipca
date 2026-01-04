@@ -23,9 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.models.Stock
-import java.util.UUID
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.UUID
 
 @Composable
 fun AddStockDialog(

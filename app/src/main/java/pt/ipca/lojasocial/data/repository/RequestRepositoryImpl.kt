@@ -1,7 +1,6 @@
 package pt.ipca.lojasocial.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
@@ -47,7 +46,10 @@ class RequestRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getRequestsByYear(schoolYearId: String, status: StatusType?): List<Request> {
+    override suspend fun getRequestsByYear(
+        schoolYearId: String,
+        status: StatusType?
+    ): List<Request> {
         return try {
             var query = collection.whereEqualTo("idAnoLetivo", schoolYearId)
 
@@ -72,12 +74,18 @@ class RequestRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String) {
+    override suspend fun updateStatusAndObservation(
+        id: String,
+        status: StatusType,
+        observation: String
+    ) {
         collection.document(id)
-            .update(mapOf(
-                "estado" to status.name,
-                "observacoes" to observation
-            ))
+            .update(
+                mapOf(
+                    "estado" to status.name,
+                    "observacoes" to observation
+                )
+            )
             .await()
     }
 

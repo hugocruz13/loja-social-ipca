@@ -76,11 +76,11 @@ class AddEditEntregaViewModel @Inject constructor(
                 if (currentUser?.role == UserRole.BENEFICIARY) {
                     val beneficiary = beneficiaryRepository.getBeneficiaryById(currentUser.id)
                     if (beneficiary != null) {
-                        _uiState.update { 
+                        _uiState.update {
                             it.copy(
                                 selectedBeneficiary = beneficiary,
                                 beneficiaryQuery = beneficiary.name // Optional: display name
-                            ) 
+                            )
                         }
                         Log.d(TAG, "Auto-selected beneficiary: ${beneficiary.name}")
                     }
@@ -96,8 +96,10 @@ class AddEditEntregaViewModel @Inject constructor(
             try {
                 val delivery = deliveryRepository.getDeliveryById(deliveryId)
                 if (delivery != null) {
-                    val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                    val calendar = Calendar.getInstance().apply { timeInMillis = delivery.scheduledDate }
+                    val beneficiary =
+                        beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+                    val calendar =
+                        Calendar.getInstance().apply { timeInMillis = delivery.scheduledDate }
                     val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
@@ -234,7 +236,10 @@ class AddEditEntregaViewModel @Inject constructor(
             val isEditing = currentState.deliveryId != null
 
             if (currentState.selectedBeneficiary == null || currentUser == null || currentState.selectedProducts.isEmpty() || currentState.date.isBlank() || currentState.time.isBlank()) {
-                Log.w(TAG, "Validation failed: Beneficiary: ${currentState.selectedBeneficiary}, User: $currentUser, Products: ${currentState.selectedProducts.size}, Date: ${currentState.date}, Time: ${currentState.time}")
+                Log.w(
+                    TAG,
+                    "Validation failed: Beneficiary: ${currentState.selectedBeneficiary}, User: $currentUser, Products: ${currentState.selectedProducts.size}, Date: ${currentState.date}, Time: ${currentState.time}"
+                )
                 _uiState.update { it.copy(isSaving = false) }
                 return@launch
             }
@@ -247,7 +252,11 @@ class AddEditEntregaViewModel @Inject constructor(
                     return@launch
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Could not parse date and time: ${currentState.date} ${currentState.time}", e)
+                Log.e(
+                    TAG,
+                    "Could not parse date and time: ${currentState.date} ${currentState.time}",
+                    e
+                )
                 _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
                 return@launch
             }
@@ -294,18 +303,29 @@ class AddEditEntregaViewModel @Inject constructor(
                 )
 
                 val deliveriesToCreate = mutableListOf<Delivery>()
-                deliveriesToCreate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+                deliveriesToCreate.add(
+                    baseDelivery.copy(
+                        id = UUID.randomUUID().toString(),
+                        scheduledDate = calendar.timeInMillis
+                    )
+                )
 
                 if (currentState.repetition != "Não repetir") {
                     try {
-                        val allSchoolYears = schoolYearRepository.getSchoolYears().firstOrNull() ?: emptyList()
+                        val allSchoolYears =
+                            schoolYearRepository.getSchoolYears().firstOrNull() ?: emptyList()
                         val currentSchoolYear = allSchoolYears.find {
                             val now = System.currentTimeMillis()
                             now >= it.startDate && now <= it.endDate
                         }
 
                         if (currentSchoolYear != null) {
-                            Log.d(TAG, "Repeating delivery within school year ending ${Date(currentSchoolYear.endDate)}")
+                            Log.d(
+                                TAG,
+                                "Repeating delivery within school year ending ${
+                                    Date(currentSchoolYear.endDate)
+                                }"
+                            )
                             while (true) {
                                 when (currentState.repetition) {
                                     "Mensalmente" -> calendar.add(Calendar.MONTH, 1)
@@ -314,10 +334,18 @@ class AddEditEntregaViewModel @Inject constructor(
                                 }
 
                                 if (calendar.timeInMillis > currentSchoolYear.endDate) {
-                                    Log.d(TAG, "Next repetition date ${calendar.time} is after school year end. Stopping.")
+                                    Log.d(
+                                        TAG,
+                                        "Next repetition date ${calendar.time} is after school year end. Stopping."
+                                    )
                                     break
                                 }
-                                deliveriesToCreate.add(baseDelivery.copy(id = UUID.randomUUID().toString(), scheduledDate = calendar.timeInMillis))
+                                deliveriesToCreate.add(
+                                    baseDelivery.copy(
+                                        id = UUID.randomUUID().toString(),
+                                        scheduledDate = calendar.timeInMillis
+                                    )
+                                )
                             }
                         } else {
                             Log.w(TAG, "Cannot repeat delivery: No current school year found.")

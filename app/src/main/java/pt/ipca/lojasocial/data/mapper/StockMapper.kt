@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.data.mapper
 
-import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.data.remote.dto.StockDto
+import pt.ipca.lojasocial.domain.models.Stock
 
 fun StockDto.toDomain(id: String): Stock {
     return Stock(

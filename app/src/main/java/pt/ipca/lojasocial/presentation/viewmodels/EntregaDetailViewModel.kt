@@ -63,7 +63,7 @@ class EntregaDetailViewModel @Inject constructor(
                 }
 
                 val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                
+
                 val productDetails = delivery.items.map { (productId, quantity) ->
                     val product = productRepository.getProductById(productId)
                     DeliveryProductDetailUi(
@@ -77,9 +77,9 @@ class EntregaDetailViewModel @Inject constructor(
                 val dateFormat = SimpleDateFormat("dd 'de' MMMM, yyyy", Locale("pt", "PT"))
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-                val uiStatus = when(delivery.status) {
+                val uiStatus = when (delivery.status) {
                     DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
-                    DeliveryStatus.SCHEDULED -> StatusType.PENDENTE 
+                    DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
                     DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
                     DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
                     DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE
@@ -112,7 +112,7 @@ class EntregaDetailViewModel @Inject constructor(
                 } else {
                     // Cancelar Entrega
                     deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.CANCELLED)
-                    
+
                     // Notificar Cancelamento
                     val delivery = deliveryRepository.getDeliveryById(deliveryId)
                     if (delivery != null) {

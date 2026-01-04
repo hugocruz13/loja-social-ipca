@@ -8,7 +8,7 @@ import pt.ipca.lojasocial.domain.models.UserRole
  ** Uma classe de instância uníca (singleton) que realiza o mapeamento entre o UserDto
  * definido na camada de dados para o User definido na camada de domínio
  */
-object UserMapper{
+object UserMapper {
     fun toDomain(dto: UserDto): User {
         return User(
             id = dto.id ?: throw IllegalArgumentException("User ID não pode ser null"),
@@ -18,8 +18,10 @@ object UserMapper{
                 "STAFF" -> UserRole.STAFF
                 "BENEFICIARY" -> UserRole.BENEFICIARY
                 else -> throw IllegalArgumentException("Role inválido ou não definido")
-            })
+            }
+        )
     }
+
     fun toDto(user: User): UserDto {
         return UserDto(
             id = user.id,

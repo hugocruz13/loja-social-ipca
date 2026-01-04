@@ -10,8 +10,7 @@ import pt.ipca.lojasocial.domain.models.ProductType
  * @param documentId O ID do documento (que vem separado do corpo do JSON no Firestore).
  * @return [Product] pronto para ser usado na UI/Domínio.
  */
-fun ProductDto.toDomain(documentId: String): Product
-{
+fun ProductDto.toDomain(documentId: String): Product {
     return Product(
         id = documentId,
         name = this.name,
@@ -30,8 +29,7 @@ fun ProductDto.toDomain(documentId: String): Product
  *
  * @return [ProductDto] com os dados formatados para persistência.
  */
-fun Product.toDto(): ProductDto
-{
+fun Product.toDto(): ProductDto {
     return ProductDto(
         name = this.name,
         type = this.type.name,

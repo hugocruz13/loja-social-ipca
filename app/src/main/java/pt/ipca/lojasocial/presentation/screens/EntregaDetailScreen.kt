@@ -1,7 +1,17 @@
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,7 +21,14 @@ import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,7 +45,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppStatusBadge
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.components.SimpleProductListItem
 import pt.ipca.lojasocial.presentation.navigation.AppScreen
 import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
 
@@ -58,16 +80,26 @@ fun EntregaDetailScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = AppScreen.EntregasList.route,
-                onItemSelected = { item -> onNavigate(item.route)}
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { padding ->
         if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator(color = accentGreen)
             }
         } else if (uiState.error != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
                 Text("Erro: ${uiState.error}", color = Color.Red)
             }
         } else {
@@ -88,22 +120,43 @@ fun EntregaDetailScreen(
 
                     DetailCardWrapper(title = "Beneficiário") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.LightGray))
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.LightGray)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(uiState.beneficiaryName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text(uiState.beneficiaryIdDisplay, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text(
+                                    uiState.beneficiaryName,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    uiState.beneficiaryIdDisplay,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
                             }
                         }
                     }
 
                     DetailCardWrapper(title = "Data") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(uiState.date, fontWeight = FontWeight.Bold)
-                                Text(uiState.time, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text(
+                                    uiState.time,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
                             }
                         }
                     }
@@ -132,7 +185,11 @@ fun EntregaDetailScreen(
                                     Text("x${item.quantity}", fontWeight = FontWeight.Bold)
                                 }
                                 if (index < uiState.items.lastIndex) {
-                                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    Divider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = 0.5f
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -141,7 +198,10 @@ fun EntregaDetailScreen(
                     // AÇÕES (BOTÕES) baseadas no estado
                     when (uiState.status) {
                         StatusType.ANALISE -> {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 AppButton(
                                     text = "Rejeitar",
                                     onClick = { viewModel.rejectDelivery(entregaId) },
@@ -156,8 +216,12 @@ fun EntregaDetailScreen(
                                 )
                             }
                         }
+
                         StatusType.PENDENTE, StatusType.AGENDADA, StatusType.ATIVA -> {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 AppButton(
                                     text = "Não Entregue",
                                     onClick = { viewModel.updateStatus(entregaId, false) },
@@ -172,6 +236,7 @@ fun EntregaDetailScreen(
                                 )
                             }
                         }
+
                         else -> {
                             // Para estados finais (Entregue, Rejeitada, Cancelada), não mostra botões de ação
                         }
@@ -190,17 +255,36 @@ fun EntregaDetailScreen(
                                 imageVector = Icons.Default.EventNote,
                                 contentDescription = null,
                                 tint = accentGreen,
-                                modifier = Modifier.size(32.dp).background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp)).padding(6.dp)
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(Color(0xFFE8F5E9), RoundedCornerShape(8.dp))
+                                    .padding(6.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("ENTREGA PROGRAMADA", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                            Text("Data e Horário", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "ENTREGA PROGRAMADA",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                            Text(
+                                "Data e Horário",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
                             Text(uiState.date, style = MaterialTheme.typography.bodyMedium)
-                            Text(uiState.time, color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                uiState.time,
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
 
-                    Text("Produtos Inclusos", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        "Produtos Inclusos",
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -209,9 +293,16 @@ fun EntregaDetailScreen(
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                             uiState.items.forEachIndexed { index, item ->
-                                SimpleProductListItem(productName = item.name, quantity = item.quantity) // Podíamos atualizar este componente também para aceitar imagem
+                                SimpleProductListItem(
+                                    productName = item.name,
+                                    quantity = item.quantity
+                                ) // Podíamos atualizar este componente também para aceitar imagem
                                 if (index < uiState.items.lastIndex) {
-                                    Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    Divider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = 0.5f
+                                        )
+                                    )
                                 }
                             }
                         }

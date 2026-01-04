@@ -1,5 +1,9 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus.ATIVO
+import pt.ipca.lojasocial.domain.models.BeneficiaryStatus.INATIVO
+
+
 /**
  * Estados de um beneficiário no sistema.
  *

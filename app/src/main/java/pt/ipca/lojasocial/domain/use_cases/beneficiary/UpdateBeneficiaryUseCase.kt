@@ -38,6 +38,7 @@ class UpdateBeneficiaryUseCase @Inject constructor(
                         email = modified.email
                     )
                 }
+
                 UserRole.STAFF -> {
                     // Staff: Pode alterar todos os dados passados no objeto modified.
                     modified

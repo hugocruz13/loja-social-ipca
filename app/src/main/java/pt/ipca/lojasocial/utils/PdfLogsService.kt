@@ -73,7 +73,8 @@ class PdfLogsService(private val context: Context) {
             // 3. Utilizador (Cinzento Escuro)
             paint.color = Color.DKGRAY
             // Trunca o email se for muito longo
-            val utilizadorAjustado = if (log.utilizador.length > 28) log.utilizador.take(26) + "..." else log.utilizador
+            val utilizadorAjustado =
+                if (log.utilizador.length > 28) log.utilizador.take(26) + "..." else log.utilizador
             canvas.drawText(utilizadorAjustado, POS_X_UTILIZADOR, y, paint)
 
             // Linha separadora subtil
@@ -99,7 +100,8 @@ class PdfLogsService(private val context: Context) {
         paint.color = Color.GRAY
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 12f
-        val dataHoje = SimpleDateFormat("dd 'de' MMMM 'de' yyyy, HH:mm", Locale.getDefault()).format(Date())
+        val dataHoje =
+            SimpleDateFormat("dd 'de' MMMM 'de' yyyy, HH:mm", Locale.getDefault()).format(Date())
         canvas.drawText("Gerado em: $dataHoje", MARGEM_ESQUERDA, 75f, paint)
     }
 

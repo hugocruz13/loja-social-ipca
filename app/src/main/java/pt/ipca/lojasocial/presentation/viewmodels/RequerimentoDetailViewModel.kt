@@ -69,7 +69,7 @@ class RequerimentoDetailViewModel @Inject constructor(
     }
 
     // --- AÇÃO: APROVAR ---
-     fun approveRequest() {
+    fun approveRequest() {
         val requestId = _uiState.value?.id ?: return
         val beneficiaryId = _uiState.value?.beneficiaryId ?: return
         val beneficiaryEmail = _uiState.value?.email ?: return
@@ -161,7 +161,11 @@ class RequerimentoDetailViewModel @Inject constructor(
     }
 
     // --- AÇÃO: DOCUMENTOS INCORRETOS ---
-    fun markDocumentsIncorrect(requestId: String, selectedDocKeys: List<String>, observacaoExtra: String = "") {
+    fun markDocumentsIncorrect(
+        requestId: String,
+        selectedDocKeys: List<String>,
+        observacaoExtra: String = ""
+    ) {
         val beneficiaryId = _uiState.value?.beneficiaryId ?: return
         val beneficiaryEmail = _uiState.value?.email ?: return
         val beneficiaryName = _uiState.value?.beneficiaryName ?: "Beneficiário"
@@ -195,7 +199,11 @@ class RequerimentoDetailViewModel @Inject constructor(
 
                     // Se tiver observação extra, atualiza também
                     if (observacaoExtra.isNotEmpty()) {
-                        requestRepository.updateStatusAndObservation(requestId, StatusType.DOCS_INCORRETOS, observacaoExtra)
+                        requestRepository.updateStatusAndObservation(
+                            requestId,
+                            StatusType.DOCS_INCORRETOS,
+                            observacaoExtra
+                        )
                     }
 
                     loadRequest()
@@ -216,13 +224,17 @@ class RequerimentoDetailViewModel @Inject constructor(
                     // 3. Email com HTML Bonito
                     // Formata a lista de documentos para HTML
                     val docsHtmlList = docsNamesList.joinToString(separator = "") { "<li>$it</li>" }
-                    val motivoTexto = if(observacaoExtra.isNotEmpty()) "<br>Nota: $observacaoExtra" else ""
+                    val motivoTexto =
+                        if (observacaoExtra.isNotEmpty()) "<br>Nota: $observacaoExtra" else ""
 
                     communicationRepository.sendEmail(
                         EmailRequest(
                             to = beneficiaryEmail,
                             subject = "Ação Necessária: Documentos do pedido ⚠️",
-                            body = getHtmlIncorreto(beneficiaryName, "<ul>$docsHtmlList</ul>$motivoTexto"), // <--- HTML AQUI
+                            body = getHtmlIncorreto(
+                                beneficiaryName,
+                                "<ul>$docsHtmlList</ul>$motivoTexto"
+                            ), // <--- HTML AQUI
                             isHtml = true,
                             senderName = "Loja Social IPCA"
                         )

@@ -60,7 +60,8 @@ class PdfValidadeService(private val context: Context) {
 
             paint.color = Color.BLACK
             // Nome (trunca se for muito grande)
-            val nomeAjustado = if (item.nomeProduto.length > 30) item.nomeProduto.take(27) + "..." else item.nomeProduto
+            val nomeAjustado =
+                if (item.nomeProduto.length > 30) item.nomeProduto.take(27) + "..." else item.nomeProduto
             canvas.drawText(nomeAjustado, 50f, y, paint)
 
             // Quantidade

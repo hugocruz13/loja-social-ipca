@@ -61,6 +61,7 @@ class ProductRepositoryImpl @Inject constructor(
             null
         }
     }
+
     /**
      * Adiciona um produto ao catálogo.
      * O ID do documento é gerado automaticamente baseado no nome do produto.

@@ -1,23 +1,34 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.domain.models.RequestCategory
 import pt.ipca.lojasocial.domain.models.educationLevels
-import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDropdownField
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppRadioCardItem
 import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 
 @Composable
 fun RegisterStep2Screen(
@@ -111,7 +122,9 @@ fun RegisterStep2Screen(
                     onValueChange = { updateStep2Fields(school = it) },
                     label = "Nome da Escola / Universidade",
                     placeholder = "Nome da Escola / Universidade",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 )
 
                 AppDropdownField(
@@ -120,7 +133,9 @@ fun RegisterStep2Screen(
                     options = educationLevels,
                     onOptionSelected = { novoNivel -> updateStep2Fields(education = novoNivel) },
                     placeholder = "Selecione nível de ensino",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
                 )
 
                 AppTextField(
@@ -128,7 +143,9 @@ fun RegisterStep2Screen(
                     onValueChange = { updateStep2Fields(courseName = it) },
                     label = "Nome do Curso",
                     placeholder = "Nome do Curso",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 )
 
                 AppTextField(
@@ -136,7 +153,9 @@ fun RegisterStep2Screen(
                     onValueChange = { updateStep2Fields(studentNumber = it) },
                     label = "Número do Estudante",
                     placeholder = "Insira o seu nº de estudante",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -152,7 +171,9 @@ fun RegisterStep2Screen(
                         onClick = onBack,
                         containerColor = Color(0XFFC7C7C7),
                         enabled = true,
-                        modifier = Modifier.weight(1f).height(56.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
                     )
 
                     AppButton(
@@ -160,7 +181,9 @@ fun RegisterStep2Screen(
                         onClick = onNext,
                         enabled = viewModel.isStep2Valid(),
                         containerColor = Color(0XFF00713C),
-                        modifier = Modifier.weight(1f).height(56.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
                     )
                 }
             }

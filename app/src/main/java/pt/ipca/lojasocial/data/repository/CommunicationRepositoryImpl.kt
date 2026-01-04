@@ -48,7 +48,8 @@ class CommunicationRepositoryImpl @Inject constructor(
             "userId" to request.userId,        // O ID de quem vai receber
             "title" to request.title,
             "message" to request.message,      // A Cloud Function usa 'message' no body
-            "data" to (request.data ?: emptyMap<String, String>()), // Dados extra (ex: screen: dashboard)
+            "data" to (request.data
+                ?: emptyMap<String, String>()), // Dados extra (ex: screen: dashboard)
             "createdAt" to FieldValue.serverTimestamp(),
             "status" to "PENDING"              // Para sabermos se a Cloud Function já processou
         )

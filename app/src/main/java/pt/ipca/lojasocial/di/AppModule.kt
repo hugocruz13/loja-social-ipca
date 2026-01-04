@@ -23,15 +23,15 @@ import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
-import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.LogRepository
+import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StaffRepository
-import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 
 /**

@@ -6,14 +6,22 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.SchoolYear
 import pt.ipca.lojasocial.domain.use_cases.school_year.GetSchoolYearByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.school_year.GetSchoolYearsUseCase
 import pt.ipca.lojasocial.domain.use_cases.school_year.SaveSchoolYearUseCase
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -107,7 +115,9 @@ class AnosLetivosViewModel @Inject constructor(
                 cal.set(Calendar.MILLISECOND, 0)
                 cal.timeInMillis
             } else 0L
-        } catch (e: Exception) { 0L }
+        } catch (e: Exception) {
+            0L
+        }
     }
 }
 

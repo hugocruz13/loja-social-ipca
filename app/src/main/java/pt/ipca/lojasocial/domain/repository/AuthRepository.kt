@@ -17,11 +17,12 @@ interface AuthRepository {
     suspend fun signUp(email: String, password: String, nome: String): Result<String>
 
     /**
-    * Termina a sessão do utilizador atual.
-    *
-    * @return [Result] com [Unit] em caso de sucesso
-    */
+     * Termina a sessão do utilizador atual.
+     *
+     * @return [Result] com [Unit] em caso de sucesso
+     */
     suspend fun logout(): Result<Unit>
+
     /**
      * Obtém o utilizador atualmente autenticado.
      *

@@ -19,7 +19,7 @@ class ConfirmDeliveryUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(deliveryId: String) {
         // 1. Obter a entrega
-        val delivery = deliveryRepository.getDeliveryById(deliveryId) 
+        val delivery = deliveryRepository.getDeliveryById(deliveryId)
             ?: throw Exception("Entrega não encontrada")
 
         // Se já estiver entregue, não fazemos nada para evitar duplo desconto de stock
@@ -45,13 +45,13 @@ class ConfirmDeliveryUseCase @Inject constructor(
 
                 // Quanto podemos tirar deste lote?
                 val quantityToTake = min(remainingQtyToDeduct, stockItem.quantity)
-                
+
                 // Calcular nova quantidade
                 val newQuantity = stockItem.quantity - quantityToTake
-                
+
                 // Guardar para atualização
                 stockUpdates[stockItem.id] = newQuantity
-                
+
                 remainingQtyToDeduct -= quantityToTake
             }
 

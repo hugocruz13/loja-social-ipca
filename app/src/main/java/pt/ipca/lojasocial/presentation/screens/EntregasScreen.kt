@@ -1,22 +1,39 @@
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.*
-import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
+import pt.ipca.lojasocial.presentation.components.AdicionarButton
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppDeliveryDetailCard
+import pt.ipca.lojasocial.presentation.components.AppSearchBar
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun EntregasScreen(
@@ -97,7 +114,11 @@ fun EntregasScreen(
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else if (error != null) {
-                Text(text = "Erro: $error", color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text(
+                    text = "Erro: $error",
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -111,13 +132,17 @@ fun EntregasScreen(
                             DeliveryStatus.REJECTED -> StatusType.REJEITADA // Mapeado para REJEITADA
                             DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE // Mapeado para ANALISE
                         }
-                        val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(deliveryUiModel.delivery.scheduledDate))
-                        
-                        val isDelivered = deliveryUiModel.delivery.status == DeliveryStatus.DELIVERED
-                        
+                        val formattedDate =
+                            SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(
+                                Date(deliveryUiModel.delivery.scheduledDate)
+                            )
+
+                        val isDelivered =
+                            deliveryUiModel.delivery.status == DeliveryStatus.DELIVERED
+
                         // Mostra botão editar APENAS se for colaborador E a entrega não tiver sido realizada
                         val canEdit = isCollaborator && !isDelivered
-                        
+
                         AppDeliveryDetailCard(
                             deliveryDate = formattedDate,
                             deliveryId = deliveryUiModel.delivery.id,
@@ -125,7 +150,7 @@ fun EntregasScreen(
                             deliveryContent = deliveryUiModel.delivery.items.keys.joinToString(", "),
                             status = statusType,
                             onEditClick = { onEditDelivery(deliveryUiModel.delivery.id) },
-                            showEditButton = canEdit, 
+                            showEditButton = canEdit,
                             modifier = Modifier.clickable { onDeliveryClick(deliveryUiModel.delivery.id) }
                         )
                     }

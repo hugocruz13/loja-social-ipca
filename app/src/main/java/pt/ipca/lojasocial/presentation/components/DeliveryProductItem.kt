@@ -1,9 +1,13 @@
 package pt.ipca.lojasocial.presentation.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Archive
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +42,6 @@ fun DeliveryProductItem(
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun DeliveryProductListPreview() {
@@ -52,7 +55,11 @@ fun DeliveryProductListPreview() {
             unit = "sacos"
         )
 
-        Divider(modifier = Modifier.height(1.dp).padding(horizontal = 10.dp))
+        Divider(
+            modifier = Modifier
+                .height(1.dp)
+                .padding(horizontal = 10.dp)
+        )
 
         DeliveryProductItem(
             productName = "Leite UHT",
@@ -60,7 +67,11 @@ fun DeliveryProductListPreview() {
             unit = "litros"
         )
 
-        Divider(modifier = Modifier.height(1.dp).padding(horizontal = 8.dp))
+        Divider(
+            modifier = Modifier
+                .height(1.dp)
+                .padding(horizontal = 8.dp)
+        )
 
         DeliveryProductItem(
             productName = "Sabão para Roupas",

@@ -18,8 +18,35 @@ import androidx.navigation.navArgument
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.screens.*
-import pt.ipca.lojasocial.presentation.viewmodels.*
+import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
+import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
+import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
+import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
+import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
+import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
+import pt.ipca.lojasocial.presentation.screens.DashboardScreen
+import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
+import pt.ipca.lojasocial.presentation.screens.EntregasScreen
+import pt.ipca.lojasocial.presentation.screens.LoginScreen
+import pt.ipca.lojasocial.presentation.screens.LogsListScreen
+import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
+import pt.ipca.lojasocial.presentation.screens.ProductDetailScreen
+import pt.ipca.lojasocial.presentation.screens.ProductListScreen
+import pt.ipca.lojasocial.presentation.screens.ProfileScreen
+import pt.ipca.lojasocial.presentation.screens.RegisterStep1Screen
+import pt.ipca.lojasocial.presentation.screens.RegisterStep2Screen
+import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
+import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
+import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
+import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 /**
  * Definição de todas as rotas da aplicação.
@@ -201,7 +228,8 @@ fun AppNavHost(
             val authState by viewModel.state.collectAsState()
             val beneficiariesViewModel: BeneficiariesViewModel = hiltViewModel()
 
-            val userRoleEnum = if (authState.userRole == "colaborador") UserRole.STAFF else UserRole.BENEFICIARY
+            val userRoleEnum =
+                if (authState.userRole == "colaborador") UserRole.STAFF else UserRole.BENEFICIARY
 
             // Cria um objeto temporário para mostrar no perfil
             val currentUser = pt.ipca.lojasocial.domain.models.Beneficiary(
@@ -254,7 +282,11 @@ fun AppNavHost(
                 onResubmitDoc = { docKey, uri -> viewModel.resubmitDocument(docKey, uri) },
                 onBackClick = {
                     viewModel.logout()
-                    navController.navigate(AppScreen.Login.route) { popUpTo(0) { inclusive = true } }
+                    navController.navigate(AppScreen.Login.route) {
+                        popUpTo(0) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
@@ -406,7 +438,9 @@ fun AppNavHost(
         composable(
             route = AppScreen.EntregaAddEdit.route,
             arguments = listOf(
-                navArgument("id") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
                 navArgument("role") { type = NavType.StringType; defaultValue = "colaborador" }
             )
         ) { backStackEntry ->

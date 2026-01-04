@@ -21,7 +21,9 @@ class SchoolYearRepositoryImpl @Inject constructor(
 
     override fun getSchoolYears(): Flow<List<SchoolYear>> = callbackFlow {
         val listener = collection.addSnapshotListener { snapshot, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
+            if (error != null) {
+                close(error); return@addSnapshotListener
+            }
 
             val list = snapshot?.documents?.mapNotNull { doc ->
                 // Converte para DTO e depois para Domain via Mapper

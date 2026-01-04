@@ -19,7 +19,8 @@ class StockRepositoryImpl @Inject constructor(
         return try {
             val snapshot = collection.get().await()
 
-            snapshot.documents.mapNotNull { doc ->  val dto = doc.toObject(StockDto::class.java)
+            snapshot.documents.mapNotNull { doc ->
+                val dto = doc.toObject(StockDto::class.java)
                 dto?.toDomain(doc.id)
             }
 

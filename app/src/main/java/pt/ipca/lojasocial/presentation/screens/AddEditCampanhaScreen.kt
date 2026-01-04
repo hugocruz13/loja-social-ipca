@@ -4,21 +4,43 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppCampanhaAssociationSelector
+import pt.ipca.lojasocial.presentation.components.AppDatePickerField
+import pt.ipca.lojasocial.presentation.components.AppFilePickerField
+import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AddEditCampanhaScreen(
@@ -116,10 +138,15 @@ fun AddEditCampanhaScreen(
                 value = descricao,
                 onValueChange = { descricao = it },
                 placeholder = "Introduza uma descrição...",
-                modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 150.dp)
             )
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 AppDatePickerField(
                     label = "Data Ínicio",
                     selectedValue = dataInicio,
@@ -149,9 +176,20 @@ fun AddEditCampanhaScreen(
 
             AppButton(
                 text = if (campanhaId == null) "Criar Campanha" else "Guardar Alterações",
-                onClick = {onSaveClick(nome, descricao, dataInicio, dataFim, selectedType, selectedImageUri)},
+                onClick = {
+                    onSaveClick(
+                        nome,
+                        descricao,
+                        dataInicio,
+                        dataFim,
+                        selectedType,
+                        selectedImageUri
+                    )
+                },
                 containerColor = accentGreen,
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

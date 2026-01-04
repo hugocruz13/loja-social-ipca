@@ -12,3 +12,12 @@ data class ItemRelatorioLog(
     val utilizador: String,
     val detalhe: String
 )
+
+data class RelatorioAnualData(
+    val anoLetivo: String, // ex: "2024-2025"
+    val totalCampanhas: Int,
+    val totalEntregasRealizadas: Int,
+    val totalItensDoados: Int, // Soma de todos os produtos entregues
+    val listaCampanhas: List<String>, // Nomes das campanhas
+    val topProdutos: List<Pair<String, Int>> // Top 5 produtos (Nome, Quantidade) para o gráfico
+)

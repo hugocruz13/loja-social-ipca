@@ -1,17 +1,41 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppDatePickerField
+import pt.ipca.lojasocial.presentation.components.AppDropdownField
+import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 
 @Composable
 fun RegisterProductScreen(
@@ -43,7 +67,8 @@ fun RegisterProductScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
+                onItemSelected = { item ->
+                    onNavigate(item.route)
                 }
             )
         },
@@ -119,10 +144,18 @@ fun RegisterProductScreen(
                         tonalElevation = 2.dp,
                         shape = RoundedCornerShape(8.dp),
                         color = Color(0xFFE2E8F0),
-                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     ) {
-                        Row(modifier = Modifier.fillMaxSize().padding(4.dp)) {
-                            val modifierWeight = Modifier.weight(1f).fillMaxHeight()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp)
+                        ) {
+                            val modifierWeight = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
 
                             Button(
                                 onClick = { campaignType = "Interna" },
@@ -130,9 +163,13 @@ fun RegisterProductScreen(
                                 shape = RoundedCornerShape(6.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (campaignType == "Interna") Color.White else Color.Transparent,
-                                    contentColor = if (campaignType == "Interna") Color(0xFF00713C) else Color(0xFF64748B)
+                                    contentColor = if (campaignType == "Interna") Color(0xFF00713C) else Color(
+                                        0xFF64748B
+                                    )
                                 ),
-                                elevation = if (campaignType == "Interna") ButtonDefaults.buttonElevation(2.dp) else null,
+                                elevation = if (campaignType == "Interna") ButtonDefaults.buttonElevation(
+                                    2.dp
+                                ) else null,
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Text("Interna", fontWeight = FontWeight.Medium)
@@ -144,9 +181,13 @@ fun RegisterProductScreen(
                                 shape = RoundedCornerShape(6.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (campaignType == "Externa") Color.White else Color.Transparent,
-                                    contentColor = if (campaignType == "Externa") Color(0xFF00713C) else Color(0xFF64748B)
+                                    contentColor = if (campaignType == "Externa") Color(0xFF00713C) else Color(
+                                        0xFF64748B
+                                    )
                                 ),
-                                elevation = if (campaignType == "Externa") ButtonDefaults.buttonElevation(2.dp) else null,
+                                elevation = if (campaignType == "Externa") ButtonDefaults.buttonElevation(
+                                    2.dp
+                                ) else null,
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Text("Externa", fontWeight = FontWeight.Medium)
@@ -169,7 +210,9 @@ fun RegisterProductScreen(
                 onClick = onAddToStockClick,
                 text = "Add to Stock",
                 containerColor = Color(0xFF00713C),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             )
         }
     }
