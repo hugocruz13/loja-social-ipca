@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.presentation.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +14,7 @@ import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
+import pt.ipca.lojasocial.domain.use_cases.delivery.ConfirmDeliveryUseCase
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,7 +41,8 @@ data class EntregaDetailUiState(
 class EntregaDetailViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val confirmDeliveryUseCase: ConfirmDeliveryUseCase // Injected Use Case
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EntregaDetailUiState())
@@ -86,7 +89,7 @@ class EntregaDetailViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         beneficiaryName = beneficiary?.name ?: "Desconhecido",
-                        beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.id ?: "N/A"}", // Ajuste conforme o modelo Beneficiary
+                        beneficiaryIdDisplay = "ID: ${beneficiary?.id ?: "N/A"}", // Ajuste conforme o modelo Beneficiary
                         date = dateFormat.format(dateObj),
                         time = timeFormat.format(dateObj),
                         status = uiStatus,
@@ -103,12 +106,20 @@ class EntregaDetailViewModel @Inject constructor(
     fun updateStatus(deliveryId: String, delivered: Boolean) {
         viewModelScope.launch {
             try {
-                val newStatus = if (delivered) DeliveryStatus.DELIVERED else DeliveryStatus.CANCELLED // Ou REJECTED/NOT_DELIVERED
-                deliveryRepository.updateDeliveryStatus(deliveryId, newStatus)
+                if (delivered) {
+                    // Se for para marcar como entregue, usamos o Use Case que abate stock
+                    confirmDeliveryUseCase(deliveryId)
+                } else {
+                    // Se for "Não Entregue", marcamos como CANCELADA (ou outra lógica)
+                    // Aqui não há abate de stock
+                    deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.CANCELLED)
+                }
+                
                 // Recarregar para atualizar a UI
                 loadDelivery(deliveryId)
             } catch (e: Exception) {
-                // Tratar erro
+                Log.e("EntregaDetailVM", "Erro ao atualizar estado: ${e.message}", e)
+                // Opcional: Atualizar UI com erro
             }
         }
     }
