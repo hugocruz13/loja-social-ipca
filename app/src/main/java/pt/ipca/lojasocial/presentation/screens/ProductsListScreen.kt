@@ -1,10 +1,12 @@
 package pt.ipca.lojasocial.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,53 +19,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.models.StockUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 import pt.ipca.lojasocial.utils.PdfValidadeService
 
-
+// =====================================================================
+// 1. STATEFUL COMPOSABLE (Lógica + ViewModels)
+// =====================================================================
 @Composable
 fun ProductListScreen(
     onBackClick: () -> Unit,
     onProductClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
-    onDownloadReportClick: () -> Unit,
+    onAddProductClick: () -> Unit,
+    onAddNewTypeClick: () -> Unit,
     stockViewModel: StockViewModel = hiltViewModel(),
     productViewModel: ProductViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val pdfService = remember { PdfValidadeService(context) }
 
-    var searchQuery by remember { mutableStateOf("") }
-    var expanded by remember { mutableStateOf(false) }
-
-    var selectedYear by remember { mutableStateOf("2024-2025") }
-    var selectedStatus by remember { mutableStateOf("") }
-
-    val years = listOf("2023-2024", "2024-2025", "2025-2026")
-    val statusOptions = listOf("Ativo", "Inativo", "Pendente")
-
-    var showAddProductSheet by remember { mutableStateOf(false) }
-    var showAddStockDialog by remember { mutableStateOf(false) }
-    var showCreateProductDialog by remember { mutableStateOf(false) }
-
-    var selectedProduct by remember { mutableStateOf<pt.ipca.lojasocial.domain.models.Product?>(null) }
-
-    val backgroundColor = Color(0xFFF8F9FA)
-
+    // Recolha de Estados dos ViewModels
     val stockList by stockViewModel.stockList.collectAsState()
     val products by productViewModel.filteredProducts.collectAsState()
     val isLoading by stockViewModel.isLoading.collectAsState()
 
+    // Carregar dados iniciais
     LaunchedEffect(Unit) {
         stockViewModel.loadStock()
         productViewModel.loadProducts()
     }
 
+    // Processamento de dados (Mapear Stock -> UI Model)
     val stockUiList = remember(stockList, products) {
         stockList.mapNotNull { stock ->
             val product = products.firstOrNull { it.id == stock.productId }
@@ -78,21 +70,130 @@ fun ProductListScreen(
         }
     }
 
+    // Chama a UI Pura passando os dados e as ações
+    ProductListContent(
+        stockUiList = stockUiList,
+        products = products,
+        navItems = navItems,
+        isLoading = isLoading,
+        onBackClick = onBackClick,
+        onProductClick = onProductClick,
+        onNavigate = onNavigate,
+        onAddProductClick = onAddProductClick,
+        onAddNewTypeClick = onAddNewTypeClick,
+        // Callbacks de lógica (PDF, Adicionar Stock, Criar Produto)
+        onDownloadReport = {
+            val dadosParaRelatorio = stockList.mapNotNull { stock ->
+                val produto = products.firstOrNull { it.id == stock.productId }
+                if (produto != null) {
+                    pt.ipca.lojasocial.domain.models.ItemRelatorioValidade(
+                        nomeProduto = produto.name,
+                        quantidade = stock.quantity,
+                        dataValidade = stock.expiryDate ?: 0L
+                    )
+                } else {
+                    null
+                }
+            }
+
+            if (dadosParaRelatorio.isNotEmpty()) {
+                pdfService.gerarRelatorio(dadosParaRelatorio)
+            } else {
+                Toast.makeText(context, "Sem dados para gerar relatório", Toast.LENGTH_SHORT).show()
+            }
+        },
+        onConfirmAddStock = { stock ->
+            stockViewModel.addStockItem(stock)
+        },
+        onConfirmCreateProduct = { newProduct, imageUri ->
+            productViewModel.addProduct(product = newProduct, imageUri = imageUri)
+            productViewModel.loadProducts()
+        }
+    )
+}
+
+// =====================================================================
+// 2. STATELESS COMPOSABLE (Apenas UI - Sem Hilt)
+// =====================================================================
+@Composable
+fun ProductListContent(
+    stockUiList: List<StockUiModel>,
+    products: List<Product>,
+    navItems: List<BottomNavItem>,
+    isLoading: Boolean,
+    onBackClick: () -> Unit,
+    onProductClick: (String) -> Unit,
+    onNavigate: (String) -> Unit,
+    onAddProductClick: () -> Unit,
+    onAddNewTypeClick: () -> Unit,
+    onDownloadReport: () -> Unit,
+    onConfirmAddStock: (pt.ipca.lojasocial.domain.models.Stock) -> Unit,
+    onConfirmCreateProduct: (Product, android.net.Uri?) -> Unit
+) {
+    // Estados locais de UI (Filtros, Dialogs, FAB)
+    var searchQuery by remember { mutableStateOf("") }
+    var expandedFab by remember { mutableStateOf(false) }
+    var selectedYear by remember { mutableStateOf("2024-2025") }
+    var selectedStatus by remember { mutableStateOf("") }
+
+    val years = listOf("2023-2024", "2024-2025", "2025-2026")
+    val statusOptions = listOf("Ativo", "Inativo", "Pendente")
+
+    var showAddProductSheet by remember { mutableStateOf(false) }
+    var showAddStockDialog by remember { mutableStateOf(false) }
+    var showCreateProductDialog by remember { mutableStateOf(false) }
+    var selectedProduct by remember { mutableStateOf<Product?>(null) }
+
+    val backgroundColor = Color(0xFFF8F9FA)
+
     Scaffold(
         topBar = {
             AppTopBar(
                 title = "Produtos",
                 onBackClick = onBackClick,
-
             )
         },
         floatingActionButton = {
-            AdicionarButton(
-                onClick = {
-                    productViewModel.loadProducts()
-                    showAddProductSheet = true
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (expandedFab) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            expandedFab = false
+                            onAddNewTypeClick()
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        icon = { Icon(Icons.Default.LibraryAdd, contentDescription = null) },
+                        text = { Text("Novo Tipo") }
+                    )
+
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            expandedFab = false
+                            // Esta ação pode abrir o Sheet localmente ou navegar
+                            // Assumindo lógica local baseada no teu código original:
+                            showAddProductSheet = true
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        icon = { Icon(Icons.Default.Inventory, contentDescription = null) },
+                        text = { Text("Registar Stock") }
+                    )
                 }
-            )
+
+                FloatingActionButton(
+                    onClick = { expandedFab = !expandedFab },
+                    containerColor = Color(0XFF00713C),
+                    contentColor = Color.White,
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = if (expandedFab) Icons.Default.Close else Icons.Default.Add,
+                        contentDescription = "Menu Adicionar"
+                    )
+                }
+            }
         },
         bottomBar = {
             AppBottomBar(
@@ -126,10 +227,8 @@ fun ProductListScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    // Alinhamento vertical importante para ficarem todos na mesma linha base
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Dropdown Ano
                     AppFilterDropdown(
                         label = "Ano",
                         selectedValue = selectedYear,
@@ -139,7 +238,6 @@ fun ProductListScreen(
                         modifier = Modifier.weight(1f)
                     )
 
-                    // Dropdown Status
                     AppFilterDropdown(
                         label = "Status",
                         selectedValue = selectedStatus,
@@ -149,71 +247,49 @@ fun ProductListScreen(
                         modifier = Modifier.weight(1f)
                     )
 
-                    // --- BOTÃO DOWNLOAD (Estilo "Dropbox" igual aos filtros) ---
+                    // --- BOTÃO DOWNLOAD ---
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp)) // Mesmo arredondamento
-                            .background(Color(0xFFF0F2F5)) // Mesma cor de fundo cinza
-                            .clickable(onClick = {
-
-                                val dadosParaRelatorio = stockList.mapNotNull { stock ->
-
-                                    val produto = products.firstOrNull { it.id == stock.productId }
-
-                                    if (produto != null) {
-                                        pt.ipca.lojasocial.domain.models.ItemRelatorioValidade(
-                                            nomeProduto = produto.name,
-                                            quantidade = stock.quantity,
-                                            dataValidade = stock.expiryDate ?: 0L
-                                        )
-                                    } else {
-                                        null
-                                    }
-                                }
-
-                                if (dadosParaRelatorio.isNotEmpty()) {
-                                    pdfService.gerarRelatorio(dadosParaRelatorio)
-                                } else {
-                                    android.widget.Toast.makeText(context, "Sem dados para gerar relatório", android.widget.Toast.LENGTH_SHORT).show()
-                                }
-
-                                onDownloadReportClick()
-                            })
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF0F2F5))
+                            .clickable(onClick = onDownloadReport)
                             .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Baixar Relatório",
-                            tint = Color.Black, // Mesma cor de ícone (Preto)
-                            modifier = Modifier.size(20.dp) // Mesmo tamanho de ícone (20.dp)
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    // -----------------------------------------------------------
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = 16.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(stockUiList) { product ->
-                    AppProductListItem(
-                        productName = product.productName,
-                        productId = product.stockId,
-                        productIcon = Icons.Default.ShoppingCart,
-                        onClick = { onProductClick(product.stockId) }
-                    )
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0XFF00713C))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(stockUiList) { product ->
+                        AppProductListItem(
+                            productName = product.productName,
+                            productId = product.stockId,
+                            productIcon = Icons.Default.ShoppingCart,
+                            onClick = { onProductClick(product.stockId) }
+                        )
+                    }
                 }
             }
         }
 
-        // LISTA DE PRODUTOS
+        // --- DIALOGS ---
+
         if (showAddProductSheet) {
             AddProductDialog(
                 products = products,
@@ -230,39 +306,34 @@ fun ProductListScreen(
             )
         }
 
-        // ADICIONAR STOCK
         if (showAddStockDialog && selectedProduct != null) {
             AddStockDialog(
                 product = selectedProduct!!,
                 campaignId = null,
                 onDismiss = { showAddStockDialog = false },
                 onConfirm = { stock ->
-                    stockViewModel.addStockItem(stock)
+                    onConfirmAddStock(stock)
                     showAddStockDialog = false
                 }
             )
         }
 
-        // CRIAR PRODUTO
         if (showCreateProductDialog) {
             AddNewProductDialog(
                 onDismiss = { showCreateProductDialog = false },
                 onConfirm = { newProduct, imageUri ->
-                    productViewModel.addProduct(
-                        product = newProduct,
-                        imageUri = imageUri
-                    )
-                    productViewModel.loadProducts()
+                    onConfirmCreateProduct(newProduct, imageUri)
                     showCreateProductDialog = false
-                    showAddProductSheet = false
+                    showAddProductSheet = false // Ou true se quiseres voltar à lista
                 }
             )
         }
     }
 }
 
-
-
+// =====================================================================
+// 3. PREVIEW (Agora funciona porque chama o Stateless Content)
+// =====================================================================
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductListScreenPreview() {
@@ -272,13 +343,27 @@ fun ProductListScreenPreview() {
         BottomNavItem("settings", Icons.Filled.Settings, "Configurações")
     )
 
+    // Dados fictícios para o preview
+    val dummyStock = listOf(
+        StockUiModel("1", "p1", "Arroz Cigala", 50),
+        StockUiModel("2", "p2", "Azeite Gallo", 20),
+        StockUiModel("3", "p3", "Leite Mimosa", 100)
+    )
+
     MaterialTheme {
-        ProductListScreen(
+        ProductListContent(
+            stockUiList = dummyStock,
+            products = emptyList(),
+            navItems = dummyNavItems,
+            isLoading = false,
             onBackClick = { },
             onProductClick = { },
-            onDownloadReportClick = { },
-            navItems = dummyNavItems,
-            onNavigate = { }
+            onNavigate = { },
+            onAddProductClick = { },
+            onAddNewTypeClick = { },
+            onDownloadReport = { },
+            onConfirmAddStock = { },
+            onConfirmCreateProduct = { _, _ -> }
         )
     }
 }
