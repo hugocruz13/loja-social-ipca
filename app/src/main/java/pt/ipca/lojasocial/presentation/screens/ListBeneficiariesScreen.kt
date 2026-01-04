@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.*
-import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
 
 @Composable
 fun ListBeneficiariesScreen(

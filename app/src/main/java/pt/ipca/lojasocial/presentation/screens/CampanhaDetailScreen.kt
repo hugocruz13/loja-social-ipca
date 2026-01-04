@@ -295,12 +295,6 @@ fun CampanhaDetailScreen(
     }
 }
 
-// --- HELPER FUNCTION ---
-fun formatLongToString(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    return sdf.format(Date(timestamp))
-}
-
 // --- COMPONENTES AUXILIARES ---
 
 @Composable
