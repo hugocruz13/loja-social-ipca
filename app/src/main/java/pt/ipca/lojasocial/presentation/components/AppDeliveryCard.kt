@@ -25,7 +25,8 @@ fun AppDeliveryDetailCard(
     deliveryContent: String,
     status: StatusType,
     onEditClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showEditButton: Boolean = true // Added parameter
 ) {
 
 
@@ -96,12 +97,14 @@ fun AppDeliveryDetailCard(
                     )
                 }
 
-                IconButton(onClick = onEditClick) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Editar Entrega",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                if (showEditButton) {
+                    IconButton(onClick = onEditClick) {
+                        Icon(
+                            imageVector = Icons.Filled.Edit,
+                            contentDescription = "Editar Entrega",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -118,7 +121,8 @@ fun AppDeliveryDetailCardImagePreview() {
             deliveryTitle = "Entrega 1",
             deliveryContent = "Pacote Arroz, Água",
             status = StatusType.ENTREGUE,
-            onEditClick = {  }
+            onEditClick = {  },
+            showEditButton = false // Test preview
         )
     }
 }

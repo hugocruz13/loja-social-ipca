@@ -15,6 +15,7 @@ import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.models.Stock
+import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
@@ -65,6 +66,29 @@ class AddEditEntregaViewModel @Inject constructor(
 
     init {
         loadAvailableProductsAndStock()
+        checkUserRoleAndSetup()
+    }
+
+    private fun checkUserRoleAndSetup() {
+        viewModelScope.launch {
+            try {
+                val currentUser = getCurrentUserUseCase()
+                if (currentUser?.role == UserRole.BENEFICIARY) {
+                    val beneficiary = beneficiaryRepository.getBeneficiaryById(currentUser.id)
+                    if (beneficiary != null) {
+                        _uiState.update { 
+                            it.copy(
+                                selectedBeneficiary = beneficiary,
+                                beneficiaryQuery = beneficiary.name // Optional: display name
+                            ) 
+                        }
+                        Log.d(TAG, "Auto-selected beneficiary: ${beneficiary.name}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking user role for auto-selection", e)
+            }
+        }
     }
 
     fun loadDelivery(deliveryId: String) {
@@ -252,12 +276,18 @@ class AddEditEntregaViewModel @Inject constructor(
                 // --- LÓGICA DE CRIAÇÃO ---
                 Log.d(TAG, "Creating new delivery. Repetition: ${currentState.repetition}")
 
+                val initialStatus = if (currentUser.role == UserRole.BENEFICIARY) {
+                    DeliveryStatus.UNDER_ANALYSIS
+                } else {
+                    DeliveryStatus.SCHEDULED
+                }
+
                 val baseDelivery = Delivery(
                     id = "",
                     beneficiaryId = currentState.selectedBeneficiary.id,
                     date = System.currentTimeMillis(),
                     scheduledDate = 0,
-                    status = DeliveryStatus.SCHEDULED,
+                    status = initialStatus, // Use determined status
                     items = currentState.selectedProducts,
                     observations = currentState.observations,
                     createdBy = currentUser.id

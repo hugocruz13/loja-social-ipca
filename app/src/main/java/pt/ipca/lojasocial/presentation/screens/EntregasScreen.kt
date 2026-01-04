@@ -21,6 +21,7 @@ import java.util.*
 @Composable
 fun EntregasScreen(
     viewModel: EntregasViewModel,
+    isCollaborator: Boolean, // Novo parâmetro
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
     onEditDelivery: (String) -> Unit,
@@ -53,6 +54,7 @@ fun EntregasScreen(
             )
         },
         floatingActionButton = {
+            // Botão visível para todos (Colaboradores agendam, Beneficiários pedem)
             AdicionarButton(onClick = onAddClick)
         }
     ) { paddingValues ->
@@ -104,12 +106,18 @@ fun EntregasScreen(
                     items(deliveries) { deliveryUiModel ->
                         val statusType = when (deliveryUiModel.delivery.status) {
                             DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
-                            DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
+                            DeliveryStatus.SCHEDULED -> StatusType.AGENDADA // Mapeado para AGENDADA
                             DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
-                            DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
-                            DeliveryStatus.UNDER_ANALYSIS -> StatusType.PENDENTE
+                            DeliveryStatus.REJECTED -> StatusType.REJEITADA // Mapeado para REJEITADA
+                            DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE // Mapeado para ANALISE
                         }
                         val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(deliveryUiModel.delivery.scheduledDate))
+                        
+                        val isDelivered = deliveryUiModel.delivery.status == DeliveryStatus.DELIVERED
+                        
+                        // Mostra botão editar APENAS se for colaborador E a entrega não tiver sido realizada
+                        val canEdit = isCollaborator && !isDelivered
+                        
                         AppDeliveryDetailCard(
                             deliveryDate = formattedDate,
                             deliveryId = deliveryUiModel.delivery.id,
@@ -117,6 +125,7 @@ fun EntregasScreen(
                             deliveryContent = deliveryUiModel.delivery.items.keys.joinToString(", "),
                             status = statusType,
                             onEditClick = { onEditDelivery(deliveryUiModel.delivery.id) },
+                            showEditButton = canEdit, 
                             modifier = Modifier.clickable { onDeliveryClick(deliveryUiModel.delivery.id) }
                         )
                     }

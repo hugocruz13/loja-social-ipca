@@ -144,6 +144,8 @@ fun AppNavHost(
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
                         "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
+                        "profile" -> navController.navigate(AppScreen.Profile.route)
+                        "notification" -> navController.navigate(AppScreen.Notification.route)
                         "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
                         "beneficiarios" -> { /* navController.navigate(AppScreen.BeneficiariosList.route) */ }
                         "reports" -> { /* navController.navigate(AppScreen.Reports.route) */ }
@@ -234,9 +236,50 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
+        
         // --- OUTRAS ROTAS (Notificações, Perfil, Campanhas, Entregas) ---
         composable(AppScreen.Notification.route) {
             NotificationsScreen(
+                onBackClick = { navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.Profile.route) {
+            val authState by viewModel.state.collectAsState()
+            // Injetar o ViewModel correto para o Perfil
+            val beneficiariesViewModel: pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel = hiltViewModel()
+
+            // Converter Role
+            val userRoleEnum = if (authState.userRole == "colaborador") {
+                pt.ipca.lojasocial.domain.models.UserRole.STAFF
+            } else {
+                pt.ipca.lojasocial.domain.models.UserRole.BENEFICIARY
+            }
+
+            // Construir objeto Beneficiary temporário a partir do estado de Auth
+            val currentUser = pt.ipca.lojasocial.domain.models.Beneficiary(
+                id = authState.userId ?: "",
+                name = authState.fullName,
+                email = authState.email,
+                birthDate = 0, // Dado não disponível no AuthState
+                schoolYearId = "", // Dado não disponível
+                phoneNumber = 0, // Dado não disponível
+                ccNumber = authState.cc,
+                status = authState.beneficiaryStatus
+            )
+
+            ProfileScreen(
+                viewModel = beneficiariesViewModel,
+                currentUser = currentUser,
+                userRole = userRoleEnum,
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(AppScreen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 onBackClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
@@ -337,6 +380,7 @@ fun AppNavHost(
 
         composable(AppScreen.EntregasList.route) {
             val entregasViewModel: EntregasViewModel = hiltViewModel()
+            val authState by viewModel.state.collectAsState()
             
             // Recarrega as entregas sempre que este ecrã for exibido
             LaunchedEffect(Unit) {
@@ -345,10 +389,11 @@ fun AppNavHost(
             
             EntregasScreen(
                 viewModel = entregasViewModel,
+                isCollaborator = authState.userRole == "colaborador",
                 onBackClick = { navController.popBackStack() },
-                onAddClick = { navController.navigate("agendar_entrega?role=colaborador") },
-                onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=colaborador") },
-                onDeliveryClick = { id -> navController.navigate("entrega_detail/$id/colaborador") },
+                onAddClick = { navController.navigate("agendar_entrega?role=${authState.userRole}") },
+                onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=${authState.userRole}") },
+                onDeliveryClick = { id -> navController.navigate("entrega_detail/$id/${authState.userRole}") },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
