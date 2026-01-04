@@ -81,7 +81,12 @@ fun DashboardScreen(
                     item { AppAccessCard("Produtos / Stock", Icons.Default.Inventory, { onNavigateTo("stock") }) }
                     item { AppAccessCard("Entregas", Icons.Default.LocalShipping, { onNavigateTo("entregas") }) }
                     item { AppAccessCard("Campanhas", Icons.Default.Campaign, { onNavigateTo("campanhas") }) }
-                    item { AppAccessCard("Reports", Icons.Default.BarChart, { onNavigateTo("reports") }) }
+
+                    // --- ALTERAÇÃO AQUI ---
+                    // Mudou de Reports para Registo de Atividades
+                    item { AppAccessCard("Registo de Atividades", Icons.Default.History, { onNavigateTo("logs") }) }
+                    // ---------------------
+
                     item { AppAccessCard("Requerimentos", Icons.Default.Assignment, { onNavigateTo("requerimentos") }) }
                     item { AppAccessCard("Ano Letivo", Icons.Default.DateRange, { onNavigateTo("ano_letivo") }) }
                 } else {
