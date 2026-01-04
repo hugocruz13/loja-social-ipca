@@ -16,8 +16,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
-import pt.ipca.lojasocial.domain.models.UserRole // Importante para definir o cargo
-import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel // Import do VM de Beneficiários
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
@@ -38,14 +36,7 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
-
-import pt.ipca.lojasocial.presentation.screens.RequestStatus
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
-import pt.ipca.lojasocial.presentation.screens.*
 
 sealed class AppScreen(val route: String) {
     object Dashboard : AppScreen("dashboard")
@@ -395,7 +386,9 @@ fun AppNavHost(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
                 navItems = globalNavItems,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                onAddProductClick = { navController.navigate("product_add_edit") },
+                onDownloadReportClick = { }
             )
         }
 

@@ -139,9 +139,17 @@ fun CampanhaDetailScreen(
                                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                                 .background(Color.LightGray),
                             contentScale = ContentScale.Crop,
-                            onSuccess = { android.util.Log.d("COIL", "Imagem carregada com sucesso!") },
+                            onSuccess = {
+                                android.util.Log.d(
+                                    "COIL",
+                                    "Imagem carregada com sucesso!"
+                                )
+                            },
                             onError = { error ->
-                                android.util.Log.e("COIL", "Erro ao carregar: ${error.result.throwable.message}")
+                                android.util.Log.e(
+                                    "COIL",
+                                    "Erro ao carregar: ${error.result.throwable.message}"
+                                )
                             }
                         )
 
@@ -179,46 +187,46 @@ fun CampanhaDetailScreen(
                     }
                 }
 
-            SectionWithAdd(
-                title = "Produtos Associados",
-                onAddClick = {
-                    productViewModel.loadProducts()
-                    showAddProductSheet = true
-                }
-            ) {
-                when {
-                    isLoading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
+                SectionWithAdd(
+                    title = "Produtos Associados",
+                    onAddClick = {
+                        productViewModel.loadProducts()
+                        showAddProductSheet = true
                     }
+                ) {
+                    when {
+                        isLoading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
 
-                    stockWithProducts.isEmpty() -> {
-                        Text(
-                            text = "Nenhum produto associado a esta campanha.",
-                            color = Color.Gray
-                        )
-                    }
+                        stockWithProducts.isEmpty() -> {
+                            Text(
+                                text = "Nenhum produto associado a esta campanha.",
+                                color = Color.Gray
+                            )
+                        }
 
-                    else -> {
-                        Column {
-                            stockWithProducts.forEachIndexed { index, item ->
-                                DeliveryProductItem(
-                                    productName = item.productName,
-                                    quantity = item.quantity,
-                                    unit = "unidades"
-                                )
+                        else -> {
+                            Column {
+                                stockWithProducts.forEachIndexed { index, item ->
+                                    DeliveryProductItem(
+                                        productName = item.productName,
+                                        quantity = item.quantity,
+                                        unit = "unidades"
+                                    )
 
-                                if (index < stockWithProducts.lastIndex) {
-                                    HorizontalDivider(color = Color(0xFFF1F1F1))
+                                    if (index < stockWithProducts.lastIndex) {
+                                        HorizontalDivider(color = Color(0xFFF1F1F1))
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
 
                 DetailSection(title = "Associações") {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -231,50 +239,51 @@ fun CampanhaDetailScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
-        // 🔹 LISTA DE PRODUTOS
-        if (showAddProductSheet) {
-            AddProductDialog(
-                products = products,
-                onDismiss = { showAddProductSheet = false },
-                onProductSelected = { product ->
-                    selectedProduct = product
-                    showAddProductSheet = false
-                    showAddStockDialog = true
-                },
-                onAddProductClick = {
-                    showAddProductSheet = false
-                    showCreateProductDialog = true
-                }
-            )
-        }
+            // 🔹 LISTA DE PRODUTOS
+            if (showAddProductSheet) {
+                AddProductDialog(
+                    products = products,
+                    onDismiss = { showAddProductSheet = false },
+                    onProductSelected = { product ->
+                        selectedProduct = product
+                        showAddProductSheet = false
+                        showAddStockDialog = true
+                    },
+                    onAddProductClick = {
+                        showAddProductSheet = false
+                        showCreateProductDialog = true
+                    }
+                )
+            }
 
-        // 🔹 ADICIONAR STOCK
-        if (showAddStockDialog && selectedProduct != null) {
-            AddStockDialog(
-                product = selectedProduct!!,
-                campaignId = campanhaId,
-                onDismiss = { showAddStockDialog = false },
-                onConfirm = { stock ->
-                    stockViewModel.addStockItem(stock)
-                    showAddStockDialog = false
-                }
-            )
-        }
+            // 🔹 ADICIONAR STOCK
+            if (showAddStockDialog && selectedProduct != null) {
+                AddStockDialog(
+                    product = selectedProduct!!,
+                    campaignId = campanhaId,
+                    onDismiss = { showAddStockDialog = false },
+                    onConfirm = { stock ->
+                        stockViewModel.addStockItem(stock)
+                        showAddStockDialog = false
+                    }
+                )
+            }
 
 
-        if (showCreateProductDialog) {
-            AddNewProductDialog(
-                onDismiss = { showCreateProductDialog = false },
-                onConfirm = { newProduct, imageUri ->
-                    productViewModel.addProduct(
-                        product = newProduct,
-                        imageUri = imageUri
-                    )
-                    productViewModel.loadProducts()
-                    showCreateProductDialog = false
-                    showAddProductSheet = false
-                }
-            )
+            if (showCreateProductDialog) {
+                AddNewProductDialog(
+                    onDismiss = { showCreateProductDialog = false },
+                    onConfirm = { newProduct, imageUri ->
+                        productViewModel.addProduct(
+                            product = newProduct,
+                            imageUri = imageUri
+                        )
+                        productViewModel.loadProducts()
+                        showCreateProductDialog = false
+                        showAddProductSheet = false
+                    }
+                )
+            }
         }
     }
 }

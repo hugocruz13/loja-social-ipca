@@ -29,8 +29,10 @@ fun ProductListScreen(
     onProductClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
+    onDownloadReportClick: () -> Unit,
     stockViewModel: StockViewModel = hiltViewModel(),
-    productViewModel: ProductViewModel = hiltViewModel()
+    productViewModel: ProductViewModel = hiltViewModel(),
+    onAddProductClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }

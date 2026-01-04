@@ -26,6 +26,9 @@ import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.repository.LogRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
+import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
+import pt.ipca.lojasocial.domain.repository.StaffRepository
+import pt.ipca.lojasocial.domain.repository.StockRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 

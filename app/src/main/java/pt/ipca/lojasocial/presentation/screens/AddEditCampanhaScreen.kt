@@ -15,12 +15,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.components.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AddEditCampanhaScreen(
     campanhaId: String? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String, String, String, CampaignType) -> Unit,
+    onSaveClick: (String, String, String, String, CampaignType, Uri?) -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit
 ) {
@@ -30,6 +33,8 @@ fun AddEditCampanhaScreen(
     var dataFim by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(CampaignType.INTERNAL) }
     var fileName by remember { mutableStateOf<String?>(null) }
+
+    var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val accentGreen = Color(0XFF00713C)
     val scrollState = rememberScrollState()
@@ -134,7 +139,7 @@ fun AddEditCampanhaScreen(
 
             AppButton(
                 text = if (campanhaId == null) "Criar Campanha" else "Guardar Alterações",
-                onClick = { onSaveClick(nome, descricao, dataInicio, dataFim, selectedType) },
+                onClick = {onSaveClick(nome, descricao, dataInicio, dataFim, selectedType, selectedImageUri)},
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )
@@ -142,4 +147,11 @@ fun AddEditCampanhaScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+fun formatLongToString(timestamp: Long): String {
+    if (timestamp == 0L) return ""
+    val date = Date(timestamp)
+    val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+    return sdf.format(date)
 }
