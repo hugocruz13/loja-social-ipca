@@ -19,8 +19,9 @@ import androidx.compose.ui.unit.sp
 // IMPORTS NECESSÁRIOS
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 
 @Composable
 fun ProfileScreen(

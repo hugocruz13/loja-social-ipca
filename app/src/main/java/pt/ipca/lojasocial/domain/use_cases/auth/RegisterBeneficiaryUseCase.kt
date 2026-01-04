@@ -75,9 +75,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
             id = UUID.randomUUID().toString(),
             beneficiaryId = newUserId,
             schoolYearId = "2024_2025",
-
-            // Usa o novo Enum (PENDENTE ou ANALISE, conforme o que definiste no StatusType)
-            status = StatusType.PENDENTE,
+            status = StatusType.ANALISE,
 
             type = mapCategoryToType(state.requestCategory),
 

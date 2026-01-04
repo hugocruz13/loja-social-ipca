@@ -21,9 +21,11 @@ class StorageRepositoryImpl @Inject constructor(
             storageRef.putFile(uri).await()
 
             // 3. Obter o URL de download após o upload terminar
-            val downloadUrl = storageRef.downloadUrl.await()
+            val downloadUrl = storageRef.downloadUrl.await().toString()
 
-            downloadUrl.toString()
+            android.util.Log.d("STORAGE_OK", "URL Gerado: $downloadUrl")
+
+            downloadUrl
         } catch (e: Exception) {
             e.printStackTrace()
             throw Exception("Falha no upload da imagem: ${e.message}")

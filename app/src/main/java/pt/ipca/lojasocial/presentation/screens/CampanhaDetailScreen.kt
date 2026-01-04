@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,8 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import pt.ipca.lojasocial.domain.models.StatusType
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
+
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun CampanhaDetailScreen(
@@ -28,10 +35,16 @@ fun CampanhaDetailScreen(
     onBackClick: () -> Unit,
     onEditClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: CampanhasViewModel = hiltViewModel()
 ) {
+    val campanha by viewModel.selectedCampanha.collectAsState()
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
+
+    LaunchedEffect(campanhaId) {
+        viewModel.loadCampanhaById(campanhaId)
+    }
 
     Scaffold(
         topBar = {
@@ -51,92 +64,98 @@ fun CampanhaDetailScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
-                .background(Color(0xFFF8F9FA))
-        ) {
-            Card(
-                modifier = Modifier.padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+        if (campanha == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = accentGreen)
+            }
+        } else {
+            val data = campanha!!
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(scrollState)
+                    .background(Color(0xFFF8F9FA))
             ) {
-                Column {
-                    // Placeholder para a imagem (como na imagem_bc8fcf.png)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(Color.LightGray)
-                    )
-
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Super Alimentação",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
+                Card(
+                    modifier = Modifier.padding(16.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column {
+                        AsyncImage(
+                            model = data.imageUrl,
+                            contentDescription = "Imagem da campanha",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                .background(Color.LightGray),
+                            contentScale = ContentScale.Crop,
+                            onSuccess = { android.util.Log.d("COIL", "Imagem carregada com sucesso!") },
+                            onError = { error ->
+                                android.util.Log.e("COIL", "Erro ao carregar: ${error.result.throwable.message}")
+                            }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        AppStatusBadge(status = StatusType.ATIVA)
+
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = data.nome,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AppStatusBadge(status = data.status)
+                        }
                     }
                 }
-            }
 
-            DetailSection(title = "Descrição") {
-                Text(
-                    text = "Esta campanha visa fornecer mantimentos essenciais a famílias vulneráveis, focando-se em bens alimentares e produtos de primeira necessidade.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
-                    lineHeight = 20.sp
-                )
-            }
-
-            DetailSection(title = "Timeline") {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TimelineItem(label = "Data Início", value = "01 Dez, 2025")
-                    TimelineItem(label = "Data Fim", value = "10 Jan, 2026")
-                }
-            }
-
-            DetailSection(title = "Produtos Associados") {
-                Column {
-                    DeliveryProductItem(
-                        productName = "Arroz",
-                        quantity = 200,
-                        unit = "units"
-                    )
-                    HorizontalDivider(color = Color(0xFFF1F1F1))
-
-                    DeliveryProductItem(
-                        productName = "Papel Higiénico",
-                        quantity = 500,
-                        unit = "units"
-                    )
-                    HorizontalDivider(color = Color(0xFFF1F1F1))
-
-                    DeliveryProductItem(
-                        productName = "Bolachas",
-                        quantity = 150,
-                        unit = "units"
+                DetailSection(title = "Descrição") {
+                    Text(
+                        text = data.desc,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        lineHeight = 20.sp
                     )
                 }
-            }
 
-            DetailSection(title = "Associações") {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    AssociationItem(label = "Linked to:", value = "Annual Food Drive")
-                    AssociationItem(label = "Partner:", value = "Global Aid Foundation")
+                DetailSection(title = "Timeline") {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TimelineItem(
+                            label = "Data Início",
+                            value = formatLongToString(data.startDate)
+                        )
+                        TimelineItem(
+                            label = "Data Fim",
+                            value = formatLongToString(data.endDate)
+                        )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                DetailSection(title = "Produtos Associados") {
+                    // Aqui podes futuramente carregar a lista real de produtos do Firebase
+                    Column {
+                        DeliveryProductItem(productName = "Arroz", quantity = 200, unit = "un")
+                        HorizontalDivider(color = Color(0xFFF1F1F1))
+                        DeliveryProductItem(productName = "Bolachas", quantity = 150, unit = "un")
+                    }
+                }
+
+                DetailSection(title = "Associações") {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        AssociationItem(
+                            label = "Tipo:",
+                            value = if (data.type == pt.ipca.lojasocial.domain.models.CampaignType.INTERNAL) "Interna" else "Externa"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }

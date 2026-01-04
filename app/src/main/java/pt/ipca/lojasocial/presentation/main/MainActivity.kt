@@ -37,6 +37,8 @@ class MainActivity : ComponentActivity() {
 
                     AppNavHost()
                 }
+
+
             }
         }
     }
