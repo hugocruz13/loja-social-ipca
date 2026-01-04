@@ -1,6 +1,11 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package pt.ipca.lojasocial.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -10,8 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditEntregaScreen(
     entregaId: String? = null,
@@ -19,34 +29,100 @@ fun AddEditEntregaScreen(
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: AddEditEntregaViewModel = hiltViewModel()
 ) {
-    var beneficiario by remember { mutableStateOf("") }
-    var data by remember { mutableStateOf("") }
-    var hora by remember { mutableStateOf("") }
-    var notas by remember { mutableStateOf("") }
-    var selectedRepeticao by remember { mutableStateOf("Mensalmente") }
+    val uiState by viewModel.uiState.collectAsState()
 
-    val productList = remember { mutableStateListOf<DeliveryProduct>() }
+    val productList = uiState.selectedProducts.mapNotNull { (productId, quantity) ->
+        uiState.availableProducts.find { it.id == productId }?.let { product ->
+            DeliveryProduct(id = product.id, name = product.name, quantity = quantity)
+        }
+    }
 
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
 
+    // --- Navigation Effect ---
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            onSaveClick()
+        }
+    }
+
+    // --- Date Picker State ---
+    val datePickerState = rememberDatePickerState()
+    if (uiState.isDatePickerDialogVisible) {
+        DatePickerDialog(
+            onDismissRequest = viewModel::hideDatePickerDialog,
+            confirmButton = {
+                Button(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        viewModel.onDateChange(sdf.format(Date(millis)))
+                    }
+                    viewModel.hideDatePickerDialog()
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = viewModel::hideDatePickerDialog) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    // --- Time Picker State ---
+    val timePickerState = rememberTimePickerState()
+    if (uiState.isTimePickerDialogVisible) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideTimePickerDialog,
+            title = { Text("Selecionar Hora") },
+            text = {
+                TimePicker(state = timePickerState)
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val time = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour, timePickerState.minute)
+                    viewModel.onTimeChange(time)
+                    viewModel.hideTimePickerDialog()
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                Button(onClick = viewModel::hideTimePickerDialog) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     LaunchedEffect(entregaId) {
         if (entregaId != null) {
-            data = "09/15/2024"
-            hora = "10:30 AM"
-            notas = "Introduza uma nota..."
-            productList.clear()
-            productList.add(DeliveryProduct("1", "Cesta Básica", 1))
-            productList.add(DeliveryProduct("2", "Kit Limpeza", 2))
+            viewModel.loadDelivery(entregaId)
         }
+    }
+
+    if (uiState.isProductPickerDialogVisible) {
+        ProductPickerDialog(
+            products = uiState.availableProducts,
+            selectedProducts = uiState.selectedProducts,
+            stockLimits = uiState.productStockLimits, // Pass the limits here
+            onProductQuantityChange = viewModel::onProductQuantityChange,
+            onDismiss = viewModel::hideProductPickerDialog,
+            onConfirm = viewModel::hideProductPickerDialog
+        )
     }
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = "Agendar Entrega",
+                title = if (entregaId == null) "Agendar Entrega" else "Editar Entrega",
                 onBackClick = onBackClick
             )
         },
@@ -54,8 +130,7 @@ fun AddEditEntregaScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->
@@ -67,14 +142,40 @@ fun AddEditEntregaScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // SEÇÃO: Beneficiário (Apenas Colaborador)
             if (isCollaborator) {
                 Text("Beneficiário", fontWeight = FontWeight.Bold)
-                AppSearchBar(
-                    query = beneficiario,
-                    onQueryChange = { beneficiario = it },
-                    placeholder = "Procurar beneficiário"
-                )
+                
+                if (entregaId == null) {
+                    // MODO CRIAÇÃO: Permite pesquisar
+                    AppSearchBar(
+                        query = uiState.beneficiaryQuery,
+                        onQueryChange = viewModel::onBeneficiaryQueryChange,
+                        placeholder = "Procurar beneficiário"
+                    )
+                    if (uiState.searchedBeneficiaries.isNotEmpty()) {
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(uiState.searchedBeneficiaries) { beneficiary ->
+                                Text(
+                                    text = beneficiary.name,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { viewModel.onBeneficiarySelected(beneficiary) }
+                                        .padding(16.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // MODO EDIÇÃO: Apenas leitura
+                    AppTextField(
+                        value = uiState.beneficiaryQuery, // O loadDelivery preenche isto com o nome
+                        onValueChange = {},
+                        label = "Nome do Beneficiário",
+                        placeholder = "", // Adicionado placeholder obrigatório
+                        readOnly = true,
+                        enabled = false // Visualmente desativado
+                    )
+                }
             }
 
             Text("Data & Repetição", fontWeight = FontWeight.Bold)
@@ -84,20 +185,27 @@ fun AddEditEntregaScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    AppTextField(label = "Data", value = data, onValueChange = { data = it }, placeholder = "mm/dd/yyyy")
-                    AppTextField(label = "Hora", value = hora, onValueChange = { hora = it }, placeholder = "10:30 AM")
+                    Box {
+                        AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy", readOnly = true)
+                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showDatePickerDialog))
+                    }
+                    Box {
+                        AppTextField(label = "Hora", value = uiState.time, onValueChange = {}, placeholder = "HH:mm", readOnly = true)
+                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showTimePickerDialog))
+                    }
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes = listOf("Não repetir", "Semanalmente", "Mensalmente", "Semestral")
+                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
                                     AppButton(
                                         text = repo,
-                                        onClick = { selectedRepeticao = repo },
+                                        onClick = { viewModel.onRepetitionChange(repo) },
+                                        enabled = entregaId == null, // Desativado na edição
                                         modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(selectedRepeticao == repo) accentGreen else Color(0xFFF1F1F5),
+                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
                                 }
                             }
@@ -105,9 +213,10 @@ fun AddEditEntregaScreen(
                                 repeticoes.takeLast(2).forEach { repo ->
                                     AppButton(
                                         text = repo,
-                                        onClick = { selectedRepeticao = repo },
+                                        onClick = { viewModel.onRepetitionChange(repo) },
+                                        enabled = entregaId == null, // Desativado na edição
                                         modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(selectedRepeticao == repo) accentGreen else Color(0xFFF1F1F5),
+                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
                                     )
                                 }
                             }
@@ -116,9 +225,7 @@ fun AddEditEntregaScreen(
                 }
             }
 
-            DeliveryProductHeader(onAddProductClick = {
-                productList.add(DeliveryProduct(productList.size.toString(), "Novo Produto", 1))
-            })
+            DeliveryProductHeader(onAddProductClick = viewModel::showProductPickerDialog)
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -131,10 +238,9 @@ fun AddEditEntregaScreen(
                         QuantitySelectorItem(
                             product = product,
                             onQuantityChange = { newQty ->
-                                val idx = productList.indexOfFirst { it.id == product.id }
-                                if (idx != -1) productList[idx] = productList[idx].copy(quantity = newQty)
+                                viewModel.onProductQuantityChange(product.id, newQty)
                             },
-                            onRemove = { productList.removeAll { it.id == product.id } },
+                            onRemove = { viewModel.onProductQuantityChange(product.id, 0) },
                             showDivider = index < productList.lastIndex
                         )
                     }
@@ -143,8 +249,8 @@ fun AddEditEntregaScreen(
 
             Text("Notas", fontWeight = FontWeight.Bold)
             AppTextField(
-                value = notas,
-                onValueChange = { notas = it },
+                value = uiState.observations,
+                onValueChange = viewModel::onObservationsChange,
                 label = "",
                 placeholder = "Introduza uma nota...",
                 modifier = Modifier.height(120.dp),
@@ -152,7 +258,7 @@ fun AddEditEntregaScreen(
 
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
-                onClick = onSaveClick,
+                onClick = viewModel::saveDelivery,
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )

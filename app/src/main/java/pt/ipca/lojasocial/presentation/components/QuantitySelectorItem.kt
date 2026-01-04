@@ -21,12 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.shape.CircleShape
 
-data class DeliveryProduct(
-    val id: String,
-    val name: String,
-    val quantity: Int
-)
-
 @Composable
 fun QuantitySelectorItem(
     product: DeliveryProduct,
