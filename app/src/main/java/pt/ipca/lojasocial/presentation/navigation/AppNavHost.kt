@@ -387,7 +387,6 @@ fun AppNavHost(
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
                 navItems = globalNavItems,
                 onNavigate = onNavigate,
-                onAddProductClick = { navController.navigate("product_add_edit") },
                 onDownloadReportClick = { }
             )
         }

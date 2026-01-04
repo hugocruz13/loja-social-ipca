@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -21,6 +22,7 @@ import pt.ipca.lojasocial.presentation.components.*
 import pt.ipca.lojasocial.presentation.models.StockUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
+import pt.ipca.lojasocial.utils.PdfValidadeService
 
 
 @Composable
@@ -31,9 +33,11 @@ fun ProductListScreen(
     onNavigate: (String) -> Unit,
     onDownloadReportClick: () -> Unit,
     stockViewModel: StockViewModel = hiltViewModel(),
-    productViewModel: ProductViewModel = hiltViewModel(),
-    onAddProductClick: () -> Unit
+    productViewModel: ProductViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val pdfService = remember { PdfValidadeService(context) }
+
     var searchQuery by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
 
@@ -150,8 +154,32 @@ fun ProductListScreen(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp)) // Mesmo arredondamento
                             .background(Color(0xFFF0F2F5)) // Mesma cor de fundo cinza
-                            .clickable(onClick = onDownloadReportClick)
-                            .padding(12.dp), // Mesmo padding interno para manter a altura igual
+                            .clickable(onClick = {
+
+                                val dadosParaRelatorio = stockList.mapNotNull { stock ->
+
+                                    val produto = products.firstOrNull { it.id == stock.productId }
+
+                                    if (produto != null) {
+                                        pt.ipca.lojasocial.domain.models.ItemRelatorioValidade(
+                                            nomeProduto = produto.name,
+                                            quantidade = stock.quantity,
+                                            dataValidade = stock.expiryDate ?: 0L
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                }
+
+                                if (dadosParaRelatorio.isNotEmpty()) {
+                                    pdfService.gerarRelatorio(dadosParaRelatorio)
+                                } else {
+                                    android.widget.Toast.makeText(context, "Sem dados para gerar relatório", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+
+                                onDownloadReportClick()
+                            })
+                            .padding(12.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -247,7 +275,6 @@ fun ProductListScreenPreview() {
         ProductListScreen(
             onBackClick = { },
             onProductClick = { },
-            onAddProductClick = { },
             onDownloadReportClick = { },
             navItems = dummyNavItems,
             onNavigate = { }
