@@ -13,17 +13,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun AddEditCampanhaScreen(
     campanhaId: String? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String, String, String, CampaignType) -> Unit,
+    onSaveClick: (String, String, String, String, CampaignType, Uri?) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: CampanhasViewModel = hiltViewModel()
 ) {
+
+
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var dataInicio by remember { mutableStateOf("") }
@@ -31,25 +38,27 @@ fun AddEditCampanhaScreen(
     var selectedType by remember { mutableStateOf(CampaignType.INTERNAL) }
     var fileName by remember { mutableStateOf<String?>(null) }
 
+    var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+    val selectedCampanha by viewModel.selectedCampanha.collectAsState()
+
     val accentGreen = Color(0XFF00713C)
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
     LaunchedEffect(campanhaId) {
         if (campanhaId != null) {
-            nome = "Super Alimentação"
-            descricao = "Campanha simulada para testes de edição."
-            dataInicio = "01/12/2025"
-            dataFim = "10/01/2026"
-            selectedType = CampaignType.EXTERNAL
-            fileName = "imagem_exemplo.jpg"
-        } else {
-            nome = ""
-            descricao = ""
-            dataInicio = ""
-            dataFim = ""
-            selectedType = CampaignType.EXTERNAL
-            fileName = null
+            viewModel.loadCampanhaById(campanhaId)
+        }
+    }
+
+    LaunchedEffect(selectedCampanha) {
+        selectedCampanha?.let { camp ->
+            nome = camp.nome
+            descricao = camp.desc
+            dataInicio = formatLongToString(camp.startDate)
+            dataFim = formatLongToString(camp.endDate)
+            selectedType = camp.type
         }
     }
 
@@ -57,11 +66,20 @@ fun AddEditCampanhaScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
+            selectedImageUri = it
             fileName = context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 cursor.moveToFirst()
                 cursor.getString(nameIndex)
             } ?: "Ficheiro selecionado"
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.isSaveSuccess.collect { success ->
+            if (success) {
+                onBackClick()
+            }
         }
     }
 
@@ -76,8 +94,7 @@ fun AddEditCampanhaScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->
@@ -134,7 +151,7 @@ fun AddEditCampanhaScreen(
 
             AppButton(
                 text = if (campanhaId == null) "Criar Campanha" else "Guardar Alterações",
-                onClick = { onSaveClick(nome, descricao, dataInicio, dataFim, selectedType) },
+                onClick = {onSaveClick(nome, descricao, dataInicio, dataFim, selectedType, selectedImageUri)},
                 containerColor = accentGreen,
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             )
@@ -142,4 +159,11 @@ fun AddEditCampanhaScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+fun formatLongToString(timestamp: Long): String {
+    if (timestamp == 0L) return ""
+    val date = Date(timestamp)
+    val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+    return sdf.format(date)
 }

@@ -1,10 +1,12 @@
 package pt.ipca.lojasocial.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.tasks.await
+import pt.ipca.lojasocial.data.mapper.toDomain
+import pt.ipca.lojasocial.data.mapper.toDto
+import pt.ipca.lojasocial.data.remote.dto.CampaignDto
 import pt.ipca.lojasocial.domain.models.Campaign
-import pt.ipca.lojasocial.domain.models.CampaignStatus
-import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import javax.inject.Inject
 
@@ -12,29 +14,13 @@ class CampaignRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : CampaignRepository {
 
-    private val campanhasCollection = firestore.collection("campanhas")
+    private val collection = firestore.collection("campanhas")
 
     override suspend fun getCampaigns(): List<Campaign> {
         return try {
-            val snapshot = campanhasCollection.get().await()
+            val snapshot = collection.get().await()
             snapshot.documents.mapNotNull { doc ->
-                val estadoDb = doc.getString("estado") ?: ""
-                val status = when (estadoDb) {
-                    "Ativa" -> CampaignStatus.ACTIVE
-                    "Agendada" -> CampaignStatus.PLANNED
-                    "Completa" -> CampaignStatus.INACTIVE
-                    else -> CampaignStatus.PLANNED
-                }
-                Campaign(
-                    id = doc.id,
-                    title = doc.getString("nome") ?: "",
-                    description = doc.getString("descricao") ?: "",
-                    startDate = doc.getLong("dataInicio") ?: 0L,
-                    endDate = doc.getLong("dataFim") ?: 0L,
-                    imageUrl = doc.getString("imagemUrl") ?: "",
-                    type = if (doc.getString("tipo") == "Interno") CampaignType.INTERNAL else CampaignType.EXTERNAL,
-                    status = status
-                )
+                doc.toObject<CampaignDto>()?.toDomain()
             }
         } catch (e: Exception) {
             emptyList()
@@ -43,77 +29,33 @@ class CampaignRepositoryImpl @Inject constructor(
 
     override suspend fun getCampaignById(id: String): Campaign? {
         return try {
-            val doc = campanhasCollection.document(id).get().await()
-            val estadoDb = doc.getString("estado") ?: ""
-            val status = when (estadoDb) {
-                "Ativa" -> CampaignStatus.ACTIVE
-                "Agendada" -> CampaignStatus.PLANNED
-                "Completa" -> CampaignStatus.INACTIVE
-                else -> CampaignStatus.PLANNED
-            }
-            if (doc.exists()) {
-                Campaign(
-                    id = doc.id,
-                    title = doc.getString("nome") ?: "",
-                    description = doc.getString("descricao") ?: "",
-                    startDate = doc.getLong("dataInicio") ?: 0L,
-                    endDate = doc.getLong("dataFim") ?: 0L,
-                    imageUrl = doc.getString("imagemUrl") ?: "",
-                    type = if (doc.getString("tipo") == "Interno") CampaignType.INTERNAL else CampaignType.EXTERNAL,
-                    status = status
-                )
-            } else null
+            val doc = collection.document(id).get().await()
+            doc.toObject<CampaignDto>()?.toDomain()
         } catch (e: Exception) {
             null
         }
     }
 
     override suspend fun addCampaign(campaign: Campaign) {
-        try {
-            val data = hashMapOf(
-                "nome" to campaign.title,
-                "descricao" to campaign.description,
-                "dataInicio" to campaign.startDate,
-                "dataFim" to campaign.endDate,
-                "tipo" to if (campaign.type == CampaignType.INTERNAL) "Interno" else "Externo",
-                "estado" to when (campaign.status) {
-                    CampaignStatus.ACTIVE -> "Ativa"
-                    CampaignStatus.PLANNED -> "Agendada"
-                    CampaignStatus.INACTIVE -> "Completa"
-                    else -> "Agendada"
-                },
-                "imagemUrl" to campaign.imageUrl
-            )
-            campanhasCollection.document(campaign.id).set(data).await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw e
-        }
+        val dto = campaign.toDto()
+        collection.document(campaign.id).set(dto).await()
     }
 
     override suspend fun updateCampaign(campaign: Campaign) {
-        val data = mutableMapOf<String, Any>(
-            "nome" to campaign.title,
-            "descricao" to campaign.description,
-            "dataInicio" to campaign.startDate,
-            "dataFim" to campaign.endDate,
-            "tipo" to if (campaign.type == CampaignType.INTERNAL) "Interno" else "Externo",
-            "estado" to when (campaign.status) {
-                CampaignStatus.ACTIVE -> "Ativa"
-                CampaignStatus.PLANNED -> "Agendada"
-                CampaignStatus.INACTIVE -> "Completa"
-                else -> "Agendada"
-            }
-        )
-
-        if (!campaign.imageUrl.isNullOrBlank()) {
-            data["imagemUrl"] = campaign.imageUrl
-        }
-
-        campanhasCollection.document(campaign.id).update(data).await()
+        val dto = campaign.toDto()
+        collection.document(campaign.id).set(dto).await()
     }
 
-    override suspend fun deleteCampaign(id: String) {}
+    override suspend fun deleteCampaign(id: String) {
+        collection.document(id).delete().await()
+    }
 
-    override suspend fun updateCampaignStatus(id: String, status: CampaignStatus) {}
+    override suspend fun updateCampaignStatus(id: String, status: pt.ipca.lojasocial.domain.models.CampaignStatus) {
+        val estadoStr = when (status) {
+            pt.ipca.lojasocial.domain.models.CampaignStatus.ACTIVE -> "Ativa"
+            pt.ipca.lojasocial.domain.models.CampaignStatus.PLANNED -> "Agendada"
+            pt.ipca.lojasocial.domain.models.CampaignStatus.INACTIVE -> "Completa"
+        }
+        collection.document(id).update("estado", estadoStr).await()
+    }
 }
