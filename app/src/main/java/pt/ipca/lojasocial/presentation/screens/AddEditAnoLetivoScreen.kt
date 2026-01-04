@@ -4,35 +4,66 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDatePickerField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.navigation.AppScreen
+import pt.ipca.lojasocial.presentation.viewmodels.AnosLetivosViewModel
 
 @Composable
 fun AddEditAnoLetivoScreen(
-    anoLetivoId: Int? = null,
+    anoLetivoId: String? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: AnosLetivosViewModel = hiltViewModel()
 ) {
+
+    val realId = if (anoLetivoId == "{id}") null else anoLetivoId
+
     var dataInicio by remember { mutableStateOf("") }
     var dataFim by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(anoLetivoId == null) }
+    var isEditing by remember { mutableStateOf(realId == null) }
 
     val accentGreen = Color(0XFF00713C)
+
+    LaunchedEffect(realId) {
+        if (realId != null) {
+            viewModel.loadAnoLetivoPorId(realId)
+            isEditing = false
+        } else {
+            dataInicio = ""
+            dataFim = ""
+            isEditing = true
+        }
+    }
+
+    LaunchedEffect(anoLetivoId) {
+        if (anoLetivoId != null) {
+            viewModel.loadAnoLetivoPorId(anoLetivoId)
+        }
+    }
+
+    LaunchedEffect(viewModel.dataInicioInput, viewModel.dataFimInput) {
+        if (anoLetivoId != null) {
+            dataInicio = viewModel.dataInicioInput
+            dataFim = viewModel.dataFimInput
+        }
+    }
+
+    LaunchedEffect(viewModel.isSaveSuccess) {
+        viewModel.isSaveSuccess.collect { success ->
+            if (success) onBackClick()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -109,8 +140,7 @@ fun AddEditAnoLetivoScreen(
                 AppButton(
                     text = if (anoLetivoId == null) "Registar" else "Guardar Alterações",
                     onClick = {
-                        onSaveClick(dataInicio, dataFim)
-                        isEditing = false
+                        viewModel.saveAnoLetivo(anoLetivoId, dataInicio, dataFim)
                     },
                     containerColor = accentGreen,
                     modifier = Modifier

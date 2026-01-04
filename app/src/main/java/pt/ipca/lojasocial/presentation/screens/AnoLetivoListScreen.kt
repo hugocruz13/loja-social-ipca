@@ -9,17 +9,22 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AdicionarButton
 import pt.ipca.lojasocial.presentation.components.AnoLetivoListItem
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.viewmodels.AnosLetivosViewModel
 
 data class AnoLetivo(
-    val id: Int,
+    val id: String,
     val label: String,
     val isCurrent: Boolean
 )
@@ -30,14 +35,11 @@ fun AnoLetivoListScreen(
     onAddClick: () -> Unit,
     onYearClick: (AnoLetivo) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: AnosLetivosViewModel = hiltViewModel()
 ) {
-    val anosLetivos = listOf(
-        AnoLetivo(1, "2024/2025", true),
-        AnoLetivo(2, "2023/2024", false),
-        AnoLetivo(3, "2022/2023", false),
-        AnoLetivo(4, "2021/2022", false)
-    )
+    val anosLetivos by viewModel.anosLetivos.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     Scaffold(
         topBar = {
@@ -50,8 +52,7 @@ fun AnoLetivoListScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         floatingActionButton = {
@@ -61,32 +62,38 @@ fun AnoLetivoListScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text(
-                        text = "Histórico de Anos Letivos",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Histórico de Anos Letivos",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
 
-                items(anosLetivos) { ano ->
-                    AnoLetivoListItem(
-                        yearLabel = ano.label,
-                        isCurrentYear = ano.isCurrent,
-                        onClick = { onYearClick(ano) },
-                        onDownloadClick = { /* Ação de download vazia */ }
-                    )
+                    items(anosLetivos) { ano ->
+                        AnoLetivoListItem(
+                            yearLabel = ano.label,
+                            isCurrentYear = ano.isCurrent,
+                            onClick = { onYearClick(ano) }
+                        )
+                    }
                 }
             }
         }
