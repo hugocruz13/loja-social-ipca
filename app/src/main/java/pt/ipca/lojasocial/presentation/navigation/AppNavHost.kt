@@ -36,12 +36,14 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
+import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
 sealed class AppScreen(val route: String) {
-    object Login : AppScreen("login")
     object Dashboard : AppScreen("dashboard")
+    object Login : AppScreen("login")
     object RegisterStep1 : AppScreen("register/step1")
     object RegisterStep2 : AppScreen("register/step2")
     object RegisterStep3 : AppScreen("register/step3")
@@ -52,7 +54,6 @@ sealed class AppScreen(val route: String) {
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
     object RequerimentosList : AppScreen("requerimentoslist")
     object RequerimentoDetails : AppScreen("requerimentodetails?id={id}")
-
     object RequerimentoStatus : AppScreen("request_status")
     object CampanhasList : AppScreen("campanhaslist")
     object CampanhaAddEdit : AppScreen("campanha_add_edit?id={id}")
@@ -60,10 +61,12 @@ sealed class AppScreen(val route: String) {
     object EntregasList : AppScreen("entregaslist")
     object ProductList : AppScreen("product_list")
     object ProductDetail : AppScreen("product_detail/{productId}")
+    object StockEditQuantity : AppScreen("stock_edit_quantity/{stockId}")
     object ProductAddEdit : AppScreen("product_add_edit?id={id}")
     object ProductType : AppScreen("add_product_type")
     object ManageStaff : AppScreen("manage_staff")
     object LogsList : AppScreen("logs_list")
+    object EntregaAddEdit : AppScreen("agendar_entrega?id={id}&role={role}")
 }
 
 @Composable
@@ -93,7 +96,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                viewModel = viewModel, // Passa o AuthViewModel partilhado
+                viewModel = viewModel,
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
 
                 onLoginSuccess = {
@@ -142,7 +145,9 @@ fun AppNavHost(
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
                         "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
-                        "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
+                        "stock" ->  navController.navigate(AppScreen.ProductList.route)
+                        "profile" -> navController.navigate(AppScreen.Profile.route)
+                        "notification" -> navController.navigate(AppScreen.Notification.route)
                         "beneficiarios" -> { /* navController.navigate(AppScreen.BeneficiariosList.route) */ }
                         "reports" -> { /* navController.navigate(AppScreen.Reports.route) */ }
                         "apoio" -> { /* navController.navigate(AppScreen.Support.route) */ }
@@ -232,9 +237,50 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
+
         // --- OUTRAS ROTAS (Notificações, Perfil, Campanhas, Entregas) ---
         composable(AppScreen.Notification.route) {
             NotificationsScreen(
+                onBackClick = { navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
+        composable(AppScreen.Profile.route) {
+            val authState by viewModel.state.collectAsState()
+            // Injetar o ViewModel correto para o Perfil
+            val beneficiariesViewModel: pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel = hiltViewModel()
+
+            // Converter Role
+            val userRoleEnum = if (authState.userRole == "colaborador") {
+                pt.ipca.lojasocial.domain.models.UserRole.STAFF
+            } else {
+                pt.ipca.lojasocial.domain.models.UserRole.BENEFICIARY
+            }
+
+            // Construir objeto Beneficiary temporário a partir do estado de Auth
+            val currentUser = pt.ipca.lojasocial.domain.models.Beneficiary(
+                id = authState.userId ?: "",
+                name = authState.fullName,
+                email = authState.email,
+                birthDate = 0, // Dado não disponível no AuthState
+                schoolYearId = "", // Dado não disponível
+                phoneNumber = 0, // Dado não disponível
+                ccNumber = authState.cc,
+                status = authState.beneficiaryStatus
+            )
+
+            ProfileScreen(
+                viewModel = beneficiariesViewModel,
+                currentUser = currentUser,
+                userRole = userRoleEnum,
+                onLogout = {
+                    viewModel.logout()
+                    navController.navigate(AppScreen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 onBackClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
@@ -335,51 +381,43 @@ fun AppNavHost(
 
 
         composable(AppScreen.EntregasList.route) {
+            val entregasViewModel: EntregasViewModel = hiltViewModel()
+            val authState by viewModel.state.collectAsState()
+
+            // Recarrega as entregas sempre que este ecrã for exibido
+            LaunchedEffect(Unit) {
+                entregasViewModel.loadDeliveries()
+            }
+
             EntregasScreen(
+                viewModel = entregasViewModel,
+                isCollaborator = authState.userRole == "colaborador",
                 onBackClick = { navController.popBackStack() },
-                onAddClick = { navController.navigate("agendar_entrega?role=colaborador") },
-                onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=colaborador") },
-                onDeliveryClick = { id ->navController.navigate("entrega_detail/$id/colaborador")},
+                onAddClick = { navController.navigate("agendar_entrega?role=${authState.userRole}") },
+                onEditDelivery = { id -> navController.navigate("agendar_entrega?id=$id&role=${authState.userRole}") },
+                onDeliveryClick = { id -> navController.navigate("entrega_detail/$id/${authState.userRole}") },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
 
         composable(
-            route = "agendar_entrega?id={id}&role={role}",
+            route = "entrega_detail/{entregaId}/{userRole}",
             arguments = listOf(
-                navArgument("id") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("role") { type = NavType.StringType; defaultValue = "colaborador" }
+                navArgument("entregaId") { type = NavType.StringType },
+                navArgument("userRole") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
-            val role = backStackEntry.arguments?.getString("role")
-
-            AddEditEntregaScreen(
-                entregaId = id,
-                isCollaborator = role == "colaborador",
-                onBackClick = { navController.popBackStack() },
-                onSaveClick = {navController.popBackStack()},
-                navItems = globalNavItems,
-                onNavigate = onNavigate
-            )
-        }
-
-        composable(
-            route = "entrega_detail/{id}/{role}",
-            arguments = listOf(
-                navArgument("id") { type = NavType.StringType },
-                navArgument("role") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id") ?: ""
-            val role = backStackEntry.arguments?.getString("role") ?: "beneficiario"
+            val entregaId = backStackEntry.arguments?.getString("entregaId") ?: ""
+            val userRole = backStackEntry.arguments?.getString("userRole") ?: "colaborador"
+            val viewModel: EntregaDetailViewModel = hiltViewModel()
 
             EntregaDetailScreen(
-                entregaId = id,
-                userRole = role,
+                entregaId = entregaId,
+                userRole = userRole,
+                viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onStatusUpdate = { entregue ->navController.popBackStack()},
+                onStatusUpdate = { entregue -> navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -389,9 +427,9 @@ fun AppNavHost(
             ProductListScreen(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
-                onAddProductClick = {},
                 navItems = globalNavItems,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                onDownloadReportClick = { /* Implementar download */ }
             )
         }
 
@@ -406,32 +444,53 @@ fun AppNavHost(
             ProductDetailScreen(
                 productId = productId,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = { navController.navigate("product_add_edit?id=$it") },
+                onEditClick = { stockId -> navController.navigate("stock_edit_quantity/$stockId")},
+                //onStatusUpdate = { /* Implement status update callback if needed at navigation level */ },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
 
         composable(
-            route = "product_add_edit?id={id}",
+            route = AppScreen.StockEditQuantity.route,
             arguments = listOf(
-                navArgument("id") {
+                navArgument("stockId") {
                     type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
-
-            val productId = backStackEntry.arguments?.getString("id")
+            val stockId = backStackEntry.arguments!!.getString("stockId")!!
 
             AddEditProductScreen(
-                productId = productId,
+                stockId = stockId,
                 onBackClick = { navController.popBackStack() },
                 onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
+
+        composable(
+            route = AppScreen.EntregaAddEdit.route,
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("role") { type = NavType.StringType; defaultValue = "colaborador" }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+            val role = backStackEntry.arguments?.getString("role")
+            val viewModel: AddEditEntregaViewModel = hiltViewModel()
+
+            AddEditEntregaScreen(
+                entregaId = id, // Pass the extracted ID here
+                viewModel = viewModel,
+                isCollaborator = role == "colaborador",
+                onBackClick = { navController.popBackStack() },
+                onSaveClick = { navController.popBackStack() },
+                navItems = globalNavItems,
+                onNavigate = onNavigate
+            )
+        }
+
     }
 }

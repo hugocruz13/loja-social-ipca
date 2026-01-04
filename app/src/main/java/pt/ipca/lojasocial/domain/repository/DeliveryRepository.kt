@@ -75,6 +75,22 @@ interface DeliveryRepository {
      */
     suspend fun updateDeliveryItems(id: String, items: Map<String, Int>)
 
+    /**
+     * Atualiza a data e hora planeada de uma entrega.
+     *
+     * @param id O identificador da entrega.
+     * @param timestamp A nova data/hora em milissegundos.
+     */
+    suspend fun updateDeliveryDate(id: String, timestamp: Long)
+
+    /**
+     * Atualiza as observações de uma entrega.
+     *
+     * @param id O identificador da entrega.
+     * @param observations As novas observações.
+     */
+    suspend fun updateDeliveryObservations(id: String, observations: String)
+
 
     // --- Consultas Específicas ---
 
