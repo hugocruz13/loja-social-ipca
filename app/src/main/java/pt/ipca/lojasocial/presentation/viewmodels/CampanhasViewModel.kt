@@ -8,9 +8,12 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 import pt.ipca.lojasocial.domain.models.CampaignType
@@ -19,9 +22,8 @@ import pt.ipca.lojasocial.domain.use_cases.campaign.AddCampaignUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
-import pt.ipca.lojasocial.presentation.components.StatusType
 import pt.ipca.lojasocial.presentation.screens.CampanhaModel
-import pt.ipca.lojasocial.presentation.screens.formatLongToString
+import pt.ipca.lojasocial.domain.models.StatusType
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
@@ -35,6 +37,8 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val auth: FirebaseAuth,
+    private val firestore: FirebaseFirestore,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -168,17 +172,11 @@ class CampanhasViewModel @Inject constructor(
             try {
                 val campanhaAtual = if (id != null) getCampaignByIdUseCase(id) else null
 
-                val startTs = if (dataInicioStr.isBlank() && campanhaAtual != null) {
-                    campanhaAtual.startDate
-                } else {
-                    parseDateToLong(dataInicioStr)
-                }
+                val startTs = if (dataInicioStr.isBlank() && campanhaAtual != null)
+                    campanhaAtual.startDate else parseDateToLong(dataInicioStr)
 
-                val endTs = if (dataFimStr.isBlank() && campanhaAtual != null) {
-                    campanhaAtual.endDate
-                } else {
-                    parseDateToLong(dataFimStr)
-                }
+                val endTs = if (dataFimStr.isBlank() && campanhaAtual != null)
+                    campanhaAtual.endDate else parseDateToLong(dataFimStr)
 
                 var downloadUrl: String? = campanhaAtual?.imageUrl
 
@@ -187,6 +185,7 @@ class CampanhasViewModel @Inject constructor(
                     downloadUrl = uploadImageUseCase(imageUri, fileName)
                 }
 
+                // Cálculo de estado (Regra de negócio que poderia estar num UseCase de validação)
                 val hojeTs = clearTime(System.currentTimeMillis())
                 val statusCalculado = when {
                     endTs < hojeTs -> CampaignStatus.INACTIVE
@@ -200,20 +199,39 @@ class CampanhasViewModel @Inject constructor(
                     description = descricao,
                     startDate = startTs,
                     endDate = endTs,
-                    type = if (tipo == CampaignType.INTERNAL) CampaignType.INTERNAL else CampaignType.EXTERNAL,
+                    type = tipo,
                     status = statusCalculado,
                     imageUrl = downloadUrl ?: ""
                 )
 
-                if (id == null) addCampaignUseCase(campaign) else updateCampaignUseCase(campaign)
+                // A lógica de Log agora acontece dentro destes invokes
+                if (id == null) {
+                    addCampaignUseCase(campaign)
+                } else {
+                    updateCampaignUseCase(campaign)
+                }
 
                 _isSaveSuccess.emit(true)
 
             } catch (e: Exception) {
-                android.util.Log.e("SAVE_ERROR", "Erro fatal ao guardar no Firestore: ${e.message}")
+                android.util.Log.e("SAVE_ERROR", e.message.toString())
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    private suspend fun saveLog(acao: String, detalhe: String) {
+        try {
+            val log = hashMapOf(
+                "acao" to acao,
+                "detalhe" to detalhe,
+                "utilizador" to (auth.currentUser?.email ?: "Sistema"),
+                "timestamp" to System.currentTimeMillis()
+            )
+            firestore.collection("logs").add(log).await()
+        } catch (e: Exception) {
+            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
         }
     }
 

@@ -30,10 +30,13 @@ fun ProductListScreen(
     onProductClick: (String) -> Unit,
     onAddProductClick: () -> Unit,
     onDownloadReportClick: () -> Unit,
+    onAddNewTypeClick: () -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
     var selectedYear by remember { mutableStateOf("2024-2025") }
     var selectedStatus by remember { mutableStateOf("") }
 
@@ -52,13 +55,49 @@ fun ProductListScreen(
         topBar = {
             AppTopBar(
                 title = "Produtos",
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+
             )
         },
         floatingActionButton = {
-            AdicionarButton(
-                onClick = onAddProductClick
-            )
+            Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (expanded) {
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            expanded = false
+                            onAddNewTypeClick()
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        icon = { Icon(Icons.Default.LibraryAdd, contentDescription = null) },
+                        text = { Text("Novo Tipo") }
+                    )
+
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            expanded = false
+                            onAddProductClick()
+                        },
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        icon = { Icon(Icons.Default.Inventory, contentDescription = null) },
+                        text = { Text("Registar Stock") }
+                    )
+                }
+
+                FloatingActionButton(
+                    onClick = { expanded = !expanded },
+                    containerColor = Color(0XFF00713C),
+                    contentColor = Color.White,
+                    shape = androidx.compose.foundation.shape.CircleShape
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
+                        contentDescription = "Menu Adicionar"
+                    )
+                }
+            }
         },
         bottomBar = {
             AppBottomBar(

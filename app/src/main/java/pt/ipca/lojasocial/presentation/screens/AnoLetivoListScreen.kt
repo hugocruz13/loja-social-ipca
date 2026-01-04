@@ -13,9 +13,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.SchoolYear
 import pt.ipca.lojasocial.presentation.components.AdicionarButton
 import pt.ipca.lojasocial.presentation.components.AnoLetivoListItem
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
@@ -23,17 +25,12 @@ import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.AnosLetivosViewModel
 
-data class AnoLetivo(
-    val id: String,
-    val label: String,
-    val isCurrent: Boolean
-)
 
 @Composable
 fun AnoLetivoListScreen(
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
-    onYearClick: (AnoLetivo) -> Unit,
+    onYearClick: (SchoolYear) -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     viewModel: AnosLetivosViewModel = hiltViewModel()
@@ -51,14 +48,12 @@ fun AnoLetivoListScreen(
         bottomBar = {
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "",
+                currentRoute = "settings",
                 onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         floatingActionButton = {
-            AdicionarButton(
-                onClick = onAddClick
-            )
+            AdicionarButton(onClick = onAddClick)
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -67,10 +62,10 @@ fun AnoLetivoListScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
+            if (isLoading && anosLetivos.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0XFF00713C)
                 )
             } else {
                 LazyColumn(
@@ -90,7 +85,7 @@ fun AnoLetivoListScreen(
                     items(anosLetivos) { ano ->
                         AnoLetivoListItem(
                             yearLabel = ano.label,
-                            isCurrentYear = ano.isCurrent,
+                            isCurrentYear = ano.isCurrent(),
                             onClick = { onYearClick(ano) }
                         )
                     }

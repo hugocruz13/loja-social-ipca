@@ -11,13 +11,15 @@ import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.use_cases.auth.LoginUserUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiaryByIdUseCase
-import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiaryByUidUseCase
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUserUseCase: LoginUserUseCase,
-    private val getBeneficiaryByIdUseCase: GetBeneficiaryByIdUseCase
+    private val getBeneficiaryByIdUseCase: GetBeneficiaryByIdUseCase,
+    private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Initial)
@@ -29,6 +31,9 @@ class LoginViewModel @Inject constructor(
 
             loginUserUseCase(email, password)
                 .onSuccess { user ->
+
+                    updateFcmToken(user.id)
+
                     when (user.role) {
                         UserRole.STAFF -> {
                             _uiState.value = LoginUiState.SuccessStaff(user)
@@ -54,6 +59,16 @@ class LoginViewModel @Inject constructor(
                 }
         }
     }
+
+    private fun updateFcmToken(userId: String) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            viewModelScope.launch {
+                // A tua função saveFcmToken inteligente trata de saber em que coleção guardar
+                communicationRepository.saveFcmToken(userId, token)
+            }
+        }
+    }
+
 }
 
 sealed interface LoginUiState {

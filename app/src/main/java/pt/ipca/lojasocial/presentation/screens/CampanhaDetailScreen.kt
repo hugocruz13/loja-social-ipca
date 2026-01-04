@@ -36,7 +36,8 @@ fun CampanhaDetailScreen(
     onBackClick: () -> Unit,
     onEditClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: CampanhasViewModel = hiltViewModel()
 ) {
     val campanha by viewModel.selectedCampanha.collectAsState()
     val scrollState = rememberScrollState()
