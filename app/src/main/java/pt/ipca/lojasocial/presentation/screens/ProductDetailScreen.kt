@@ -73,12 +73,14 @@ fun ProductDetailScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onEditClick(productId) },
+                onClick = {
+                    stock?.id?.let { onEditClick(it) }
+                },
                 containerColor = accentGreen,
                 contentColor = Color.White,
                 shape = CircleShape
             ) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar Produto")
+                Icon(Icons.Default.Edit, contentDescription = "Editar Quantidade")
             }
         },
         bottomBar = {

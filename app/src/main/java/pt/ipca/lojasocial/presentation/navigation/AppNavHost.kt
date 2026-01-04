@@ -58,6 +58,9 @@ sealed class AppScreen(val route: String) {
     object EntregasList : AppScreen("entregaslist")
     object ProductList : AppScreen("product_list")
     object ProductDetail : AppScreen("product_detail/{productId}")
+    object StockEditQuantity : AppScreen("stock_edit_quantity/{stockId}")
+
+
 }
 
 @Composable
@@ -386,32 +389,31 @@ fun AppNavHost(
             ProductDetailScreen(
                 productId = productId,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = { navController.navigate("product_add_edit?id=$it") },
+                onEditClick = { stockId -> navController.navigate("stock_edit_quantity/$stockId")},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
 
         composable(
-            route = "product_add_edit?id={id}",
+            route = AppScreen.StockEditQuantity.route,
             arguments = listOf(
-                navArgument("id") {
+                navArgument("stockId") {
                     type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
 
-            val productId = backStackEntry.arguments?.getString("id")
+            val stockId = backStackEntry.arguments!!.getString("stockId")!!
 
             AddEditProductScreen(
-                productId = productId,
+                stockId = stockId,
                 onBackClick = { navController.popBackStack() },
                 onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
+
     }
 }

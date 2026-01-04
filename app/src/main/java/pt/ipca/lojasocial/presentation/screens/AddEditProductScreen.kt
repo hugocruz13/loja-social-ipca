@@ -1,77 +1,60 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import android.net.Uri
-import android.provider.OpenableColumns
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil.compose.AsyncImage
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 
 @Composable
 fun AddEditProductScreen(
-    productId: String? = null,
+    stockId: String,
     onBackClick: () -> Unit,
     onSaveClick: () -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    stockViewModel: StockViewModel = hiltViewModel(),
+    productViewModel: ProductViewModel = hiltViewModel()
 ) {
-    var name by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
-    var expiryDate by remember { mutableStateOf("") }
-    var fileName by remember { mutableStateOf<String?>(null) }
-
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
-    val context = LocalContext.current
 
-    LaunchedEffect(productId) {
-        if (productId != null) {
-            name = "Arroz $productId"
-            type = "Food Staples"
-            quantity = "32"
-            expiryDate = "31/12/2025"
-            fileName = "arroz.jpg"
-        } else {
-            name = ""
-            type = ""
-            quantity = ""
-            expiryDate = ""
-            fileName = null
-        }
+    val stock by stockViewModel.selectedStockItem.collectAsState()
+    val product by productViewModel.selectedProduct.collectAsState()
+
+    var quantity by remember { mutableStateOf("") }
+
+    LaunchedEffect(stockId) {
+        stockViewModel.loadStockItemById(stockId)
     }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            fileName = context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                cursor.moveToFirst()
-                cursor.getString(nameIndex)
-            } ?: "Ficheiro selecionado"
+    LaunchedEffect(stock) {
+        stock?.let {
+            quantity = it.quantity.toString()
+            productViewModel.loadProductById(it.productId)
         }
     }
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = if (productId == null) "Criar Produto" else "Editar Produto",
+                title = "Editar Quantidade",
                 onBackClick = onBackClick
             )
         },
@@ -88,61 +71,125 @@ fun AddEditProductScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .verticalScroll(scrollState)
+                .background(Color(0xFFF8F9FA))
         ) {
 
-            AppTextField(
-                label = "Nome do Produto",
-                value = name,
-                onValueChange = { name = it },
-                placeholder = "ex: Arroz Agulha 1kg"
-            )
-
-            AppTextField(
-                label = "Tipo",
-                value = type,
-                onValueChange = { type = it },
-                placeholder = "ex: Food Staples"
-            )
-
-            AppTextField(
-                label = "Quantidade",
-                value = quantity,
-                onValueChange = { value ->
-                    if (value.all { it.isDigit() }) {
-                        quantity = value
+            Card(
+                modifier = Modifier.padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        if (product?.photoUrl != null) {
+                            AsyncImage(
+                                model = product?.photoUrl,
+                                contentDescription = product?.name,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.LightGray)
+                            )
+                        }
                     }
-                },
-                placeholder = "ex: 32",
-                modifier = Modifier.fillMaxWidth()
-            )
 
-            AppDatePickerField(
-                label = "Validade",
-                selectedValue = expiryDate,
-                onDateSelected = { expiryDate = it },
-                placeholder = "dd/mm/aaaa",
-                modifier = Modifier.fillMaxWidth()
-            )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = product?.name ?: "",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
-            AppFilePickerField(
-                description = "Selecionar Foto do Produto",
-                fileName = fileName,
-                onSelectFile = { filePickerLauncher.launch("image/*") }
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    ProductInfoRow(
+                        icon = Icons.Filled.Category,
+                        label = "Tipo Produto",
+                        value = product?.type?.name ?: "-"
+                    )
+
+                    HorizontalDivider()
+                    EditableProductInfoRow(
+                        icon = Icons.Filled.Inventory2,
+                        label = "Quantidade",
+                        value = quantity,
+                        onValueChange = { quantity = it }
+                    )
+
+                    HorizontalDivider()
+                    ProductInfoRow(
+                        icon = Icons.Filled.AccessTimeFilled,
+                        label = "Última Entrega",
+                        value = stock?.entryDate?.let { formatDate(it) } ?: "-"
+                    )
+
+                    HorizontalDivider()
+                    ProductInfoRow(
+                        icon = Icons.Filled.Event,
+                        label = "Validade",
+                        value = stock?.expiryDate?.let { formatDate(it) } ?: "-"
+                    )
+
+                    HorizontalDivider()
+                    ProductInfoRow(
+                        icon = Icons.Filled.Numbers,
+                        label = "Código Produto",
+                        value = product?.id ?: "-"
+                    )
+
+                    HorizontalDivider()
+                    ProductInfoRow(
+                        icon = Icons.Filled.Link,
+                        label = "Campanha Associada",
+                        value = stock?.campaignId?.takeLast(6) ?: "Nenhuma"
+                    )
+
+                    HorizontalDivider()
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             AppButton(
-                text = if (productId == null) "Criar Produto" else "Guardar Alterações",
-                onClick = onSaveClick,
+                text = "Guardar",
+                onClick = {
+                    val parsedQuantity = quantity.toIntOrNull() ?: return@AppButton
+                    stock?.let {
+                        stockViewModel.updateStockQuantity(
+                            itemId = it.id,
+                            newQuantity = parsedQuantity
+                        )
+                        onSaveClick()
+                    }
+                },
                 containerColor = accentGreen,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
                     .height(56.dp)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
