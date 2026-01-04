@@ -10,10 +10,11 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
+import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
+import pt.ipca.lojasocial.data.repository.CommunicationRepositoryImpl
+import pt.ipca.lojasocial.data.repository.DeliveryRepositoryImpl
 import pt.ipca.lojasocial.data.repository.LogRepositoryImpl
 import pt.ipca.lojasocial.data.repository.ProductRepositoryImpl
-import pt.ipca.lojasocial.data.repository.CommunicationRepositoryImpl
-import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StaffRepositoryImpl
@@ -21,15 +22,16 @@ import pt.ipca.lojasocial.data.repository.StockRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.CommunicationRepository
-import pt.ipca.lojasocial.domain.repository.CampaignRepository
+import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.LogRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StaffRepository
-import pt.ipca.lojasocial.domain.repository.StockRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
+import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Singleton
 
 /**
@@ -51,7 +53,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirestore(): FirebaseFirestore{
+    fun provideFirestore(): FirebaseFirestore {
         return FirebaseFirestore.getInstance("loja-social-ipca-db")
     }
     // --- DATA SOURCES ---
@@ -102,6 +104,24 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDeliveryRepository(firestore: FirebaseFirestore): DeliveryRepository {
+        return DeliveryRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProductRepository(firestore: FirebaseFirestore): ProductRepository {
+        return ProductRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStockRepository(firestore: FirebaseFirestore): StockRepository {
+        return StockRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
     fun provideSchoolYearRepository(firestore: FirebaseFirestore): SchoolYearRepository {
         return SchoolYearRepositoryImpl(firestore)
     }
@@ -119,19 +139,6 @@ object AppModule {
         return LogRepositoryImpl(firestore)
     }
 
-    @Provides
-    @Singleton
-    fun provideProductRepository(firestore: FirebaseFirestore): ProductRepository {
-        return ProductRepositoryImpl(firestore)
-    }
-
-
-    @Provides
-    @Singleton
-    fun provideStockRepository(firestore: FirebaseFirestore): StockRepository {
-        return StockRepositoryImpl(firestore)
-    }
-
 
     @Provides
     @Singleton
@@ -144,4 +151,5 @@ object AppModule {
     fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
         return StorageRepositoryImpl(storage)
     }
+
 }

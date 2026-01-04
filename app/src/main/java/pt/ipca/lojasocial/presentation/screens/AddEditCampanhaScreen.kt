@@ -13,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 @Composable
 fun AddEditCampanhaScreen(
@@ -25,7 +26,8 @@ fun AddEditCampanhaScreen(
     onBackClick: () -> Unit,
     onSaveClick: (String, String, String, String, CampaignType, Uri?) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: CampanhasViewModel = hiltViewModel()
 ) {
     var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
@@ -36,25 +38,25 @@ fun AddEditCampanhaScreen(
 
     var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
+    val selectedCampanha by viewModel.selectedCampanha.collectAsState()
+
     val accentGreen = Color(0XFF00713C)
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
     LaunchedEffect(campanhaId) {
         if (campanhaId != null) {
-            nome = "Super Alimentação"
-            descricao = "Campanha simulada para testes de edição."
-            dataInicio = "01/12/2025"
-            dataFim = "10/01/2026"
-            selectedType = CampaignType.EXTERNAL
-            fileName = "imagem_exemplo.jpg"
-        } else {
-            nome = ""
-            descricao = ""
-            dataInicio = ""
-            dataFim = ""
-            selectedType = CampaignType.EXTERNAL
-            fileName = null
+            viewModel.loadCampanhaById(campanhaId)
+        }
+    }
+
+    LaunchedEffect(selectedCampanha) {
+        selectedCampanha?.let { camp ->
+            nome = camp.nome
+            descricao = camp.desc
+            dataInicio = formatLongToString(camp.startDate)
+            dataFim = formatLongToString(camp.endDate)
+            selectedType = camp.type
         }
     }
 
@@ -62,11 +64,20 @@ fun AddEditCampanhaScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
+            selectedImageUri = it
             fileName = context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 cursor.moveToFirst()
                 cursor.getString(nameIndex)
             } ?: "Ficheiro selecionado"
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.isSaveSuccess.collect { success ->
+            if (success) {
+                onBackClick()
+            }
         }
     }
 
@@ -81,8 +92,7 @@ fun AddEditCampanhaScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->

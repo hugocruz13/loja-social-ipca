@@ -1,4 +1,4 @@
-package pt.ipca.lojasocial.presentation.viewmodel
+package pt.ipca.lojasocial.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +16,6 @@ import javax.inject.Inject
 class BeneficiariesViewModel @Inject constructor(
     private val getBeneficiariesUseCase: GetBeneficiariesUseCase,
     private val addBeneficiaryUseCase: AddBeneficiaryUseCase,
-    // --- NOVO: Injetamos o UseCase de atualização do Passo 1 ---
     private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase
 ) : ViewModel() {
 

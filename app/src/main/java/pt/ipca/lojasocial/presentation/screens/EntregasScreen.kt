@@ -6,14 +6,22 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun EntregasScreen(
+    viewModel: EntregasViewModel,
+    isCollaborator: Boolean, // Novo parâmetro
     onBackClick: () -> Unit,
     onAddClick: () -> Unit,
     onEditDelivery: (String) -> Unit,
@@ -21,10 +29,14 @@ fun EntregasScreen(
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("All") }
+    val deliveries by viewModel.deliveries.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
 
-    val filters = listOf("All", "Entregue", "Pendente", "Não Entregue")
+
+    val filters = listOf("All", "Agendada", "Entregue", "Cancelada")
     val accentGreen = Color(0XFF00713C)
 
     Scaffold(
@@ -38,11 +50,11 @@ fun EntregasScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         floatingActionButton = {
+            // Botão visível para todos (Colaboradores agendam, Beneficiários pedem)
             AdicionarButton(onClick = onAddClick)
         }
     ) { paddingValues ->
@@ -50,12 +62,13 @@ fun EntregasScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.Top
         ) {
             AppSearchBar(
                 query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                placeholder = "Procurar por item, ID, data, beneficiário",
+                onQueryChange = { viewModel.onSearchQueryChange(it) },
+                placeholder = "Procurar por ID, beneficiário, data...",
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
@@ -68,7 +81,7 @@ fun EntregasScreen(
                 filters.forEach { filter ->
                     FilterChip(
                         selected = selectedFilter == filter,
-                        onClick = { selectedFilter = filter },
+                        onClick = { viewModel.onFilterSelected(filter) },
                         label = { Text(filter) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = accentGreen,
@@ -81,37 +94,43 @@ fun EntregasScreen(
                 }
             }
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
-            ) {
-                items(getMockEntregas()) { entrega ->
-                    AppDeliveryDetailCard(
-                        deliveryDate = entrega.date,
-                        deliveryId = entrega.id,
-                        deliveryTitle = entrega.title,
-                        deliveryContent = entrega.items,
-                        status = entrega.status,
-                        onEditClick = { onEditDelivery(entrega.id) },
-                        modifier = Modifier.clickable { onDeliveryClick(entrega.id) }
-                    )
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else if (error != null) {
+                Text(text = "Erro: $error", color = Color.Red, modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(deliveries) { deliveryUiModel ->
+                        val statusType = when (deliveryUiModel.delivery.status) {
+                            DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
+                            DeliveryStatus.SCHEDULED -> StatusType.AGENDADA // Mapeado para AGENDADA
+                            DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
+                            DeliveryStatus.REJECTED -> StatusType.REJEITADA // Mapeado para REJEITADA
+                            DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE // Mapeado para ANALISE
+                        }
+                        val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(deliveryUiModel.delivery.scheduledDate))
+                        
+                        val isDelivered = deliveryUiModel.delivery.status == DeliveryStatus.DELIVERED
+                        
+                        // Mostra botão editar APENAS se for colaborador E a entrega não tiver sido realizada
+                        val canEdit = isCollaborator && !isDelivered
+                        
+                        AppDeliveryDetailCard(
+                            deliveryDate = formattedDate,
+                            deliveryId = deliveryUiModel.delivery.id,
+                            deliveryTitle = "Entrega para ${deliveryUiModel.beneficiaryName}",
+                            deliveryContent = deliveryUiModel.delivery.items.keys.joinToString(", "),
+                            status = statusType,
+                            onEditClick = { onEditDelivery(deliveryUiModel.delivery.id) },
+                            showEditButton = canEdit, 
+                            modifier = Modifier.clickable { onDeliveryClick(deliveryUiModel.delivery.id) }
+                        )
+                    }
                 }
             }
         }
     }
 }
-
-data class EntregaData(
-    val id: String,
-    val date: String,
-    val title: String,
-    val items: String,
-    val status: StatusType
-)
-
-fun getMockEntregas() = listOf(
-    EntregaData("12345", "15 Oct 2023", "Entrega 1", "Pacote Arroz, Água", StatusType.ENTREGUE),
-    EntregaData("12342", "10 Oct 2023", "Items para Entrega", "Kit de Higiene", StatusType.PENDENTE),
-    EntregaData("12338", "05 Oct 2023", "Items", "Limpeza", StatusType.NOT_ENTREGUE),
-    EntregaData("12330", "01 Oct 2023", "Itens Entrega", "Comida", StatusType.ENTREGUE)
-)

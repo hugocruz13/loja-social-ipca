@@ -22,6 +22,7 @@ fun AppTextField(
     placeholder: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
     enabled: Boolean = true,
+    readOnly: Boolean = false, // Added parameter
     isError: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None
@@ -62,6 +63,7 @@ fun AppTextField(
             placeholder = { Text(placeholder) },
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
+            readOnly = readOnly, // Passed to OutlinedTextField
             isError = isError,
             singleLine = true,
             shape = fieldShape,
