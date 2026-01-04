@@ -1,6 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.stock
 
-import pt.ipca.lojasocial.domain.models.StockItem
+import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import javax.inject.Inject
 
@@ -24,9 +24,9 @@ class GetExpiringStockUseCase @Inject constructor(
      *
      * @param daysThreshold O intervalo em dias a partir de hoje para considerar o risco (ex: 30 dias).
      * Se a validade do item for menor que (Hoje + daysThreshold), o item é retornado.
-     * @return Lista de [StockItem] em risco ou expirados.
+     * @return Lista de [Stock] em risco ou expirados.
      */
-    suspend operator fun invoke(daysThreshold: Int): List<StockItem> {
+    suspend operator fun invoke(daysThreshold: Int): List<Stock> {
         val currentTime = System.currentTimeMillis()
 
         // Lógica de Negócio: Conversão de dias (Humano) para Millis (Máquina)

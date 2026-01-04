@@ -10,21 +10,22 @@ import dagger.hilt.components.SingletonComponent
 import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
 import pt.ipca.lojasocial.data.repository.AuthRepositoryImpl
 import pt.ipca.lojasocial.data.repository.BeneficiaryRepositoryImpl
-import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
 import pt.ipca.lojasocial.data.repository.LogRepositoryImpl
+import pt.ipca.lojasocial.data.repository.ProductRepositoryImpl
 import pt.ipca.lojasocial.data.repository.CommunicationRepositoryImpl
+import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StaffRepositoryImpl
+import pt.ipca.lojasocial.data.repository.StockRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.repository.LogRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
-import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
-import pt.ipca.lojasocial.domain.repository.StaffRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 
@@ -65,15 +66,13 @@ object AppModule {
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
+    // --- REPOSITORIES ---
+
     @Provides
     @Singleton
     fun provideCampaignRepository(firestore: FirebaseFirestore): CampaignRepository {
         return CampaignRepositoryImpl(firestore)
     }
-
-
-
-    // --- REPOSITORIES ---
 
     @Provides
     @Singleton
@@ -115,6 +114,19 @@ object AppModule {
     @Singleton
     fun provideLogRepository(firestore: FirebaseFirestore): LogRepository {
         return LogRepositoryImpl(firestore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProductRepository(firestore: FirebaseFirestore): ProductRepository {
+        return ProductRepositoryImpl(firestore)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideStockRepository(firestore: FirebaseFirestore): StockRepository {
+        return StockRepositoryImpl(firestore)
     }
 
 

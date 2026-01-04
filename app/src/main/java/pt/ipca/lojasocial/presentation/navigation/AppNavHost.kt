@@ -9,7 +9,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -39,7 +38,6 @@ import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.screens.*
-import pt.ipca.lojasocial.presentation.screens.products.ProductListScreen
 
 import pt.ipca.lojasocial.presentation.screens.RequestStatus
 import androidx.compose.runtime.collectAsState
@@ -48,7 +46,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import pt.ipca.lojasocial.presentation.screens.*
-import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
 sealed class AppScreen(val route: String) {
     object Dashboard : AppScreen("dashboard")
@@ -75,6 +72,9 @@ sealed class AppScreen(val route: String) {
     object ProductType : AppScreen("add_product_type")
     object ManageStaff : AppScreen("manage_staff")
     object LogsList : AppScreen("logs_list")
+    object StockEditQuantity : AppScreen("stock_edit_quantity/{stockId}")
+
+
 }
 
 @Composable
@@ -104,7 +104,7 @@ fun AppNavHost(
 
         composable(AppScreen.Login.route) {
             LoginScreen(
-                viewModel = viewModel, // Passa o AuthViewModel partilhado
+                viewModel = viewModel,
                 onNavigateToRegister = { navController.navigate(AppScreen.RegisterStep1.route) },
 
                 onLoginSuccess = {
@@ -153,7 +153,7 @@ fun AppNavHost(
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
                         "ano_letivo" -> navController.navigate(AppScreen.AnoLetivoList.route)
-                        "stock" -> { /* navController.navigate(AppScreen.StockList.route) */ }
+                        "stock" ->  navController.navigate(AppScreen.ProductList.route)
                         "beneficiarios" -> { /* navController.navigate(AppScreen.BeneficiariosList.route) */ }
                         "reports" -> { /* navController.navigate(AppScreen.Reports.route) */ }
                         "apoio" -> { /* navController.navigate(AppScreen.Support.route) */ }
@@ -261,8 +261,8 @@ fun AppNavHost(
         composable(AppScreen.AnoLetivoList.route) {
             AnoLetivoListScreen(
                 onBackClick = { navController.popBackStack() },
-                onAddClick = { navController.navigate("anoletivoaddedit") },
-                onYearClick = { ano -> navController.navigate("anoletivoaddedit?id=${ano.id}")},
+                onAddClick = { navController.navigate(AppScreen.AnoLetivoAddEdit.route) },
+                onYearClick = { ano -> navController.navigate("anoletivoaddedit?id=${ano.id}") },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -394,7 +394,6 @@ fun AppNavHost(
             ProductListScreen(
                 onBackClick = { navController.popBackStack() },
                 onProductClick = { productId ->  navController.navigate("product_detail/$productId") },
-                onAddProductClick = {},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
@@ -411,32 +410,31 @@ fun AppNavHost(
             ProductDetailScreen(
                 productId = productId,
                 onBackClick = { navController.popBackStack() },
-                onEditClick = { navController.navigate("product_add_edit?id=$it") },
+                onEditClick = { stockId -> navController.navigate("stock_edit_quantity/$stockId")},
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
 
         composable(
-            route = "product_add_edit?id={id}",
+            route = AppScreen.StockEditQuantity.route,
             arguments = listOf(
-                navArgument("id") {
+                navArgument("stockId") {
                     type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
 
-            val productId = backStackEntry.arguments?.getString("id")
+            val stockId = backStackEntry.arguments!!.getString("stockId")!!
 
             AddEditProductScreen(
-                productId = productId,
+                stockId = stockId,
                 onBackClick = { navController.popBackStack() },
                 onSaveClick = { navController.popBackStack() },
                 navItems = globalNavItems,
                 onNavigate = onNavigate
             )
         }
+
     }
 }
