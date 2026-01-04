@@ -13,8 +13,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+// 1. IMPORTANTE: Importar o enum do Domain
+import pt.ipca.lojasocial.domain.models.CampaignType
 
-enum class CampaignType { INTERNA, EXTERNA }
+// 2. APAGAR: Removi a linha "enum class CampaignType { INTERNA, EXTERNA }" que estava aqui
 
 @Composable
 fun AppCampanhaAssociationSelector(
@@ -22,8 +24,6 @@ fun AppCampanhaAssociationSelector(
     onTypeSelected: (CampaignType) -> Unit,
     modifier: Modifier = Modifier.fillMaxWidth()
 ) {
-
-
     Column(
         modifier = modifier.padding(vertical = 8.dp)
     ) {
@@ -44,15 +44,17 @@ fun AppCampanhaAssociationSelector(
         ) {
             SegmentButton(
                 label = "Interna",
-                isSelected = selectedType == CampaignType.INTERNA,
-                onClick = { onTypeSelected(CampaignType.INTERNA) },
+                // 3. ATENÇÃO: Se o teu enum no Domain usa INTERNAL/EXTERNAL,
+                // muda aqui para coincidir com o que escreveste no Campaign.kt
+                isSelected = selectedType == CampaignType.INTERNAL,
+                onClick = { onTypeSelected(CampaignType.INTERNAL) },
                 accentColor = Color(0XFF00713C)
             )
 
             SegmentButton(
                 label = "Externa",
-                isSelected = selectedType == CampaignType.EXTERNA,
-                onClick = { onTypeSelected(CampaignType.EXTERNA) },
+                isSelected = selectedType == CampaignType.EXTERNAL,
+                onClick = { onTypeSelected(CampaignType.EXTERNAL) },
                 accentColor = Color(0XFF00713C)
             )
         }
@@ -88,24 +90,10 @@ private fun RowScope.SegmentButton(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun AppCampanhaAssociationSelectorInternaPreview() {
-    val selected = remember { mutableStateOf(CampaignType.INTERNA) }
-
-    Surface(modifier = Modifier.padding(16.dp)) {
-        AppCampanhaAssociationSelector(
-            selectedType = selected.value,
-            onTypeSelected = { selected.value = it }
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AppCampanhaAssociationSelectorExternaPreview() {
-    val selected = remember { mutableStateOf(CampaignType.EXTERNA) }
+    val selected = remember { mutableStateOf(CampaignType.INTERNAL) }
 
     Surface(modifier = Modifier.padding(16.dp)) {
         AppCampanhaAssociationSelector(

@@ -4,40 +4,71 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDatePickerField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.navigation.AppScreen
+import pt.ipca.lojasocial.presentation.viewmodels.AnosLetivosViewModel
 
 @Composable
 fun AddEditAnoLetivoScreen(
-    anoLetivoId: Int? = null,
+    anoLetivoId: String? = null,
     onBackClick: () -> Unit,
-    onSaveClick: (String, String) -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: AnosLetivosViewModel = hiltViewModel()
 ) {
+    val realId = remember(anoLetivoId) {
+        if (anoLetivoId == "{id}" || anoLetivoId.isNullOrBlank()) null else anoLetivoId
+    }
+
+
     var dataInicio by remember { mutableStateOf("") }
     var dataFim by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(anoLetivoId == null) }
+    var isEditing by remember { mutableStateOf(realId == null) }
 
     val accentGreen = Color(0XFF00713C)
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(realId) {
+        if (realId != null) {
+            viewModel.loadAnoLetivoPorId(realId)
+            isEditing = false
+        }
+    }
+
+    LaunchedEffect(viewModel.dataInicioInput, viewModel.dataFimInput) {
+        if (realId != null) {
+            dataInicio = viewModel.dataInicioInput
+            dataFim = viewModel.dataFimInput
+        }
+    }
+
+    LaunchedEffect(viewModel.dataInicioInput, viewModel.dataFimInput) {
+        if (realId != null) {
+            dataInicio = viewModel.dataInicioInput
+            dataFim = viewModel.dataFimInput
+        }
+    }
+
+    LaunchedEffect(viewModel.isSaveSuccess) {
+        viewModel.isSaveSuccess.collect { success ->
+            if (success) onBackClick()
+        }
+    }
 
     Scaffold(
         topBar = {
             AppTopBar(
-                title = if (anoLetivoId == null) "Registar Ano Letivo" else "Detalhes",
+                title = if (realId == null) "Registar Ano Letivo" else "Detalhes",
                 onBackClick = onBackClick
             )
         },
@@ -45,8 +76,7 @@ fun AddEditAnoLetivoScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         }
     ) { paddingValues ->
@@ -56,8 +86,7 @@ fun AddEditAnoLetivoScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
         ) {
-
-            if (anoLetivoId != null) {
+            if (realId != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -65,9 +94,7 @@ fun AddEditAnoLetivoScreen(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(
-                        onClick = { isEditing = !isEditing }
-                    ) {
+                    TextButton(onClick = { isEditing = !isEditing }) {
                         Icon(
                             imageVector = if (isEditing) Icons.Default.Close else Icons.Default.Edit,
                             contentDescription = null,
@@ -107,10 +134,9 @@ fun AddEditAnoLetivoScreen(
 
             if (isEditing) {
                 AppButton(
-                    text = if (anoLetivoId == null) "Registar" else "Guardar Alterações",
+                    text = if (realId == null) "Registar" else "Guardar Alterações",
                     onClick = {
-                        onSaveClick(dataInicio, dataFim)
-                        isEditing = false
+                        viewModel.saveAnoLetivo(realId, dataInicio, dataFim)
                     },
                     containerColor = accentGreen,
                     modifier = Modifier
