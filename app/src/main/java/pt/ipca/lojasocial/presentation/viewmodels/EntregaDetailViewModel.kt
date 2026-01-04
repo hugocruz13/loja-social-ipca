@@ -10,8 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
+import pt.ipca.lojasocial.domain.models.NotificationRequest
+import pt.ipca.lojasocial.domain.models.NotificationType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.use_cases.delivery.ConfirmDeliveryUseCase
@@ -42,7 +45,8 @@ class EntregaDetailViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
     private val productRepository: ProductRepository,
-    private val confirmDeliveryUseCase: ConfirmDeliveryUseCase // Injected Use Case
+    private val communicationRepository: CommunicationRepository,
+    private val confirmDeliveryUseCase: ConfirmDeliveryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EntregaDetailUiState())
@@ -58,10 +62,8 @@ class EntregaDetailViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Carregar Beneficiário
                 val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
                 
-                // Carregar Detalhes dos Produtos (Nome e Imagem)
                 val productDetails = delivery.items.map { (productId, quantity) ->
                     val product = productRepository.getProductById(productId)
                     DeliveryProductDetailUi(
@@ -71,25 +73,23 @@ class EntregaDetailViewModel @Inject constructor(
                     )
                 }
 
-                // Formatar Data e Hora
                 val dateObj = Date(delivery.scheduledDate)
                 val dateFormat = SimpleDateFormat("dd 'de' MMMM, yyyy", Locale("pt", "PT"))
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
-                // Mapear Estado
                 val uiStatus = when(delivery.status) {
                     DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
-                    DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
+                    DeliveryStatus.SCHEDULED -> StatusType.PENDENTE 
                     DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
                     DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
-                    DeliveryStatus.UNDER_ANALYSIS -> StatusType.PENDENTE
+                    DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE
                 }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         beneficiaryName = beneficiary?.name ?: "Desconhecido",
-                        beneficiaryIdDisplay = "ID: ${beneficiary?.id ?: "N/A"}", // Ajuste conforme o modelo Beneficiary
+                        beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.id ?: "N/A"}",
                         date = dateFormat.format(dateObj),
                         time = timeFormat.format(dateObj),
                         status = uiStatus,
@@ -107,19 +107,79 @@ class EntregaDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 if (delivered) {
-                    // Se for para marcar como entregue, usamos o Use Case que abate stock
                     confirmDeliveryUseCase(deliveryId)
+                    // Opcional: Notificar entrega bem sucedida
                 } else {
-                    // Se for "Não Entregue", marcamos como CANCELADA (ou outra lógica)
-                    // Aqui não há abate de stock
+                    // Cancelar Entrega
                     deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.CANCELLED)
+                    
+                    // Notificar Cancelamento
+                    val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                    if (delivery != null) {
+                        val notif = NotificationRequest(
+                            userId = delivery.beneficiaryId,
+                            title = "Entrega Cancelada",
+                            message = "A sua entrega agendada foi cancelada. Contacte os serviços para mais informações.",
+                            type = NotificationType.WARNING
+                        )
+                        communicationRepository.sendNotification(notif)
+                    }
                 }
-                
-                // Recarregar para atualizar a UI
                 loadDelivery(deliveryId)
             } catch (e: Exception) {
                 Log.e("EntregaDetailVM", "Erro ao atualizar estado: ${e.message}", e)
-                // Opcional: Atualizar UI com erro
+            }
+        }
+    }
+
+    fun approveDelivery(deliveryId: String) {
+        viewModelScope.launch {
+            try {
+                // 1. Update status to SCHEDULED
+                deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.SCHEDULED)
+
+                // 2. Notify Beneficiary
+                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                if (delivery != null) {
+                    val notif = NotificationRequest(
+                        userId = delivery.beneficiaryId,
+                        title = "Pedido Aprovado",
+                        message = "O seu pedido de entrega foi aprovado e agendado.",
+                        type = NotificationType.SUCCESS
+                    )
+                    communicationRepository.sendNotification(notif)
+                }
+
+                // 3. Reload
+                loadDelivery(deliveryId)
+            } catch (e: Exception) {
+                Log.e("EntregaDetailVM", "Error approving delivery", e)
+            }
+        }
+    }
+
+    fun rejectDelivery(deliveryId: String) {
+        viewModelScope.launch {
+            try {
+                // 1. Update status to REJECTED
+                deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.REJECTED)
+
+                // 2. Notify Beneficiary
+                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                if (delivery != null) {
+                    val notif = NotificationRequest(
+                        userId = delivery.beneficiaryId,
+                        title = "Pedido Rejeitado",
+                        message = "O seu pedido de entrega não pôde ser aceite neste momento.",
+                        type = NotificationType.ERROR
+                    )
+                    communicationRepository.sendNotification(notif)
+                }
+
+                // 3. Reload
+                loadDelivery(deliveryId)
+            } catch (e: Exception) {
+                Log.e("EntregaDetailVM", "Error rejecting delivery", e)
             }
         }
     }

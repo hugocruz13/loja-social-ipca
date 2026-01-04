@@ -138,20 +138,42 @@ fun EntregaDetailScreen(
                         }
                     }
 
-                    if (uiState.status == StatusType.PENDENTE || uiState.status == StatusType.ATIVA) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            AppButton(
-                                text = "Não Entregue",
-                                onClick = { viewModel.updateStatus(entregaId, false) },
-                                modifier = Modifier.weight(1f),
-                                containerColor = Color.Red,
-                            )
-                            AppButton(
-                                text = "Entregue",
-                                onClick = { viewModel.updateStatus(entregaId, true) },
-                                modifier = Modifier.weight(1f),
-                                containerColor = accentGreen
-                            )
+                    // AÇÕES (BOTÕES) baseadas no estado
+                    when (uiState.status) {
+                        StatusType.ANALISE -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                AppButton(
+                                    text = "Rejeitar",
+                                    onClick = { viewModel.rejectDelivery(entregaId) },
+                                    modifier = Modifier.weight(1f),
+                                    containerColor = Color.Red,
+                                )
+                                AppButton(
+                                    text = "Aprovar",
+                                    onClick = { viewModel.approveDelivery(entregaId) },
+                                    modifier = Modifier.weight(1f),
+                                    containerColor = accentGreen
+                                )
+                            }
+                        }
+                        StatusType.PENDENTE, StatusType.AGENDADA, StatusType.ATIVA -> {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                AppButton(
+                                    text = "Não Entregue",
+                                    onClick = { viewModel.updateStatus(entregaId, false) },
+                                    modifier = Modifier.weight(1f),
+                                    containerColor = Color.Red,
+                                )
+                                AppButton(
+                                    text = "Entregue",
+                                    onClick = { viewModel.updateStatus(entregaId, true) },
+                                    modifier = Modifier.weight(1f),
+                                    containerColor = accentGreen
+                                )
+                            }
+                        }
+                        else -> {
+                            // Para estados finais (Entregue, Rejeitada, Cancelada), não mostra botões de ação
                         }
                     }
 
