@@ -13,10 +13,13 @@ import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
+import pt.ipca.lojasocial.domain.models.EmailRequest
+import pt.ipca.lojasocial.domain.models.NotificationRequest
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
@@ -58,7 +61,8 @@ class AddEditEntregaViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val stockRepository: StockRepository,
     private val schoolYearRepository: SchoolYearRepository,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditEntregaUiState())
@@ -236,10 +240,6 @@ class AddEditEntregaViewModel @Inject constructor(
             val isEditing = currentState.deliveryId != null
 
             if (currentState.selectedBeneficiary == null || currentUser == null || currentState.selectedProducts.isEmpty() || currentState.date.isBlank() || currentState.time.isBlank()) {
-                Log.w(
-                    TAG,
-                    "Validation failed: Beneficiary: ${currentState.selectedBeneficiary}, User: $currentUser, Products: ${currentState.selectedProducts.size}, Date: ${currentState.date}, Time: ${currentState.time}"
-                )
                 _uiState.update { it.copy(isSaving = false) }
                 return@launch
             }
@@ -247,16 +247,10 @@ class AddEditEntregaViewModel @Inject constructor(
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val initialDate: Date = try {
                 sdf.parse("${currentState.date} ${currentState.time}") ?: run {
-                    Log.e(TAG, "Date/Time parsing returned null.")
                     _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
                     return@launch
                 }
             } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Could not parse date and time: ${currentState.date} ${currentState.time}",
-                    e
-                )
                 _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
                 return@launch
             }
@@ -265,7 +259,6 @@ class AddEditEntregaViewModel @Inject constructor(
             if (isEditing) {
                 // --- LÓGICA DE EDIÇÃO ---
                 val id = currentState.deliveryId!!
-                Log.d(TAG, "Editing delivery $id. Updating Date, Obs, Items. Ignoring Beneficiary.")
                 try {
                     // Update Date
                     deliveryRepository.updateDeliveryDate(id, calendar.timeInMillis)
@@ -274,7 +267,39 @@ class AddEditEntregaViewModel @Inject constructor(
                     // Update Items
                     deliveryRepository.updateDeliveryItems(id, currentState.selectedProducts)
 
-                    Log.i(TAG, "Successfully updated delivery $id")
+                    if (currentUser.role != UserRole.BENEFICIARY) {
+                        val beneficiary = currentState.selectedBeneficiary
+                        val dataFormatada =
+                            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(
+                                calendar.time
+                            )
+
+                        // Push
+                        communicationRepository.sendNotification(
+                            NotificationRequest(
+                                userId = beneficiary.id,
+                                title = "Entrega Atualizada 📝",
+                                message = "A tua entrega foi alterada para: $dataFormatada",
+                                data = mapOf("screen" to "entregas")
+                            )
+                        )
+
+                        // Email
+                        communicationRepository.sendEmail(
+                            EmailRequest(
+                                to = beneficiary.email,
+                                subject = "Atualização de Entrega - Loja Social",
+                                body = """
+                                    <h3>Olá ${beneficiary.name},</h3>
+                                    <p>A tua entrega agendada sofreu alterações.</p>
+                                    <p><strong>Nova Data:</strong> $dataFormatada</p>
+                                    <p>Verifica os detalhes na aplicação.</p>
+                                """.trimIndent(),
+                                isHtml = true,
+                                senderName = "Loja Social IPCA"
+                            )
+                        )
+                    }
                     _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to update delivery $id", e)
@@ -360,6 +385,41 @@ class AddEditEntregaViewModel @Inject constructor(
                     deliveriesToCreate.forEach { delivery ->
                         deliveryRepository.addDelivery(delivery)
                     }
+
+                    if (currentUser.role != UserRole.BENEFICIARY) {
+                        val beneficiary = currentState.selectedBeneficiary
+                        val dataFormatada =
+                            SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(
+                                calendar.time
+                            )
+
+                        // Push
+                        communicationRepository.sendNotification(
+                            NotificationRequest(
+                                userId = beneficiary.id,
+                                title = "Nova Entrega Agendada! 📦",
+                                message = "Tens uma recolha marcada para $dataFormatada.",
+                                data = mapOf("screen" to "entregas")
+                            )
+                        )
+
+                        // Email
+                        communicationRepository.sendEmail(
+                            EmailRequest(
+                                to = beneficiary.email,
+                                subject = "Agendamento de Entrega - Loja Social",
+                                body = """
+                                    <h3>Olá ${beneficiary.name},</h3>
+                                    <p>Foi agendada uma nova entrega/recolha de produtos para ti.</p>
+                                    <p><strong>Data:</strong> $dataFormatada</p>
+                                    <p>Por favor, dirige-te à Loja Social no horário indicado.</p>
+                                """.trimIndent(),
+                                isHtml = true,
+                                senderName = "Loja Social IPCA"
+                            )
+                        )
+                    }
+
                     _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                     Log.i(TAG, "Successfully saved ${deliveriesToCreate.size} deliveries.")
                 } catch (e: Exception) {
