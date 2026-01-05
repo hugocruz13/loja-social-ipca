@@ -337,13 +337,5 @@ fun DetailCardWrapper(title: String, content: @Composable () -> Unit) {
 
 @Preview(showBackground = true, name = "Visão Colaborador")
 @Composable
-fun EntregaDetailScreenStaffPreview() {
-    val navItems = listOf(
-        BottomNavItem("home", Icons.Filled.Home, "Home"),
-        BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-        BottomNavItem("settings", Icons.Filled.Settings, "Configurações")
-    )
-    // Nota: A preview agora requereria mocks do ViewModel, o que é complexo num setup simples.
-    // Para simplificar a preview, seria ideal extrair o conteúdo do Scaffold para um Stateless Composable.
-    // Vou manter assim por agora, mas a preview poderá falhar sem injeção de dependência adequada no Preview.
-}
+fun EntregaDetailScreenStaffPreview() {}
+

@@ -375,11 +375,6 @@ fun ProductListContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductListScreenPreview() {
-    val dummyNavItems = listOf(
-        BottomNavItem("home", Icons.Filled.Home, "Home"),
-        BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-        BottomNavItem("settings", Icons.Filled.Settings, "Configurações")
-    )
 
     // Dados fictícios para o preview
     val dummyStock = listOf(
@@ -392,7 +387,6 @@ fun ProductListScreenPreview() {
         ProductListContent(
             stockUiList = dummyStock,
             products = emptyList(),
-            navItems = dummyNavItems,
             isLoading = false,
             onBackClick = { },
             onProductClick = { },
@@ -401,7 +395,8 @@ fun ProductListScreenPreview() {
             onAddNewTypeClick = { },
             onDownloadReport = { },
             onConfirmAddStock = { },
-            onConfirmCreateProduct = { _, _ -> }
+            onConfirmCreateProduct = { _, _ -> },
+            navItems = emptyList()
         )
     }
 }
