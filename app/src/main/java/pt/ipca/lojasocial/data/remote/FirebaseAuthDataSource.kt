@@ -6,9 +6,7 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.remote.dto.UserDto
-import pt.ipca.lojasocial.domain.models.User
 import javax.inject.Inject
-import kotlin.io.path.exists
 
 
 /**
@@ -17,9 +15,9 @@ import kotlin.io.path.exists
 class FirebaseAuthDataSource @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-){
+) {
 
-    suspend fun login(email:String, password:String): UserDto {
+    suspend fun login(email: String, password: String): UserDto {
         //1. Autenticar
         val authResult = auth.signInWithEmailAndPassword(email, password).await()
         val firebaseUser = authResult.user ?: throw Exception("Utilizador não encontrado")
@@ -41,7 +39,9 @@ class FirebaseAuthDataSource @Inject constructor(
 
     suspend fun signUp(email: String, pass: String, nome: String): String {
         val result = auth.createUserWithEmailAndPassword(email, pass).await()
-        result.user?.updateProfile(com.google.firebase.auth.UserProfileChangeRequest.Builder().setDisplayName(nome).build())
+        result.user?.updateProfile(
+            com.google.firebase.auth.UserProfileChangeRequest.Builder().setDisplayName(nome).build()
+        )
         return result.user?.uid ?: throw Exception("Erro ao obter UID após registo")
     }
 
@@ -59,7 +59,8 @@ class FirebaseAuthDataSource @Inject constructor(
             id = uid,
             name = name,
             email = email,
-            role = role)
+            role = role
+        )
     }
 
     fun logout() {

@@ -1,5 +1,12 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.domain.models.DeliveryStatus.CANCELLED
+import pt.ipca.lojasocial.domain.models.DeliveryStatus.DELIVERED
+import pt.ipca.lojasocial.domain.models.DeliveryStatus.REJECTED
+import pt.ipca.lojasocial.domain.models.DeliveryStatus.SCHEDULED
+import pt.ipca.lojasocial.domain.models.DeliveryStatus.UNDER_ANALYSIS
+
+
 /**
  * Define o estado logístico e administrativo de uma entrega.
  *

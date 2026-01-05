@@ -1,5 +1,12 @@
 package pt.ipca.lojasocial.domain.models
 
+import pt.ipca.lojasocial.domain.models.CampaignStatus.ACTIVE
+import pt.ipca.lojasocial.domain.models.CampaignStatus.INACTIVE
+import pt.ipca.lojasocial.domain.models.CampaignStatus.PLANNED
+import pt.ipca.lojasocial.domain.models.CampaignType.EXTERNAL
+import pt.ipca.lojasocial.domain.models.CampaignType.INTERNAL
+
+
 /**
  * Define a origem e o âmbito de organização da campanha.
  *

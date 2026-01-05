@@ -13,7 +13,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,11 +31,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.components.ProductDetailTopBar
+import pt.ipca.lojasocial.presentation.components.ProductDetailsListPreview
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ProductDetailScreen(

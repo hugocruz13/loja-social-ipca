@@ -1,16 +1,29 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AdicionarButton
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppCampanhaCard
+import pt.ipca.lojasocial.presentation.components.AppSearchBar
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
 data class CampanhaModel(
@@ -51,7 +64,8 @@ fun CampanhasScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item -> onNavigate(item.route)
+                onItemSelected = { item ->
+                    onNavigate(item.route)
                 }
             )
         },

@@ -53,5 +53,9 @@ interface RequestRepository {
      */
     suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String)
 
-    suspend fun updateRequestDocsAndStatus(id: String, documents: Map<String, String?>, status: StatusType)
+    suspend fun updateRequestDocsAndStatus(
+        id: String,
+        documents: Map<String, String?>,
+        status: StatusType
+    )
 }

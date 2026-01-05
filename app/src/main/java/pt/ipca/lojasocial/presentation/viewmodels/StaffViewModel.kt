@@ -3,7 +3,12 @@ package pt.ipca.lojasocial.presentation.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.use_cases.staff.AddStaffUseCase
 import pt.ipca.lojasocial.domain.use_cases.staff.GetStaffUseCase
@@ -43,7 +48,8 @@ class StaffViewModel @Inject constructor(
     fun toggleStatus(uid: String, currentStatus: Boolean) {
         viewModelScope.launch {
             try {
-                val nomeColaborador = colaboradores.value.find { it.uid == uid }?.nome ?: "Desconhecido"
+                val nomeColaborador =
+                    colaboradores.value.find { it.uid == uid }?.nome ?: "Desconhecido"
                 toggleStaffStatusUseCase(uid, currentStatus, nomeColaborador)
             } catch (e: Exception) {
                 android.util.Log.e("STAFF_LOG_ERROR", e.message.toString())

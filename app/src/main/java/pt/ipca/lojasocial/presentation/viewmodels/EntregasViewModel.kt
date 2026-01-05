@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.collections.emptyList
 
 @HiltViewModel
 class EntregasViewModel @Inject constructor(
@@ -61,14 +60,21 @@ class EntregasViewModel @Inject constructor(
             } else {
                 val lowerCaseQuery = query.lowercase(Locale.getDefault())
                 filteredList.filter { uiModel ->
-                    val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(uiModel.delivery.scheduledDate))
+                    val formattedDate = SimpleDateFormat(
+                        "dd MMM yyyy",
+                        Locale.getDefault()
+                    ).format(Date(uiModel.delivery.scheduledDate))
                     uiModel.delivery.id.contains(lowerCaseQuery, ignoreCase = true) ||
                             uiModel.beneficiaryName.contains(lowerCaseQuery, ignoreCase = true) ||
                             formattedDate.contains(lowerCaseQuery, ignoreCase = true) ||
                             uiModel.delivery.createdBy.contains(lowerCaseQuery, ignoreCase = true)
                 }
             }
-        }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), emptyList())
+        }.stateIn(
+            viewModelScope,
+            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
 
 
     init {
@@ -98,14 +104,17 @@ class EntregasViewModel @Inject constructor(
 
                 val rawDeliveries = when (currentUser.role) {
                     UserRole.STAFF -> deliveryRepository.getDeliveries()
-                    UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(currentUser.id)
+                    UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(
+                        currentUser.id
+                    )
                 }
 
                 // Ordenação: Data mais próxima primeiro
                 val sortedDeliveries = rawDeliveries.sortedBy { it.scheduledDate }
 
                 val uiModels = sortedDeliveries.map { delivery ->
-                    val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+                    val beneficiary =
+                        beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
                     DeliveryUiModel(
                         delivery = delivery,
                         beneficiaryName = beneficiary?.name ?: "Beneficiário Desconhecido"

@@ -25,10 +25,11 @@ fun AppProgressBar(
     Column(modifier = modifier.padding(vertical = 16.dp)) {
 
 
-        Canvas(modifier = Modifier
-            .fillMaxWidth()
-            .height(8.dp)
-            .clip(RoundedCornerShape(50))
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(50))
         ) {
             drawRect(Color(0xFFDBE0E6))
             drawRect(

@@ -1,26 +1,42 @@
 package pt.ipca.lojasocial.presentation.screens
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import android.net.Uri
-import pt.ipca.lojasocial.domain.models.RegistrationState
-import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppFilePickerField
 import pt.ipca.lojasocial.presentation.components.AppNoteBox
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.state.AuthState
+import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 
 @Composable
 fun RegisterStep3Screen(
@@ -62,12 +78,17 @@ fun RegisterStep3Screen(
     ) { paddingValues ->
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
             AppProgressBar(
                 currentStep = 3,
                 totalSteps = 3,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 16.dp)
             )
 
             Column(
@@ -117,7 +138,9 @@ fun RegisterStep3Screen(
 
                 AppNoteBox(
                     text = "Para candidatos FAES, apenas os documentos a) e c) são obrigatórios.",
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 )
 
                 // --- ÁREA DE ERRO ---
@@ -134,7 +157,9 @@ fun RegisterStep3Screen(
 
                 // --- BOTÕES ---
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically // Alinhamento vertical
                 ) {
@@ -143,13 +168,17 @@ fun RegisterStep3Screen(
                         onClick = onBack,
                         containerColor = Color.LightGray,
                         enabled = !state.isLoading, // Desativa se estiver a carregar
-                        modifier = Modifier.weight(1f).height(56.dp)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp)
                     )
 
                     if (state.isLoading) {
                         // Mostra Spinner se estiver a carregar
                         Box(
-                            modifier = Modifier.weight(1f).height(56.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             CircularProgressIndicator(color = accentGreen)
@@ -164,8 +193,12 @@ fun RegisterStep3Screen(
                                 // O LaunchedEffect lá em cima trata disso.
                             },
                             enabled = viewModel.isStep3Valid(),
-                            containerColor = if (viewModel.isStep3Valid()) accentGreen else Color(0XFFC7C7C7),
-                            modifier = Modifier.weight(1f).height(56.dp)
+                            containerColor = if (viewModel.isStep3Valid()) accentGreen else Color(
+                                0XFFC7C7C7
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
                         )
                     }
                 }

@@ -11,23 +11,28 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 import pt.ipca.lojasocial.domain.models.CampaignType
+import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.use_cases.UploadImageUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.AddCampaignUseCase
-import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
+import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
 import pt.ipca.lojasocial.presentation.screens.CampanhaModel
-import pt.ipca.lojasocial.domain.models.StatusType
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
-
 
 
 @HiltViewModel
@@ -89,7 +94,7 @@ class CampanhasViewModel @Inject constructor(
                         id = domain.id,
                         nome = domain.title,
                         desc = domain.description,
-                        status = when(domain.status) {
+                        status = when (domain.status) {
                             CampaignStatus.ACTIVE -> StatusType.ATIVA
                             CampaignStatus.PLANNED -> StatusType.AGENDADA
                             CampaignStatus.INACTIVE -> StatusType.COMPLETA
@@ -119,7 +124,7 @@ class CampanhasViewModel @Inject constructor(
                         id = domain.id,
                         nome = domain.title,
                         desc = domain.description,
-                        status = when(domain.status) {
+                        status = when (domain.status) {
                             CampaignStatus.ACTIVE -> StatusType.ATIVA
                             CampaignStatus.PLANNED -> StatusType.AGENDADA
                             else -> StatusType.COMPLETA
@@ -137,7 +142,6 @@ class CampanhasViewModel @Inject constructor(
             }
         }
     }
-
 
 
     private fun mapIcon(category: String?): androidx.compose.ui.graphics.vector.ImageVector {
@@ -255,7 +259,6 @@ class CampanhasViewModel @Inject constructor(
     }
 
 
-
     private fun clearTime(timestamp: Long): Long {
         val cal = Calendar.getInstance()
         cal.timeInMillis = timestamp
@@ -267,4 +270,3 @@ class CampanhasViewModel @Inject constructor(
     }
 
 }
-

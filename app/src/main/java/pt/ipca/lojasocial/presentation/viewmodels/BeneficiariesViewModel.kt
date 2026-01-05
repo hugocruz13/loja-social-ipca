@@ -1,22 +1,26 @@
-package pt.ipca.lojasocial.presentation.viewmodel
+package pt.ipca.lojasocial.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.domain.models.UserRole // Importante: Importar o Enum
+import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.AddBeneficiaryUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
-import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase // <-- IMPORT NOVO
+import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class BeneficiariesViewModel @Inject constructor(
     private val getBeneficiariesUseCase: GetBeneficiariesUseCase,
     private val addBeneficiaryUseCase: AddBeneficiaryUseCase,
-    // --- NOVO: Injetamos o UseCase de atualização do Passo 1 ---
     private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase
 ) : ViewModel() {
 
@@ -49,12 +53,20 @@ class BeneficiariesViewModel @Inject constructor(
         _beneficiaries, _searchQuery, _selectedYear, _selectedStatus
     ) { list, query, year, status ->
         list.filter { ben ->
-            val matchesQuery = query.isEmpty() || ben.name.contains(query, ignoreCase = true) || ben.email.contains(query, ignoreCase = true)
+            val matchesQuery = query.isEmpty() || ben.name.contains(
+                query,
+                ignoreCase = true
+            ) || ben.email.contains(query, ignoreCase = true)
             val matchesYear = year.isEmpty() || ben.schoolYearId == year
-            val matchesStatus = status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
+            val matchesStatus =
+                status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
             matchesQuery && matchesYear && matchesStatus
         }
-    }.stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     init {
         loadBeneficiaries()
@@ -131,8 +143,19 @@ class BeneficiariesViewModel @Inject constructor(
     }
 
     // --- EVENTOS DA UI (Mantive igual) ---
-    fun onSearchQueryChange(newQuery: String) { _searchQuery.value = newQuery }
-    fun onYearSelected(year: String) { _selectedYear.value = year }
-    fun onStatusSelected(status: String) { _selectedStatus.value = status }
-    fun clearError() { _errorMessage.value = null }
+    fun onSearchQueryChange(newQuery: String) {
+        _searchQuery.value = newQuery
+    }
+
+    fun onYearSelected(year: String) {
+        _selectedYear.value = year
+    }
+
+    fun onStatusSelected(status: String) {
+        _selectedStatus.value = status
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
 }

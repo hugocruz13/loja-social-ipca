@@ -5,16 +5,41 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -95,7 +120,7 @@ fun RequerimentoEstadoScreen(
 
                 // Itera sobre os documentos esperados
                 // Se o mapa documents vier vazio, usamos as chaves padrão, senão usamos as do mapa
-                val keysToShow = if(documents.isNotEmpty()) documents.keys else docLabels.keys
+                val keysToShow = if (documents.isNotEmpty()) documents.keys else docLabels.keys
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     keysToShow.forEach { key ->
@@ -129,7 +154,8 @@ fun DocumentStatusRow(
 ) {
     // Configuração de Estilo
     val bgColor = Color.White
-    val borderColor = if (isValid) Color(0xFFE0E0E0) else Color(0xFFFFCDD2) // Vermelho claro se erro
+    val borderColor =
+        if (isValid) Color(0xFFE0E0E0) else Color(0xFFFFCDD2) // Vermelho claro se erro
 
     // Ícone
     val iconBg = if (isValid) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
@@ -210,7 +236,12 @@ fun DocumentStatusRow(
                         .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Check, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Check,
+                            null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Submeter", fontSize = 12.sp, color = Color.Gray)
                     }
@@ -303,28 +334,28 @@ private fun ProfileHeaderCard(name: String, cc: String) {
 
 @Composable
 private fun StatusCard(status: StatusType) {
-    val containerColor = when(status) {
+    val containerColor = when (status) {
         StatusType.ANALISE -> Color(0xFFFFF8E1)
         StatusType.DOCS_INCORRETOS -> Color(0xFFFFEBEE)
         StatusType.REJEITADA -> Color(0xFFFFEBEE)
         else -> Color.White // Fallback
     }
 
-    val contentColor = when(status) {
+    val contentColor = when (status) {
         StatusType.ANALISE -> Color(0xFFF57C00)
         StatusType.DOCS_INCORRETOS -> Color(0xFFD32F2F)
         StatusType.REJEITADA -> Color(0xFFD32F2F)
         else -> Color.Black
     }
 
-    val title = when(status) {
+    val title = when (status) {
         StatusType.ANALISE -> "Em Análise"
         StatusType.DOCS_INCORRETOS -> "Ação Necessária"
         StatusType.REJEITADA -> "Pedido Recusado"
         else -> "Estado Desconhecido"
     }
 
-    val description = when(status) {
+    val description = when (status) {
         StatusType.ANALISE -> "O processo encontra-se em validação pelos serviços."
         StatusType.DOCS_INCORRETOS -> "Alguns documentos precisam de ser corrigidos. Verifique a lista abaixo."
         StatusType.REJEITADA -> "Infelizmente o seu pedido não foi aceite."
@@ -370,7 +401,11 @@ fun PreviewAnalise() {
     )
 }
 
-@Preview(name = "2. Docs Incorretos (Upload Necessário)", showBackground = true, backgroundColor = 0xFFF9FAFB)
+@Preview(
+    name = "2. Docs Incorretos (Upload Necessário)",
+    showBackground = true,
+    backgroundColor = 0xFFF9FAFB
+)
 @Composable
 fun PreviewDocsIncorretos() {
     val mockDocuments = mapOf(

@@ -3,23 +3,57 @@
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppSearchBar
+import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.components.DeliveryProduct
+import pt.ipca.lojasocial.presentation.components.DeliveryProductHeader
+import pt.ipca.lojasocial.presentation.components.ProductPickerDialog
+import pt.ipca.lojasocial.presentation.components.QuantitySelectorItem
 import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +121,12 @@ fun AddEditEntregaScreen(
             },
             confirmButton = {
                 Button(onClick = {
-                    val time = String.format(Locale.getDefault(), "%02d:%02d", timePickerState.hour, timePickerState.minute)
+                    val time = String.format(
+                        Locale.getDefault(),
+                        "%02d:%02d",
+                        timePickerState.hour,
+                        timePickerState.minute
+                    )
                     viewModel.onTimeChange(time)
                     viewModel.hideTimePickerDialog()
                 }) {
@@ -144,7 +183,7 @@ fun AddEditEntregaScreen(
         ) {
             if (isCollaborator) {
                 Text("Beneficiário", fontWeight = FontWeight.Bold)
-                
+
                 if (entregaId == null) {
                     // MODO CRIAÇÃO: Permite pesquisar
                     AppSearchBar(
@@ -184,19 +223,43 @@ fun AddEditEntregaScreen(
                 elevation = CardDefaults.cardElevation(2.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Box {
-                        AppTextField(label = "Data", value = uiState.date, onValueChange = {}, placeholder = "dd/mm/yyyy", readOnly = true)
-                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showDatePickerDialog))
+                        AppTextField(
+                            label = "Data",
+                            value = uiState.date,
+                            onValueChange = {},
+                            placeholder = "dd/mm/yyyy",
+                            readOnly = true
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable(onClick = viewModel::showDatePickerDialog)
+                        )
                     }
                     Box {
-                        AppTextField(label = "Hora", value = uiState.time, onValueChange = {}, placeholder = "HH:mm", readOnly = true)
-                        Spacer(modifier = Modifier.matchParentSize().clickable(onClick = viewModel::showTimePickerDialog))
+                        AppTextField(
+                            label = "Hora",
+                            value = uiState.time,
+                            onValueChange = {},
+                            placeholder = "HH:mm",
+                            readOnly = true
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable(onClick = viewModel::showTimePickerDialog)
+                        )
                     }
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
+                        val repeticoes =
+                            listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
@@ -204,8 +267,12 @@ fun AddEditEntregaScreen(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
                                         enabled = entregaId == null, // Desativado na edição
-                                        modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(40.dp),
+                                        containerColor = if (uiState.repetition == repo) accentGreen else Color(
+                                            0xFFF1F1F5
+                                        ),
                                     )
                                 }
                             }
@@ -215,8 +282,12 @@ fun AddEditEntregaScreen(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
                                         enabled = entregaId == null, // Desativado na edição
-                                        modifier = Modifier.weight(1f).height(40.dp),
-                                        containerColor = if(uiState.repetition == repo) accentGreen else Color(0xFFF1F1F5),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(40.dp),
+                                        containerColor = if (uiState.repetition == repo) accentGreen else Color(
+                                            0xFFF1F1F5
+                                        ),
                                     )
                                 }
                             }
@@ -260,7 +331,9 @@ fun AddEditEntregaScreen(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
                 onClick = viewModel::saveDelivery,
                 containerColor = accentGreen,
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             )
         }
     }

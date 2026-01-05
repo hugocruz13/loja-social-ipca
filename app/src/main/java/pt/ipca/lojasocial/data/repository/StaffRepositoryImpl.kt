@@ -23,7 +23,9 @@ class StaffRepositoryImpl @Inject constructor(
 
     override fun getStaff(): Flow<List<Colaborador>> = callbackFlow {
         val listener = collection.addSnapshotListener { snapshot, error ->
-            if (error != null) { close(error); return@addSnapshotListener }
+            if (error != null) {
+                close(error); return@addSnapshotListener
+            }
 
             val list = snapshot?.documents?.mapNotNull { doc ->
                 doc.toObject<ColaboradorDto>()?.toDomain(doc.id)

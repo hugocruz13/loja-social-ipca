@@ -97,7 +97,11 @@ class DeliveryRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error getting deliveries by beneficiary: ${e.message}", e)
+            Log.e(
+                "DeliveryRepositoryImpl",
+                "Error getting deliveries by beneficiary: ${e.message}",
+                e
+            )
             emptyList()
         }
     }

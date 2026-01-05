@@ -2,7 +2,6 @@ package pt.ipca.lojasocial.domain.use_cases.campaign
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase

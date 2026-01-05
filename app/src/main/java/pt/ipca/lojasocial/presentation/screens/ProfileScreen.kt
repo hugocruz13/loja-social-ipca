@@ -2,12 +2,25 @@ package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,12 +29,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// IMPORTS NECESSÁRIOS
-import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.presentation.components.*
-import pt.ipca.lojasocial.presentation.viewmodel.BeneficiariesViewModel
-import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
+import pt.ipca.lojasocial.domain.models.UserRole
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
 
 @Composable
 fun ProfileScreen(
@@ -41,7 +56,11 @@ fun ProfileScreen(
 
     var nome by remember(currentUser) { mutableStateOf(currentUser?.name ?: "") }
     var email by remember(currentUser) { mutableStateOf(currentUser?.email ?: "") }
-    var numero by remember(currentUser) { mutableStateOf(currentUser?.phoneNumber?.toString() ?: "") }
+    var numero by remember(currentUser) {
+        mutableStateOf(
+            currentUser?.phoneNumber?.toString() ?: ""
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -72,7 +91,7 @@ fun ProfileScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if(nome.isNotEmpty()) nome.take(1).uppercase() else "?",
+                    text = if (nome.isNotEmpty()) nome.take(1).uppercase() else "?",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = accentGreen,
@@ -153,14 +172,18 @@ fun ProfileScreen(
                         isEditing = false
                     },
                     containerColor = accentGreen,
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
                 )
             } else {
                 AppButton(
                     text = "Terminar Sessão",
                     onClick = onLogout,
                     containerColor = Color.Red,
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
                 )
             }
         }

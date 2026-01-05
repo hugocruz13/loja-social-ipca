@@ -50,7 +50,10 @@ class CampaignRepositoryImpl @Inject constructor(
         collection.document(id).delete().await()
     }
 
-    override suspend fun updateCampaignStatus(id: String, status: pt.ipca.lojasocial.domain.models.CampaignStatus) {
+    override suspend fun updateCampaignStatus(
+        id: String,
+        status: pt.ipca.lojasocial.domain.models.CampaignStatus
+    ) {
         val estadoStr = when (status) {
             pt.ipca.lojasocial.domain.models.CampaignStatus.ACTIVE -> "Ativa"
             pt.ipca.lojasocial.domain.models.CampaignStatus.PLANNED -> "Agendada"

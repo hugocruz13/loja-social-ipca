@@ -1,13 +1,13 @@
 package pt.ipca.lojasocial.data.repository
 
 import com.google.firebase.auth.FirebaseAuthException
-import pt.ipca.lojasocial.data.mapper.UserMapper
-import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
-import pt.ipca.lojasocial.domain.repository.AuthRepository
-import javax.inject.Inject
-import pt.ipca.lojasocial.domain.models.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import pt.ipca.lojasocial.data.mapper.UserMapper
+import pt.ipca.lojasocial.data.remote.FirebaseAuthDataSource
+import pt.ipca.lojasocial.domain.models.User
+import pt.ipca.lojasocial.domain.repository.AuthRepository
+import javax.inject.Inject
 
 //-----------------------------------
 // Implementação das funções definidas na interface AuthRepository deve usar os atributos
@@ -16,7 +16,7 @@ import kotlinx.coroutines.tasks.await
 class AuthRepositoryImpl @Inject constructor(
     private val remoteDataSource: FirebaseAuthDataSource,
     private val firestore: FirebaseFirestore
-): AuthRepository {
+) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<User> {
         return try {
             val userDto = remoteDataSource.login(email, password)
@@ -32,7 +32,7 @@ class AuthRepositoryImpl @Inject constructor(
                 else -> "Erro de autenticação: ${e.message}"
             }
             Result.failure(Exception(errorMessage))
-            } catch (e: Exception) {
+        } catch (e: Exception) {
             Result.failure(Exception("Erro desconhecido: ${e.message}"))
         }
     }
@@ -55,7 +55,7 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCurrentUser(): User?{
+    override suspend fun getCurrentUser(): User? {
         return try {
             val userDto = remoteDataSource.getCurrentUser()
             val user = UserMapper.toDomain(userDto!!)

@@ -18,8 +18,8 @@ import pt.ipca.lojasocial.data.repository.ProductRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StaffRepositoryImpl
-import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.data.repository.StockRepositoryImpl
+import pt.ipca.lojasocial.data.repository.StorageRepositoryImpl
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
@@ -30,8 +30,8 @@ import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StaffRepository
-import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
+import pt.ipca.lojasocial.domain.repository.StorageRepository
 import javax.inject.Singleton
 
 /**
@@ -71,13 +71,13 @@ object AppModule {
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
+    // --- REPOSITORIES ---
+
     @Provides
     @Singleton
     fun provideCampaignRepository(firestore: FirebaseFirestore): CampaignRepository {
         return CampaignRepositoryImpl(firestore)
     }
-
-    // --- REPOSITORIES ---
 
     @Provides
     @Singleton

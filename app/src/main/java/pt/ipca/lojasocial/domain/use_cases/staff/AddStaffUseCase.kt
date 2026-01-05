@@ -1,8 +1,8 @@
 package pt.ipca.lojasocial.domain.use_cases.staff
 
-import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
-import pt.ipca.lojasocial.domain.repository.StaffRepository
 import pt.ipca.lojasocial.domain.models.Colaborador
+import pt.ipca.lojasocial.domain.repository.StaffRepository
+import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 

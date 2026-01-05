@@ -4,15 +4,42 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,7 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.*
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppButton
+import pt.ipca.lojasocial.presentation.components.AppExpandableCard
+import pt.ipca.lojasocial.presentation.components.AppTextField
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import pt.ipca.lojasocial.presentation.components.InfoRow
 import pt.ipca.lojasocial.presentation.viewmodels.RequerimentoDetailViewModel
 
 @Composable
@@ -86,7 +119,11 @@ fun RequerimentoDetailScreen(
             title = { Text("Rejeitar Requerimento") },
             text = {
                 Column {
-                    Text("Esta ação irá marcar o pedido como Rejeitado.", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "Esta ação irá marcar o pedido como Rejeitado.",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     AppTextField(
                         value = justificacao,
@@ -161,7 +198,9 @@ fun RequerimentoDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        if (selectedDocKeys.contains(key)) selectedDocKeys.remove(key)
+                                        if (selectedDocKeys.contains(key)) selectedDocKeys.remove(
+                                            key
+                                        )
                                         else selectedDocKeys.add(key)
                                     }
                                     .padding(vertical = 8.dp)
@@ -169,7 +208,9 @@ fun RequerimentoDetailScreen(
                                 Checkbox(
                                     checked = selectedDocKeys.contains(key),
                                     onCheckedChange = { isChecked ->
-                                        if (isChecked) selectedDocKeys.add(key) else selectedDocKeys.remove(key)
+                                        if (isChecked) selectedDocKeys.add(key) else selectedDocKeys.remove(
+                                            key
+                                        )
                                     }
                                 )
                                 Text(text = label)
@@ -199,7 +240,12 @@ fun RequerimentoDetailScreen(
     // --- UI PRINCIPAL ---
     Scaffold(
         topBar = { AppTopBar(title = "Detalhe do Requerimento", onBackClick = onBackClick) },
-        bottomBar = { AppBottomBar(navItems = navItems, currentRoute = "", onItemSelected = { onNavigate(it.route) }) }
+        bottomBar = {
+            AppBottomBar(
+                navItems = navItems,
+                currentRoute = "",
+                onItemSelected = { onNavigate(it.route) })
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -209,10 +255,20 @@ fun RequerimentoDetailScreen(
                 .padding(16.dp)
         ) {
             // Header
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 24.dp)) {
-                Box(modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.LightGray), contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 24.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = if(data.beneficiaryName.isNotBlank()) data.beneficiaryName.take(1).uppercase() else "?",
+                        text = if (data.beneficiaryName.isNotBlank()) data.beneficiaryName.take(1)
+                            .uppercase() else "?",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -220,13 +276,25 @@ fun RequerimentoDetailScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text(text = data.beneficiaryName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(text = "CC: ${data.cc}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                    Text(text = "Submetido: ${data.submissionDate}", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Text(
+                        text = data.beneficiaryName,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "CC: ${data.cc}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "Submetido: ${data.submissionDate}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     // Badge de Estado usando StatusType
-                    val statusColor = when(data.status) {
+                    val statusColor = when (data.status) {
                         StatusType.APROVADA -> accentGreen
                         StatusType.REJEITADA -> Color.Red
                         StatusType.DOCS_INCORRETOS -> warningOrange
@@ -297,7 +365,8 @@ fun RequerimentoDetailScreen(
                                         IconButton(
                                             onClick = {
                                                 try {
-                                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                                    val intent =
+                                                        Intent(Intent.ACTION_VIEW, Uri.parse(url))
                                                     context.startActivity(intent)
                                                 } catch (e: Exception) {
                                                     e.printStackTrace()
@@ -325,7 +394,9 @@ fun RequerimentoDetailScreen(
             // Se já estiver Aprovado ou Rejeitado, geralmente não queremos mexer mais
             if (data.status != StatusType.APROVADA && data.status != StatusType.REJEITADA) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     AppButton(
@@ -335,20 +406,26 @@ fun RequerimentoDetailScreen(
                             showDocsModal = true
                         },
                         containerColor = warningOrange,
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         AppButton(
                             text = "Rejeitar",
                             onClick = { showRejectModal = true },
                             containerColor = Color.Red,
-                            modifier = Modifier.weight(1f).height(50.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
                         )
                         AppButton(
                             text = "Aceitar",
                             onClick = { showApproveModal = true },
                             containerColor = accentGreen,
-                            modifier = Modifier.weight(1f).height(50.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp)
                         )
                     }
                 }

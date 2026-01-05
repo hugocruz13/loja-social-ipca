@@ -1,18 +1,22 @@
 package pt.ipca.lojasocial.presentation.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import pt.ipca.lojasocial.presentation.components.AppBottomBar
+import pt.ipca.lojasocial.presentation.components.AppTopBar
+import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.NotificationModel
 import pt.ipca.lojasocial.presentation.components.NotificationsList
-import pt.ipca.lojasocial.presentation.components.AppTopBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Settings
-import pt.ipca.lojasocial.presentation.components.AppBottomBar
-import pt.ipca.lojasocial.presentation.components.BottomNavItem
 
 @Composable
 fun NotificationsScreen(
@@ -61,7 +65,8 @@ fun NotificationsScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "notification",
-                onItemSelected = { item -> onNavigate(item.route)
+                onItemSelected = { item ->
+                    onNavigate(item.route)
                 }
             )
         },

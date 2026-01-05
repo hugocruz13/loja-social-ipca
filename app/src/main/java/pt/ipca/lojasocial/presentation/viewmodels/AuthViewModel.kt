@@ -147,7 +147,8 @@ class AuthViewModel @Inject constructor(
                 val requests = requestRepository.getRequestsByBeneficiary(userId)
                 val request = requests.maxByOrNull { it.submissionDate } ?: return@launch
 
-                val fileName = "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
+                val fileName =
+                    "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
                 val downloadUrl = storageRepository.uploadFile(uri, fileName)
 
                 val updatedDocs = currentDocs.toMutableMap()
@@ -220,19 +221,57 @@ class AuthViewModel @Inject constructor(
     }
 
     fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
-        _state.update { it.copy(fullName = fullName, cc = cc, phone = phone, email = email, password = password) }
+        _state.update {
+            it.copy(
+                fullName = fullName,
+                cc = cc,
+                phone = phone,
+                email = email,
+                password = password
+            )
+        }
     }
 
     fun updateBirthDate(date: String) {
         _state.update { it.copy(birthDate = date) }
     }
 
-    fun updateStep2(category: RequestCategory?, education: String, dependents: Int, school: String, courseName: String, studentNumber: String) {
-        _state.update { it.copy(requestCategory = category, educationLevel = education, dependents = dependents, school = school, courseName = courseName, studentNumber = studentNumber) }
+    fun updateStep2(
+        category: RequestCategory?,
+        education: String,
+        dependents: Int,
+        school: String,
+        courseName: String,
+        studentNumber: String
+    ) {
+        _state.update {
+            it.copy(
+                requestCategory = category,
+                educationLevel = education,
+                dependents = dependents,
+                school = school,
+                courseName = courseName,
+                studentNumber = studentNumber
+            )
+        }
     }
 
-    fun updateStep3(docIdentification: Uri?, docFamily: Uri?, docMorada: Uri?, docRendimento: Uri?, docMatricula: Uri?) {
-        _state.update { it.copy(docIdentification = docIdentification, docFamily = docFamily, docMorada = docMorada, docRendimento = docRendimento, docMatricula = docMatricula) }
+    fun updateStep3(
+        docIdentification: Uri?,
+        docFamily: Uri?,
+        docMorada: Uri?,
+        docRendimento: Uri?,
+        docMatricula: Uri?
+    ) {
+        _state.update {
+            it.copy(
+                docIdentification = docIdentification,
+                docFamily = docFamily,
+                docMorada = docMorada,
+                docRendimento = docRendimento,
+                docMatricula = docMatricula
+            )
+        }
     }
 
     fun register() {
@@ -260,7 +299,12 @@ class AuthViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, errorMessage = e.message ?: "Erro desconhecido.") }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Erro desconhecido."
+                    )
+                }
                 e.printStackTrace()
             }
         }

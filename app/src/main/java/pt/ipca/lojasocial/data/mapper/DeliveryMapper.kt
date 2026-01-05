@@ -9,7 +9,8 @@ object DeliveryMapper {
     fun toDomain(id: String, dto: DeliveryDto): Delivery {
         return Delivery(
             id = id,
-            beneficiaryId = dto.idBeneficiario?.id ?: throw IllegalArgumentException("Beneficiary ID DocumentReference cannot be null"),
+            beneficiaryId = dto.idBeneficiario?.id
+                ?: throw IllegalArgumentException("Beneficiary ID DocumentReference cannot be null"),
             date = dto.dataEntrega,
             scheduledDate = dto.dataHoraPlaneada,
             status = when (dto.estado.uppercase()) {
@@ -22,7 +23,8 @@ object DeliveryMapper {
             },
             items = dto.produtosEntregues,
             observations = dto.observacoes.ifEmpty { null },
-            createdBy = dto.criadoPor?.id ?: throw IllegalArgumentException("Created By DocumentReference cannot be null")
+            createdBy = dto.criadoPor?.id
+                ?: throw IllegalArgumentException("Created By DocumentReference cannot be null")
         )
     }
 

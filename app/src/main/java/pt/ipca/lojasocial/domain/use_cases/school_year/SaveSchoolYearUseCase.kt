@@ -1,9 +1,8 @@
 package pt.ipca.lojasocial.domain.use_cases.school_year
 
-import com.google.firebase.auth.FirebaseAuth
-import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import pt.ipca.lojasocial.domain.models.SchoolYear
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
+import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import pt.ipca.lojasocial.domain.use_cases.log.SaveLogUseCase
 import javax.inject.Inject
 
