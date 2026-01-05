@@ -89,7 +89,7 @@ class EntregaDetailViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         beneficiaryName = beneficiary?.name ?: "Desconhecido",
-                        beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.id ?: "N/A"}",
+                        beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.ccNumber ?: "N/A"}",
                         date = dateFormat.format(dateObj),
                         time = timeFormat.format(dateObj),
                         status = uiStatus,

@@ -48,7 +48,8 @@ data class AddEditEntregaUiState(
     val saveSuccess: Boolean = false,
     val isProductPickerDialogVisible: Boolean = false,
     val isDatePickerDialogVisible: Boolean = false,
-    val isTimePickerDialogVisible: Boolean = false
+    val isTimePickerDialogVisible: Boolean = false,
+    val isImmediateDelivery: Boolean = false
 )
 
 @HiltViewModel
@@ -103,16 +104,18 @@ class AddEditEntregaViewModel @Inject constructor(
                     val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                     val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
+                    val dateStr = simpleDateFormat.format(calendar.time)
                     _uiState.update {
                         it.copy(
                             deliveryId = deliveryId,
                             selectedBeneficiary = beneficiary,
                             beneficiaryQuery = beneficiary?.name ?: "",
-                            date = simpleDateFormat.format(calendar.time),
+                            date = dateStr,
                             time = timeFormat.format(calendar.time),
                             repetition = "Não repetir",
                             observations = delivery.observations ?: "",
-                            selectedProducts = delivery.items // Assuming items are ProductID -> Quantity
+                            selectedProducts = delivery.items, // Assuming items are ProductID -> Quantity
+                            isImmediateDelivery = isDateToday(dateStr)
                         )
                     }
                 } else {
@@ -179,7 +182,8 @@ class AddEditEntregaViewModel @Inject constructor(
     }
 
     fun onDateChange(date: String) {
-        _uiState.update { it.copy(date = date) }
+        val isToday = isDateToday(date)
+        _uiState.update { it.copy(date = date, isImmediateDelivery = isToday) }
     }
 
     fun onTimeChange(time: String) {
@@ -226,6 +230,42 @@ class AddEditEntregaViewModel @Inject constructor(
 
     fun hideTimePickerDialog() {
         _uiState.update { it.copy(isTimePickerDialogVisible = false) }
+    }
+
+    private fun isDateToday(dateString: String): Boolean {
+        return try {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val today = sdf.format(Date())
+            dateString == today
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun deductStock(items: Map<String, Int>) {
+        try {
+            val allStock = stockRepository.getStockItems()
+            items.forEach { (productId, qtyToDeduct) ->
+                var remaining = qtyToDeduct
+                // FEFO: Sort by expiryDate ascending
+                val relevantStock = allStock
+                    .filter { it.productId == productId && it.quantity > 0 }
+                    .sortedBy { it.expiryDate }
+
+                for (stock in relevantStock) {
+                    if (remaining <= 0) break
+                    val take = kotlin.math.min(remaining, stock.quantity)
+                    stockRepository.updateStockQuantity(stock.id, stock.quantity - take)
+                    remaining -= take
+                }
+                
+                if (remaining > 0) {
+                    Log.w(TAG, "Stock insufficiency for product $productId. Missing: $remaining")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deducting stock", e)
+        }
     }
 
     fun saveDelivery() {
@@ -303,10 +343,18 @@ class AddEditEntregaViewModel @Inject constructor(
                 )
 
                 val deliveriesToCreate = mutableListOf<Delivery>()
+                
+                // Logic for Immediate Delivery (Only for Staff/Admin, assuming Beneficiary requests are always Under Analysis)
+                val isStaff = currentUser.role != UserRole.BENEFICIARY
+                val isImmediate = isStaff && currentState.isImmediateDelivery // Using state which is updated by date
+                
+                val firstDeliveryStatus = if (isImmediate) DeliveryStatus.DELIVERED else initialStatus
+
                 deliveriesToCreate.add(
                     baseDelivery.copy(
                         id = UUID.randomUUID().toString(),
-                        scheduledDate = calendar.timeInMillis
+                        scheduledDate = calendar.timeInMillis,
+                        status = firstDeliveryStatus
                     )
                 )
 
@@ -340,10 +388,12 @@ class AddEditEntregaViewModel @Inject constructor(
                                     )
                                     break
                                 }
+                                // Repeated deliveries are always SCHEDULED (or UNDER_ANALYSIS)
                                 deliveriesToCreate.add(
                                     baseDelivery.copy(
                                         id = UUID.randomUUID().toString(),
-                                        scheduledDate = calendar.timeInMillis
+                                        scheduledDate = calendar.timeInMillis,
+                                        status = initialStatus
                                     )
                                 )
                             }
@@ -360,6 +410,12 @@ class AddEditEntregaViewModel @Inject constructor(
                     deliveriesToCreate.forEach { delivery ->
                         deliveryRepository.addDelivery(delivery)
                     }
+                    
+                    // Deduct stock if immediate
+                    if (isImmediate) {
+                        deductStock(currentState.selectedProducts)
+                    }
+                    
                     _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
                     Log.i(TAG, "Successfully saved ${deliveriesToCreate.size} deliveries.")
                 } catch (e: Exception) {
