@@ -8,10 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -207,11 +203,6 @@ fun AnoLetivoListContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun AnoLetivoListScreenPreview() {
-    val dummyNavItems = listOf(
-        BottomNavItem("Início", Icons.Default.Home, "home"),
-        BottomNavItem("Perfil", Icons.Default.Person, "profile"),
-        BottomNavItem("Definições", Icons.Default.Settings, "settings")
-    )
 
     val dummyYears = listOf(
         SchoolYear(id = "1", label = "2024-2025", startDate = 0L, endDate = 0L),
@@ -226,7 +217,7 @@ fun AnoLetivoListScreenPreview() {
             onAddClick = { },
             onYearClick = { },
             onDownloadClick = { }, // Ação vazia no preview
-            navItems = dummyNavItems,
+            navItems = emptyList(),
             onNavigate = { }
         )
     }
