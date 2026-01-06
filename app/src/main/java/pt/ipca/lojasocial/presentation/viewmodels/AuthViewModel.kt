@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
+import pt.ipca.lojasocial.domain.models.EmailRequest
 import pt.ipca.lojasocial.domain.models.RequestCategory
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.AuthRepository
@@ -287,6 +288,25 @@ class AuthViewModel @Inject constructor(
                     updateFcmToken(currentUser.id)
 
                     loadUserProfile(currentUser.id)
+
+                    communicationRepository.sendEmail(
+                        EmailRequest(
+                            to = _state.value.email, // Email inserido no formulário
+                            subject = "Bem-vindo à Loja Social IPCA! \uD83D\uDC4B",
+                            body = """
+                                <div style="font-family: Arial, sans-serif; color: #333;">
+                                    <h2>Olá ${_state.value.fullName}!</h2>
+                                    <p>O teu registo na <strong>Loja Social IPCA</strong> foi efetuado com sucesso.</p>
+                                    <p>O teu requerimento foi submetido e encontra-se agora em <strong>ANÁLISE</strong>.</p>
+                                    <p>Serás notificado assim que a equipa validar os teus documentos.</p>
+                                    <br>
+                                    <p>Obrigado,<br>Equipa Loja Social</p>
+                                </div>
+                            """.trimIndent(),
+                            isHtml = true,
+                            senderName = "Loja Social IPCA"
+                        )
+                    )
                 }
 
                 _state.update {

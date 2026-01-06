@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
+import pt.ipca.lojasocial.domain.models.EmailRequest
 import pt.ipca.lojasocial.domain.models.NotificationRequest
 import pt.ipca.lojasocial.domain.models.NotificationType
 import pt.ipca.lojasocial.domain.models.StatusType
@@ -106,23 +107,68 @@ class EntregaDetailViewModel @Inject constructor(
     fun updateStatus(deliveryId: String, delivered: Boolean) {
         viewModelScope.launch {
             try {
+                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                val beneficiary =
+                    if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
                 if (delivered) {
                     confirmDeliveryUseCase(deliveryId)
-                    // Opcional: Notificar entrega bem sucedida
+
+                    if (beneficiary != null) {
+                        // Push
+                        communicationRepository.sendNotification(
+                            NotificationRequest(
+                                userId = beneficiary.id,
+                                title = "Entrega Concluída ✅",
+                                message = "Confirmamos que levantaste os teus produtos. Obrigado!",
+                                type = NotificationType.SUCCESS,
+                                data = mapOf("screen" to "entregas")
+                            )
+                        )
+                        // Email (Recibo)
+                        communicationRepository.sendEmail(
+                            EmailRequest(
+                                to = beneficiary.email,
+                                subject = "Comprovativo de Entrega - Loja Social",
+                                body = """
+                                    <h3>Entrega Confirmada</h3>
+                                    <p>Olá ${beneficiary.name},</p>
+                                    <p>Confirmamos a entrega dos produtos no dia de hoje.</p>
+                                    <p>Obrigado pela colaboração.</p>
+                                """.trimIndent(),
+                                isHtml = true,
+                                senderName = "Loja Social IPCA"
+                            )
+                        )
+                    }
                 } else {
                     // Cancelar Entrega
                     deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.CANCELLED)
-
-                    // Notificar Cancelamento
-                    val delivery = deliveryRepository.getDeliveryById(deliveryId)
-                    if (delivery != null) {
-                        val notif = NotificationRequest(
-                            userId = delivery.beneficiaryId,
-                            title = "Entrega Cancelada",
-                            message = "A sua entrega agendada foi cancelada. Contacte os serviços para mais informações.",
-                            type = NotificationType.WARNING
+                    if (beneficiary != null) {
+                        // Push
+                        communicationRepository.sendNotification(
+                            NotificationRequest(
+                                userId = beneficiary.id,
+                                title = "Entrega Cancelada 🚫",
+                                message = "A sua entrega agendada foi cancelada. Contacte os serviços.",
+                                type = NotificationType.WARNING,
+                                data = mapOf("screen" to "entregas")
+                            )
                         )
-                        communicationRepository.sendNotification(notif)
+                        // Email
+                        communicationRepository.sendEmail(
+                            EmailRequest(
+                                to = beneficiary.email,
+                                subject = "Cancelamento de Entrega - Loja Social",
+                                body = """
+                                    <h3>Entrega Cancelada</h3>
+                                    <p>Olá ${beneficiary.name},</p>
+                                    <p>Informamos que a sua entrega agendada foi cancelada.</p>
+                                    <p>Por favor, entre em contacto com a Loja Social para mais informações.</p>
+                                """.trimIndent(),
+                                isHtml = true,
+                                senderName = "Loja Social IPCA"
+                            )
+                        )
                     }
                 }
                 loadDelivery(deliveryId)
@@ -138,16 +184,36 @@ class EntregaDetailViewModel @Inject constructor(
                 // 1. Update status to SCHEDULED
                 deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.SCHEDULED)
 
-                // 2. Notify Beneficiary
                 val delivery = deliveryRepository.getDeliveryById(deliveryId)
-                if (delivery != null) {
-                    val notif = NotificationRequest(
-                        userId = delivery.beneficiaryId,
-                        title = "Pedido Aprovado",
-                        message = "O seu pedido de entrega foi aprovado e agendado.",
-                        type = NotificationType.SUCCESS
+                val beneficiary =
+                    if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
+
+                if (beneficiary != null) {
+                    // Push
+                    communicationRepository.sendNotification(
+                        NotificationRequest(
+                            userId = beneficiary.id,
+                            title = "Pedido Aprovado 🗓️",
+                            message = "O seu pedido de entrega foi aprovado e agendado.",
+                            type = NotificationType.SUCCESS,
+                            data = mapOf("screen" to "entregas")
+                        )
                     )
-                    communicationRepository.sendNotification(notif)
+                    // Email
+                    communicationRepository.sendEmail(
+                        EmailRequest(
+                            to = beneficiary.email,
+                            subject = "Pedido de Entrega Aprovado - Loja Social",
+                            body = """
+                                <h3>Boas notícias!</h3>
+                                <p>Olá ${beneficiary.name},</p>
+                                <p>O teu pedido de agendamento de entrega foi <strong>APROVADO</strong>.</p>
+                                <p>Consulta a aplicação para veres a data e hora marcadas.</p>
+                            """.trimIndent(),
+                            isHtml = true,
+                            senderName = "Loja Social IPCA"
+                        )
+                    )
                 }
 
                 // 3. Reload
@@ -164,16 +230,36 @@ class EntregaDetailViewModel @Inject constructor(
                 // 1. Update status to REJECTED
                 deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.REJECTED)
 
-                // 2. Notify Beneficiary
                 val delivery = deliveryRepository.getDeliveryById(deliveryId)
-                if (delivery != null) {
-                    val notif = NotificationRequest(
-                        userId = delivery.beneficiaryId,
-                        title = "Pedido Rejeitado",
-                        message = "O seu pedido de entrega não pôde ser aceite neste momento.",
-                        type = NotificationType.ERROR
+                val beneficiary =
+                    if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
+
+                if (beneficiary != null) {
+                    // Push
+                    communicationRepository.sendNotification(
+                        NotificationRequest(
+                            userId = beneficiary.id,
+                            title = "Pedido Rejeitado ❌",
+                            message = "O seu pedido de entrega não pôde ser aceite neste momento.",
+                            type = NotificationType.ERROR,
+                            data = mapOf("screen" to "entregas")
+                        )
                     )
-                    communicationRepository.sendNotification(notif)
+                    // Email
+                    communicationRepository.sendEmail(
+                        EmailRequest(
+                            to = beneficiary.email,
+                            subject = "Pedido de Entrega Rejeitado - Loja Social",
+                            body = """
+                                <h3>Atualização do Pedido</h3>
+                                <p>Olá ${beneficiary.name},</p>
+                                <p>Lamentamos informar que o teu pedido de agendamento não foi aceite.</p>
+                                <p>Tenta agendar para outra data ou contacta os serviços.</p>
+                            """.trimIndent(),
+                            isHtml = true,
+                            senderName = "Loja Social IPCA"
+                        )
+                    )
                 }
 
                 // 3. Reload
