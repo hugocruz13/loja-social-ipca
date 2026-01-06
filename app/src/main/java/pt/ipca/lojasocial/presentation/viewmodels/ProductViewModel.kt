@@ -36,6 +36,9 @@ class ProductViewModel @Inject constructor(
     private val _selectedProduct = MutableStateFlow<Product?>(null)
     val selectedProduct = _selectedProduct.asStateFlow()
 
+    private val _lastCreatedProduct = MutableStateFlow<Product?>(null)
+    val lastCreatedProduct = _lastCreatedProduct.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     private val _selectedType = MutableStateFlow("")
 
@@ -90,6 +93,9 @@ class ProductViewModel @Inject constructor(
                 )
 
                 loadProducts()
+
+                _lastCreatedProduct.value = productWithId
+
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao adicionar produto: ${e.message}"
             } finally {
@@ -97,6 +103,7 @@ class ProductViewModel @Inject constructor(
             }
         }
     }
+
 
     fun loadProductById(id: String) {
         viewModelScope.launch {
