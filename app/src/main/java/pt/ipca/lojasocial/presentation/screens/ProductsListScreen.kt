@@ -200,16 +200,6 @@ fun ProductListContent(
                     ExtendedFloatingActionButton(
                         onClick = {
                             expandedFab = false
-                            onAddNewTypeClick()
-                        },
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        icon = { Icon(Icons.Default.LibraryAdd, contentDescription = null) },
-                        text = { Text("Novo Tipo") }
-                    )
-
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            expandedFab = false
                             // Esta ação pode abrir o Sheet localmente ou navegar
                             // Assumindo lógica local baseada no teu código original:
                             showAddProductSheet = true
