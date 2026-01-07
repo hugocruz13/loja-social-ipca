@@ -33,6 +33,7 @@ import pt.ipca.lojasocial.presentation.screens.CampanhaModel
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
+import pt.ipca.lojasocial.domain.use_cases.campaigns.GetActiveCampaignsCountUseCase
 
 
 @HiltViewModel
@@ -42,6 +43,7 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val getActiveCampaignsCountUseCase: GetActiveCampaignsCountUseCase,
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
@@ -57,7 +59,9 @@ class CampanhasViewModel @Inject constructor(
 
     private val _selectedCampanha = MutableStateFlow<CampanhaModel?>(null)
     val selectedCampanha = _selectedCampanha.asStateFlow()
+    private val _activeCount = MutableStateFlow(0)
 
+    val activeCount = _activeCount.asStateFlow()
 
     val filteredCampanhas = combine(_campanhas, _searchQuery) { list, query ->
         if (query.isBlank()) {
@@ -80,6 +84,7 @@ class CampanhasViewModel @Inject constructor(
 
     init {
         loadCampanhas()
+        loadActiveCount()
     }
 
     fun loadCampanhas() {
@@ -108,6 +113,19 @@ class CampanhasViewModel @Inject constructor(
             } catch (e: Exception) {
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+    fun loadActiveCount() {
+        viewModelScope.launch {
+            // Não precisamos de ativar o isLoading geral para isto,
+            // para não bloquear a UI toda se for apenas um update pequeno
+            try {
+                val count = getActiveCampaignsCountUseCase()
+                _activeCount.value = count
+            } catch (e: Exception) {
+                // Em caso de erro mantém 0 ou trata como preferires
+                _activeCount.value = 0
             }
         }
     }
