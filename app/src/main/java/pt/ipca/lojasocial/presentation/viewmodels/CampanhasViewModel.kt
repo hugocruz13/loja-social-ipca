@@ -8,8 +8,6 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 import pt.ipca.lojasocial.domain.models.CampaignType
@@ -45,8 +42,6 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
-    private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -111,7 +106,9 @@ class CampanhasViewModel @Inject constructor(
                             },
                             icon = mapIcon(domain.title),
                             startDate = domain.startDate,
-                            endDate = domain.endDate
+                            endDate = domain.endDate,
+                            // 🚨 CORREÇÃO CRÍTICA: Mapear a imagem aqui para aparecer na lista 🚨
+                            imageUrl = domain.imageUrl
                         )
                     }
                     _isLoading.value = false
@@ -193,10 +190,12 @@ class CampanhasViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val campanhaAtualDomain = _campanhas.value.find { it.id == id }
-
                 // Assumindo que a imagem antiga vem do model selecionado ou da lista
-                val imageUrlAtual = _selectedCampanha.value?.imageUrl ?: ""
+                // Procuramos na lista atual para ter a referência caso o _selectedCampanha não esteja carregado
+                val imageUrlAtual = _selectedCampanha.value?.imageUrl
+                    ?: _campanhas.value.find { it.id == id }?.imageUrl
+                    ?: ""
+
                 val startDateAtual = _selectedCampanha.value?.startDate ?: 0L
                 val endDateAtual = _selectedCampanha.value?.endDate ?: 0L
 
@@ -247,20 +246,6 @@ class CampanhasViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
-        }
-    }
-
-    private suspend fun saveLog(acao: String, detalhe: String) {
-        try {
-            val log = hashMapOf(
-                "acao" to acao,
-                "detalhe" to detalhe,
-                "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-                "timestamp" to System.currentTimeMillis()
-            )
-            firestore.collection("logs").add(log).await()
-        } catch (e: Exception) {
-            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
         }
     }
 
