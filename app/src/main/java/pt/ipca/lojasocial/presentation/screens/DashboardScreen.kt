@@ -50,7 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel // Para injetar o ViewMode
 import androidx.compose.runtime.collectAsState     // Para ler o valor dinâmico
 import androidx.compose.runtime.getValue           // Para usar "by"
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel // O teu ViewModel
-
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 // Definimos um Enum simples para controlar a UI na View
 enum class UserRole { STAFF, BENEFICIARY }
@@ -61,9 +61,11 @@ fun DashboardScreen(
     role: UserRole,
     navItems: List<BottomNavItem>, // <--- Adicionado
     onNavigate: (String) -> Unit,   // <--- Renomeado para padronizar
-    viewModel: CampanhasViewModel = hiltViewModel()
+    viewModel: CampanhasViewModel = hiltViewModel(),
+    entregasViewModel: EntregasViewModel = hiltViewModel()
 ) {
     val activeCount by viewModel.activeCount.collectAsState()
+    val pendingDeliveriesCount by entregasViewModel.pendingCount.collectAsState()
     Scaffold(
         bottomBar = {
             AppBottomBar(
@@ -99,11 +101,11 @@ fun DashboardScreen(
                 // --- SECÇÃO DE INFO (STATS) ---
                 if (role == UserRole.STAFF) {
                     item { AppInfoCard ("Campanhas Ativas", activeCount.toString(), Icons.Default.Campaign)}
-                    item { AppInfoCard("Entregas Pendentes", "12", Icons.Default.LocalShipping) }
+                    item {AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping )}
                 } else {
                     // Beneficiário vê apenas Entregas Pendentes em largura total
                     item(span = { GridItemSpan(2) }) {
-                        AppInfoCard("Entregas Pendentes", "12", Icons.Default.LocalShipping)
+                        AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping)
                     }
                 }
 
