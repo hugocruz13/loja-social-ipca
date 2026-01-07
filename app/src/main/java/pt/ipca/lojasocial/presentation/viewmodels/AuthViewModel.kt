@@ -260,17 +260,13 @@ class AuthViewModel @Inject constructor(
     fun updateStep3(
         docIdentification: Uri?,
         docFamily: Uri?,
-        docMorada: Uri?,
-        docRendimento: Uri?,
-        docMatricula: Uri?
+        docMorada: Uri?
     ) {
         _state.update {
             it.copy(
                 docIdentification = docIdentification,
                 docFamily = docFamily,
-                docMorada = docMorada,
-                docRendimento = docRendimento,
-                docMatricula = docMatricula
+                docMorada = docMorada
             )
         }
     }

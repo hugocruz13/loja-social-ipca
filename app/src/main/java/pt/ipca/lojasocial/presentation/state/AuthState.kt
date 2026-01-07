@@ -61,7 +61,5 @@ data class AuthState(
     // Passo 3: Documentos (URIs locais antes do upload)
     val docIdentification: Uri? = null,
     val docFamily: Uri? = null,
-    val docMorada: Uri? = null,
-    val docRendimento: Uri? = null,
-    val docMatricula: Uri? = null
+    val docMorada: Uri? = null
 )

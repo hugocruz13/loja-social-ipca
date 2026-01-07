@@ -67,8 +67,6 @@ fun RegisterStep3Screen(
                 "identificacao" -> updateStep3Fields(viewModel, state, docIdentification = it)
                 "agregado" -> updateStep3Fields(viewModel, state, docFamily = it)
                 "morada" -> updateStep3Fields(viewModel, state, docMorada = it)
-                "rendimento" -> updateStep3Fields(viewModel, state, docRendimento = it)
-                "matricula" -> updateStep3Fields(viewModel, state, docMatricula = it)
             }
         }
     }
@@ -213,11 +211,9 @@ private fun updateStep3Fields(
     state: AuthState,
     docIdentification: Uri? = state.docIdentification,
     docFamily: Uri? = state.docFamily,
-    docMorada: Uri? = state.docMorada,
-    docRendimento: Uri? = state.docRendimento,
-    docMatricula: Uri? = state.docMatricula
+    docMorada: Uri? = state.docMorada
 ) {
     viewModel.updateStep3(
-        docIdentification, docFamily, docMorada, docRendimento, docMatricula
+        docIdentification, docFamily, docMorada
     )
 }

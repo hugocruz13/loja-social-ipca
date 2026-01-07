@@ -54,8 +54,6 @@ class RegisterBeneficiaryUseCase @Inject constructor(
         uploadIfPresent(state.docIdentification, "identificacao")
         uploadIfPresent(state.docFamily, "agregado")
         uploadIfPresent(state.docMorada, "morada")
-        uploadIfPresent(state.docRendimento, "rendimento")
-        uploadIfPresent(state.docMatricula, "matricula")
 
         // 3. Criar Beneficiário
         val newBeneficiary = Beneficiary(
