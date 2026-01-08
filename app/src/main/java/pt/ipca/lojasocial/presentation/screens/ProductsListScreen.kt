@@ -328,7 +328,9 @@ fun StockListItem(
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
+            .clickable(enabled = totalQuantity > 0) {
+                expanded = !expanded
+            }
     ) {
         Column {
             Row(
@@ -374,18 +376,20 @@ fun StockListItem(
                         fontWeight = FontWeight.ExtraBold,
                         color = statusColor
                     )
-                    Icon(
-                        Icons.Default.ExpandMore,
-                        null,
-                        modifier = Modifier
-                            .rotate(rotationState)
-                            .size(20.dp),
-                        tint = Color.LightGray
-                    )
+                    if (totalQuantity > 0) {
+                        Icon(
+                            Icons.Default.ExpandMore,
+                            null,
+                            modifier = Modifier
+                                .rotate(rotationState)
+                                .size(20.dp),
+                            tint = Color.LightGray
+                        )
+                    }
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(visible = expanded && totalQuantity > 0) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
