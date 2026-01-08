@@ -55,6 +55,9 @@ class CampanhasViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
+    private val _selectedStatusFilter = MutableStateFlow<StatusType?>(null)
+    val selectedStatusFilter = _selectedStatusFilter.asStateFlow()
+
     private val _campanhas = MutableStateFlow<List<CampanhaModel>>(emptyList())
 
     private val _selectedCampanha = MutableStateFlow<CampanhaModel?>(null)
@@ -63,14 +66,26 @@ class CampanhasViewModel @Inject constructor(
 
     val activeCount = _activeCount.asStateFlow()
 
-    val filteredCampanhas = combine(_campanhas, _searchQuery) { list, query ->
-        if (query.isBlank()) {
-            list
-        } else {
-            list.filter { item ->
+    val filteredCampanhas = combine(
+        _campanhas,
+        _searchQuery,
+        _selectedStatusFilter
+    ) { list, query, selectedStatus ->
+        list.filter { item ->
+            val matchesSearch = if (query.isBlank()) {
+                true
+            } else {
                 item.nome.contains(query, ignoreCase = true) ||
                         item.desc.contains(query, ignoreCase = true)
             }
+
+            val matchesStatus = if (selectedStatus == null) {
+                true
+            } else {
+                item.status == selectedStatus
+            }
+
+            matchesSearch && matchesStatus
         }
     }.stateIn(
         scope = viewModelScope,
@@ -118,13 +133,10 @@ class CampanhasViewModel @Inject constructor(
     }
     fun loadActiveCount() {
         viewModelScope.launch {
-            // Não precisamos de ativar o isLoading geral para isto,
-            // para não bloquear a UI toda se for apenas um update pequeno
             try {
                 val count = getActiveCampaignsCountUseCase()
                 _activeCount.value = count
             } catch (e: Exception) {
-                // Em caso de erro mantém 0 ou trata como preferires
                 _activeCount.value = 0
             }
         }
@@ -285,6 +297,10 @@ class CampanhasViewModel @Inject constructor(
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
         return cal.timeInMillis
+    }
+
+    fun onFilterChange(status: StatusType?) {
+        _selectedStatusFilter.value = status
     }
 
 }

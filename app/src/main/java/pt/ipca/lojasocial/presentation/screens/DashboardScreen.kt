@@ -117,7 +117,7 @@ fun DashboardScreen(
                         AppAccessCard(
                             "Beneficiários",
                             Icons.Default.Groups,
-                            { onNavigate("beneficiarios") })
+                            { onNavigate("beneficiaries") })
                     }
                     item {
                         AppAccessCard(
