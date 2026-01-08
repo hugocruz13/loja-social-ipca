@@ -144,7 +144,7 @@ fun RegisterStep2Screen(
                     value = state.studentNumber,
                     onValueChange = { updateStep2Fields(studentNumber = it) },
                     label = "Número do Estudante",
-                    placeholder = "Insira o seu nº mecanográfico",
+                    placeholder = "Insira o seu nº de estudante",
                     // errorMessage = state.studentNumberError, // Caso tenhas definido no VM
                     modifier = Modifier
                         .fillMaxWidth()
