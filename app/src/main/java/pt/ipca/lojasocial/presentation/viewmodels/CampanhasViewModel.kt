@@ -27,7 +27,7 @@ import pt.ipca.lojasocial.domain.use_cases.campaign.GetActiveCampaignsCountUseCa
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
-import pt.ipca.lojasocial.presentation.screens.CampanhaModel
+import pt.ipca.lojasocial.presentation.models.CampanhaUiModel
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
@@ -56,9 +56,9 @@ class CampanhasViewModel @Inject constructor(
     private val _selectedStatusFilter = MutableStateFlow<StatusType?>(null)
     val selectedStatusFilter = _selectedStatusFilter.asStateFlow()
 
-    private val _campanhas = MutableStateFlow<List<CampanhaModel>>(emptyList())
+    private val _campanhas = MutableStateFlow<List<CampanhaUiModel>>(emptyList())
 
-    private val _selectedCampanha = MutableStateFlow<CampanhaModel?>(null)
+    private val _selectedCampanha = MutableStateFlow<CampanhaUiModel?>(null)
     val selectedCampanha = _selectedCampanha.asStateFlow()
     private val _activeCount = MutableStateFlow(0)
 
@@ -113,7 +113,7 @@ class CampanhasViewModel @Inject constructor(
 
                     // Mapeamento de Domain -> UI Model
                     _campanhas.value = domainList.map { domain ->
-                        CampanhaModel(
+                        CampanhaUiModel(
                             id = domain.id,
                             nome = domain.title,
                             desc = domain.description,
@@ -162,7 +162,7 @@ class CampanhasViewModel @Inject constructor(
                 getCampaignByIdUseCase(id).collect { domain ->
                     if (domain != null) {
                         android.util.Log.d("DETALHE_DEBUG", "URL Realtime: ${domain.imageUrl}")
-                        _selectedCampanha.value = CampanhaModel(
+                        _selectedCampanha.value = CampanhaUiModel(
                             id = domain.id,
                             nome = domain.title,
                             desc = domain.description,

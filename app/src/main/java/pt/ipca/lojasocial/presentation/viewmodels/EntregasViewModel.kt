@@ -13,8 +13,8 @@ import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
-import pt.ipca.lojasocial.domain.use_cases.delivery.GetPendingDeliveriesCountUseCase
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
+import pt.ipca.lojasocial.domain.use_cases.delivery.GetPendingDeliveriesCountUseCase
 import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,7 +38,7 @@ class EntregasViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow("All")
+    private val _selectedFilter = MutableStateFlow("Agendada")
     val selectedFilter = _selectedFilter.asStateFlow()
 
     private val _allDeliveries = MutableStateFlow<List<DeliveryUiModel>>(emptyList())
@@ -112,6 +112,7 @@ class EntregasViewModel @Inject constructor(
             }
         }
     }
+
     // Tornada pública para permitir refresh manual
     fun loadDeliveries() {
         viewModelScope.launch {
