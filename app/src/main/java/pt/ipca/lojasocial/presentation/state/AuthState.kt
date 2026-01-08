@@ -15,6 +15,7 @@ data class AuthState(
     val isLoggedIn: Boolean = false,
     val userId: String? = null,
 
+
     // ==========================================================
     // ROLE / PAPEL DO UTILIZADOR
     // ==========================================================
@@ -40,6 +41,8 @@ data class AuthState(
     val requestObservations: String = "",
 
     val requestDocuments: Map<String, String?> = emptyMap(),
+
+    val uploadingDocKey: String? = null,
 
     // ==========================================================
     // DADOS DO FORMULÁRIO DE REGISTO (Inputs)

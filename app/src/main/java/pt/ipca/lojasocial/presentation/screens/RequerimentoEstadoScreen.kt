@@ -31,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import pt.ipca.lojasocial.domain.models.StatusType
@@ -69,6 +69,7 @@ fun RequerimentoEstadoScreen(
     cc: String,
     observations: String = "",
     documents: Map<String, String?> = emptyMap(), // Recebe o mapa de documentos
+    uploadingDocKey: String?,
     onResubmitDoc: (String, Uri) -> Unit = { _, _ -> } // Callback para o ViewModel
 ) {
     // Gestão do Upload de ficheiros
@@ -129,9 +130,12 @@ fun RequerimentoEstadoScreen(
                         val isValid = !url.isNullOrBlank()
                         val label = docLabels[key] ?: "Documento"
 
+                        val isUploading = (key == uploadingDocKey)
+
                         DocumentStatusRow(
                             name = label,
                             isValid = isValid,
+                            isUploading = isUploading,
                             onUploadClick = {
                                 selectedDocKey = key
                                 launcher.launch("application/pdf") // Ou "*/*"
@@ -150,6 +154,7 @@ fun RequerimentoEstadoScreen(
 fun DocumentStatusRow(
     name: String,
     isValid: Boolean,
+    isUploading: Boolean,
     onUploadClick: () -> Unit
 ) {
     // Configuração de Estilo
@@ -176,6 +181,7 @@ fun DocumentStatusRow(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             // Ícone Circular
             Box(
                 modifier = Modifier
@@ -201,6 +207,11 @@ fun DocumentStatusRow(
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
                 )
+                val statusText = when {
+                    isUploading -> "A enviar..."
+                    isValid -> "Validado"
+                    else -> "Alteração Necessária"
+                }
                 Text(
                     text = statusText,
                     style = MaterialTheme.typography.bodySmall,
@@ -212,38 +223,55 @@ fun DocumentStatusRow(
             Spacer(modifier = Modifier.width(8.dp))
 
             // Botão
-            if (!isValid) {
-                Button(
-                    onClick = onUploadClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00713C)),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    modifier = Modifier.height(36.dp)
+            if (isUploading) {
+                // MOSTRA SPINNER
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .height(36.dp)
+                        .padding(horizontal = 16.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color(0xFF00713C),
+                        strokeWidth = 2.dp
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Submeter", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             } else {
-                // Botão visual "Submeter" desativado/cinza
-                Box(
-                    modifier = Modifier
-                        .background(Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                // MOSTRA BOTÃO ou CHECK
+                if (!isValid) {
+                    Button(
+                        onClick = onUploadClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00713C)),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.height(36.dp)
+                    ) {
                         Icon(
-                            Icons.Default.Check,
-                            null,
-                            tint = Color.Gray,
+                            imageVector = Icons.Default.CloudUpload,
+                            contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Submeter", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Submeter", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    // Botão Cinza (Já submetido)
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Check,
+                                null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Enviado", fontSize = 12.sp, color = Color.Gray)
+                        }
                     }
                 }
             }
@@ -383,55 +411,4 @@ private fun StatusCard(status: StatusType) {
             )
         }
     }
-}
-
-// ==========================================
-// PREVIEWS
-// ==========================================
-
-@Preview(name = "1. Em Análise", showBackground = true, backgroundColor = 0xFFF9FAFB)
-@Composable
-fun PreviewAnalise() {
-    RequerimentoEstadoScreen(
-        onBackClick = {},
-        status = StatusType.ANALISE,
-        beneficiaryName = "Maria Santos",
-        cc = "12345678 1ZZ0",
-        documents = emptyMap()
-    )
-}
-
-@Preview(
-    name = "2. Docs Incorretos (Upload Necessário)",
-    showBackground = true,
-    backgroundColor = 0xFFF9FAFB
-)
-@Composable
-fun PreviewDocsIncorretos() {
-    val mockDocuments = mapOf(
-        "identificacao" to "https://exemplo.com/doc.pdf",
-        "morada" to null,
-        "rendimento" to null,
-        "matricula" to "https://exemplo.com/doc2.pdf"
-    )
-
-    RequerimentoEstadoScreen(
-        onBackClick = {},
-        status = StatusType.DOCS_INCORRETOS,
-        beneficiaryName = "João Silva",
-        cc = "87654321 2XX0",
-        documents = mockDocuments
-    )
-}
-
-@Preview(name = "3. Rejeitada (Com Motivo)", showBackground = true, backgroundColor = 0xFFF9FAFB)
-@Composable
-fun PreviewRejeitada() {
-    RequerimentoEstadoScreen(
-        onBackClick = {},
-        status = StatusType.REJEITADA,
-        beneficiaryName = "Ana Pereira",
-        cc = "11223344 5WW0",
-        observations = "O agregado familiar ultrapassa o rendimento per capita máximo permitido pelo regulamento (Cap. IV, Art 3º). Por favor verifique os requisitos."
-    )
 }

@@ -278,6 +278,7 @@ fun AppNavHost(
                 observations = state.requestObservations,
                 documents = state.requestDocuments,
                 onResubmitDoc = { docKey, uri -> viewModel.resubmitDocument(docKey, uri) },
+                uploadingDocKey = state.uploadingDocKey,
                 onBackClick = {
                     viewModel.logout()
                     navController.navigate(AppScreen.Login.route) {

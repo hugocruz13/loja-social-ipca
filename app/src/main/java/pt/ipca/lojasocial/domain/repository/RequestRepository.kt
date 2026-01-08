@@ -1,58 +1,49 @@
 package pt.ipca.lojasocial.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Request
 import pt.ipca.lojasocial.domain.models.StatusType
 
 /**
  * Interface responsável pela gestão dos Pedidos de Apoio (Candidaturas).
- *
- * Define as operações essenciais para criar, ler e atualizar candidaturas,
- * servindo de ponte entre os Use Cases e a implementação concreta (Firestore).
+ * * Agora adaptada para Reactive Streams (Flow) para permitir atualizações em tempo real.
  */
 interface RequestRepository {
 
     /**
      * Regista uma nova candidatura no sistema.
-     *
-     * @param request O objeto [Request] totalmente preenchido (incluindo URLs de documentos, se houver).
+     * Mantém-se SUSPEND (operação única de escrita).
      */
     suspend fun addRequest(request: Request)
 
     /**
-     * Obtém os detalhes de uma candidatura específica através do seu ID.
-     *
-     * @param id O identificador único do pedido.
-     * @return O objeto [Request] se encontrado, ou null caso contrário.
+     * Obtém os detalhes de uma candidatura específica.
+     * * NOTA: Podes manter 'suspend' se não precisares de atualizações em tempo real no ecrã de detalhes.
+     * Se quiseres que o detalhe também atualize sozinho, muda para: Flow<Request?>
      */
     suspend fun getRequestById(id: String): Request?
 
     /**
-     * Lista todas as candidaturas feitas por um determinado beneficiário.
-     * Útil para mostrar o histórico na ficha do utente.
-     *
-     * @param beneficiaryId O ID do beneficiário.
-     * @return Lista de [Request] associados a esse beneficiário.
+     * Lista todas as candidaturas de um beneficiário.
+     * * @return Flow<List<Request>> -> Emite uma nova lista sempre que este beneficiário fizer um novo pedido.
      */
-    suspend fun getRequestsByBeneficiary(beneficiaryId: String): List<Request>
+    fun getRequestsByBeneficiary(beneficiaryId: String): Flow<List<Request>>
 
     /**
      * Lista as candidaturas de um determinado Ano Letivo.
-     * Permite filtragem opcional pelo estado (ex: ver apenas as "SUBMITTED").
-     *
-     * @param schoolYearId O identificador do ano letivo (ex: "2024_2025").
-     * @param status (Opcional) Se fornecido, filtra a lista para mostrar apenas pedidos neste estado.
-     * @return Lista de [Request] que correspondem aos critérios.
+     * É este método que alimenta o ecrã principal.
+     * * @return Flow<List<Request>> -> O Room/Firestore vai emitir dados aqui automaticamente.
      */
-    suspend fun getRequestsByYear(schoolYearId: String, status: StatusType? = null): List<Request>
+    fun getRequestsByYear(schoolYearId: String, status: StatusType? = null): Flow<List<Request>>
 
     /**
-     * Atualiza o estado de uma candidatura (ex: de SUBMITTED para APPROVED).
-     *
-     * @param id O identificador do pedido.
-     * @param newStatus O novo estado a aplicar.
+     * Atualiza o estado de uma candidatura.
      */
     suspend fun updateStatusAndObservation(id: String, status: StatusType, observation: String)
 
+    /**
+     * Atualiza documentos e estado.
+     */
     suspend fun updateRequestDocsAndStatus(
         id: String,
         documents: Map<String, String?>,
