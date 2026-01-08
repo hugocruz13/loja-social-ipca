@@ -118,4 +118,6 @@ interface DeliveryRepository {
      * @return Lista de entregas agendadas próximas.
      */
     suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery>
+
+    suspend fun getPendingDeliveriesCount(userId: String?): Int
 }

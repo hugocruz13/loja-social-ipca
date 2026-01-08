@@ -122,4 +122,16 @@ class CampaignRepositoryImpl @Inject constructor(
         }
         collection.document(id).update("estado", estadoStr).await()
     }
+
+    override suspend fun getActiveCampaignsCount(): Int {
+        return try {
+            val query = collection.whereEqualTo("estado", "Ativa")
+            val snapshot = query.get().await()
+
+            snapshot.size()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            0 // Em caso de erro
+        }
+    }
 }

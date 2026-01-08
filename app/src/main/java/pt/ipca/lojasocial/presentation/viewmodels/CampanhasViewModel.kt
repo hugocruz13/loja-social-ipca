@@ -30,6 +30,7 @@ import pt.ipca.lojasocial.presentation.screens.CampanhaModel
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
+import pt.ipca.lojasocial.domain.use_cases.campaigns.GetActiveCampaignsCountUseCase
 
 /**
  * ViewModel responsável pela gestão de Campanhas com suporte a Tempo Real.
@@ -55,6 +56,7 @@ class CampanhasViewModel @Inject constructor(
 
     private val _selectedCampanha = MutableStateFlow<CampanhaModel?>(null)
     val selectedCampanha = _selectedCampanha.asStateFlow()
+    private val _activeCount = MutableStateFlow(0)
 
     // Filtro reativo: combina a lista realtime com a query de pesquisa
     val filteredCampanhas = combine(_campanhas, _searchQuery) { list, query ->
@@ -78,6 +80,7 @@ class CampanhasViewModel @Inject constructor(
 
     init {
         loadCampanhas()
+        loadActiveCount()
     }
 
     /**
@@ -116,6 +119,19 @@ class CampanhasViewModel @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("ViewModel", "Erro ao carregar campanhas", e)
                 _isLoading.value = false
+            }
+        }
+    }
+    fun loadActiveCount() {
+        viewModelScope.launch {
+            // Não precisamos de ativar o isLoading geral para isto,
+            // para não bloquear a UI toda se for apenas um update pequeno
+            try {
+                val count = getActiveCampaignsCountUseCase()
+                _activeCount.value = count
+            } catch (e: Exception) {
+                // Em caso de erro mantém 0 ou trata como preferires
+                _activeCount.value = 0
             }
         }
     }

@@ -13,6 +13,7 @@ import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
+import pt.ipca.lojasocial.domain.use_cases.delivery.GetPendingDeliveriesCountUseCase
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
 import java.text.SimpleDateFormat
@@ -24,7 +25,8 @@ import javax.inject.Inject
 class EntregasViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val beneficiaryRepository: BeneficiaryRepository
+    private val beneficiaryRepository: BeneficiaryRepository,
+    private val getPendingDeliveriesCountUseCase: GetPendingDeliveriesCountUseCase
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -40,6 +42,8 @@ class EntregasViewModel @Inject constructor(
     val selectedFilter = _selectedFilter.asStateFlow()
 
     private val _allDeliveries = MutableStateFlow<List<DeliveryUiModel>>(emptyList())
+    private val _pendingCount = MutableStateFlow(0)
+    val pendingCount = _pendingCount.asStateFlow()
 
     // Lógica de Filtro
     val deliveries: StateFlow<List<DeliveryUiModel>> =
@@ -83,6 +87,7 @@ class EntregasViewModel @Inject constructor(
 
     init {
         loadDeliveries()
+        loadPendingCount()
     }
 
     fun onSearchQueryChange(query: String) {
@@ -93,7 +98,21 @@ class EntregasViewModel @Inject constructor(
         _selectedFilter.value = filter
     }
 
-    // Agora é realtime
+    fun loadPendingCount() {
+        viewModelScope.launch {
+            try {
+                val currentUser = getCurrentUserUseCase()
+
+                if (currentUser != null) {
+                    val count = getPendingDeliveriesCountUseCase(currentUser.role, currentUser.id)
+                    _pendingCount.value = count
+                }
+            } catch (e: Exception) {
+                _pendingCount.value = 0
+            }
+        }
+    }
+    // Tornada pública para permitir refresh manual
     fun loadDeliveries() {
         viewModelScope.launch {
             _isLoading.value = true

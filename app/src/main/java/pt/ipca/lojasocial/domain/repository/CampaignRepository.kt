@@ -73,4 +73,6 @@ interface CampaignRepository {
      * @param status O novo estado a aplicar.
      */
     suspend fun updateCampaignStatus(id: String, status: CampaignStatus)
+
+    suspend fun getActiveCampaignsCount(): Int
 }

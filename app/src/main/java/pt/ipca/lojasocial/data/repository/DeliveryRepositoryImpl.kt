@@ -132,4 +132,22 @@ class DeliveryRepositoryImpl @Inject constructor(
             if (dto != null) DeliveryMapper.toDomain(doc.id, dto) else null
         }
     }
+
+    override suspend fun getPendingDeliveriesCount(userId: String?): Int {
+        return try {
+            var query = collection.whereEqualTo("estado", "AGENDADA")
+
+            if (userId != null) {
+                val beneficiaryRef = beneficiariesCollection.document(userId)
+                query = query.whereEqualTo("idBeneficiario", beneficiaryRef)
+            }
+
+            val snapshot = query.get().await()
+            snapshot.size()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepo", "Erro ao contar entregas: ${e.message}")
+            0
+        }
+    }
+
 }
