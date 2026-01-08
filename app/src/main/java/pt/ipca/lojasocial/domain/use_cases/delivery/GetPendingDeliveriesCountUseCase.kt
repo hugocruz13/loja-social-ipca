@@ -1,7 +1,7 @@
 package pt.ipca.lojasocial.domain.use_cases.delivery
 
-import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.models.UserRole
+import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import javax.inject.Inject
 
 class GetPendingDeliveriesCountUseCase @Inject constructor(

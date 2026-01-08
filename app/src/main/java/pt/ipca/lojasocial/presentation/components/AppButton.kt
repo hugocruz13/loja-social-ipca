@@ -28,7 +28,8 @@ fun AppButton(
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
-            contentColor = contentColor),
+            contentColor = contentColor
+        ),
         shape = RoundedCornerShape(8.dp)
     ) {
         Text(text = text)

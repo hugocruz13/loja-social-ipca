@@ -32,6 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,14 +41,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AppAccessCard
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppInfoCard
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import androidx.hilt.navigation.compose.hiltViewModel // Para injetar o ViewModel
-import androidx.compose.runtime.collectAsState     // Para ler o valor dinâmico
-import androidx.compose.runtime.getValue           // Para usar "by"
-import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel // O teu ViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 // Definimos um Enum simples para controlar a UI na View
@@ -97,12 +97,28 @@ fun DashboardScreen(
             ) {
                 // --- SECÇÃO DE INFO (STATS) ---
                 if (role == UserRole.STAFF) {
-                    item { AppInfoCard ("Campanhas Ativas", activeCount.toString(), Icons.Default.Campaign)}
-                    item {AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping )}
+                    item {
+                        AppInfoCard(
+                            "Campanhas Ativas",
+                            activeCount.toString(),
+                            Icons.Default.Campaign
+                        )
+                    }
+                    item {
+                        AppInfoCard(
+                            "Entregas Pendentes",
+                            pendingDeliveriesCount.toString(),
+                            Icons.Default.LocalShipping
+                        )
+                    }
                 } else {
                     // Beneficiário vê apenas Entregas Pendentes em largura total
                     item(span = { GridItemSpan(2) }) {
-                        AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping)
+                        AppInfoCard(
+                            "Entregas Pendentes",
+                            pendingDeliveriesCount.toString(),
+                            Icons.Default.LocalShipping
+                        )
                     }
                 }
 

@@ -3,6 +3,7 @@ package pt.ipca.lojasocial.presentation.screens
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.NotificationsList
 import pt.ipca.lojasocial.presentation.viewmodels.NotificationsViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     onBackClick: () -> Unit,
@@ -45,9 +47,11 @@ fun NotificationsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
 
             if (notifications.isEmpty()) {
                 // Estado Vazio

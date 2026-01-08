@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
@@ -32,6 +33,18 @@ import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
+data class CampanhaFormState(
+    val nomeError: String? = null,
+    val descError: String? = null,
+    val dataInicioError: String? = null,
+    val dataFimError: String? = null,
+    val nomeTouched: Boolean = false,
+    val descTouched: Boolean = false,
+    val dataInicioTouched: Boolean = false,
+    val dataFimTouched: Boolean = false,
+    val isFormValid: Boolean = false
+)
+
 /**
  * ViewModel responsável pela gestão de Campanhas com suporte a Tempo Real.
  * Atualizado para consumir Flows do Repositório.
@@ -46,6 +59,9 @@ class CampanhasViewModel @Inject constructor(
     private val GetActiveCampaignsCountUseCase: GetActiveCampaignsCountUseCase,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(CampanhaFormState())
+    val uiState = _uiState.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -278,6 +294,57 @@ class CampanhasViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun validateCampaign(nome: String, desc: String, dataInicioStr: String, dataFimStr: String) {
+        val startTs = parseDateToLong(dataInicioStr)
+        val endTs = parseDateToLong(dataFimStr)
+
+        // Obtém o timestamp de HOJE às 00:00
+        val hojeTs = clearTime(System.currentTimeMillis())
+
+        val nomeErr = if (nome.isBlank()) "Nome é obrigatório" else null
+        val descErr = if (desc.length < 10) "Descrição muito curta (mín. 10 carac.)" else null
+
+        // REGRA: Início deve ser estritamente APÓS hoje (não pode ser antes, nem hoje)
+        val inicioErr = when {
+            dataInicioStr.isBlank() -> "Data de início obrigatória"
+            startTs <= hojeTs -> "O início deve ser, no mínimo, a partir de amanhã"
+            else -> null
+        }
+
+        // REGRA: Fim deve ser após o início
+        val fimErr = when {
+            dataFimStr.isBlank() -> "Data de fim obrigatória"
+            endTs <= startTs -> "O fim deve ser posterior à data de início"
+            else -> null
+        }
+
+        _uiState.update {
+            it.copy(
+                nomeError = nomeErr,
+                descError = descErr,
+                dataInicioError = inicioErr,
+                dataFimError = fimErr,
+                isFormValid = nomeErr == null && descErr == null && inicioErr == null && fimErr == null
+            )
+        }
+    }
+
+    // Funções para marcar como "Touched" e validar
+    fun onNomeChange(novo: String, desc: String, di: String, df: String) {
+        _uiState.update { it.copy(nomeTouched = true) }
+        validateCampaign(novo, desc, di, df)
+    }
+
+    fun onDataInicioChange(di: String, nome: String, desc: String, df: String) {
+        _uiState.update { it.copy(dataInicioTouched = true) }
+        validateCampaign(nome, desc, di, df)
+    }
+
+    fun onDataFimChange(df: String, nome: String, desc: String, di: String) {
+        _uiState.update { it.copy(dataFimTouched = true) }
+        validateCampaign(nome, desc, di, df)
     }
 
     private fun parseDateToLong(dateStr: String): Long {

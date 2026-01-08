@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditCampanhaScreen(
     campanhaId: String? = null,
@@ -65,6 +67,8 @@ fun AddEditCampanhaScreen(
     val accentGreen = Color(0XFF00713C)
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+
+    val formState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(campanhaId) {
         if (campanhaId != null) {
@@ -129,14 +133,21 @@ fun AddEditCampanhaScreen(
             AppTextField(
                 label = "Nome Campanha",
                 value = nome,
-                onValueChange = { nome = it },
+                onValueChange = {
+                    nome = it
+                    viewModel.onNomeChange(it, descricao, dataInicio, dataFim)
+                },
+                errorMessage = if (formState.nomeTouched) formState.nomeError else null,
                 placeholder = "ex: Campanha Mercadona"
             )
 
             AppTextField(
                 label = "Descrição",
                 value = descricao,
-                onValueChange = { descricao = it },
+                onValueChange = {
+                    descricao = it
+                },
+                errorMessage = if (formState.descTouched) formState.descError else null,
                 placeholder = "Introduza uma descrição...",
                 modifier = Modifier
                     .fillMaxWidth()
@@ -150,13 +161,21 @@ fun AddEditCampanhaScreen(
                 AppDatePickerField(
                     label = "Data Ínicio",
                     selectedValue = dataInicio,
-                    onDateSelected = { dataInicio = it },
+                    onDateSelected = {
+                        dataInicio = it
+                        viewModel.onDataInicioChange(it, nome, descricao, dataFim)
+                    },
+                    errorMessage = if (formState.dataInicioTouched) formState.dataInicioError else null,
                     modifier = Modifier.weight(1f)
                 )
                 AppDatePickerField(
                     label = "Data Fim",
                     selectedValue = dataFim,
-                    onDateSelected = { dataFim = it },
+                    onDateSelected = {
+                        dataFim = it
+                        viewModel.onDataFimChange(it, nome, descricao, dataInicio)
+                    },
+                    errorMessage = if (formState.dataFimTouched) formState.dataFimError else null,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -186,7 +205,8 @@ fun AddEditCampanhaScreen(
                         selectedImageUri
                     )
                 },
-                containerColor = accentGreen,
+                enabled = formState.isFormValid && !viewModel.isLoading.value,
+                containerColor = if (formState.isFormValid) accentGreen else Color(0xFFC7C7C7),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

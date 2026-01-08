@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.BlendMode.Companion.Screen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -377,7 +376,7 @@ fun AppNavHost(
                         uri
                     )
                 },
-                navItems = emptyList(),
+                navItems = bottomNavItems,
                 onNavigate = onNavigate
             )
         }
@@ -391,7 +390,7 @@ fun AppNavHost(
                 campanhaId = id,
                 onBackClick = { navController.popBackStack() },
                 onEditClick = { idToEdit -> navController.navigate("campanha_add_edit?id=$idToEdit") },
-                navItems = emptyList(),
+                navItems = bottomNavItems,
                 onNavigate = onNavigate
             )
         }
@@ -403,11 +402,11 @@ fun AppNavHost(
         composable(AppScreen.ProductList.route) {
             ProductListScreen(
                 onBackClick = { navController.popBackStack() },
-                onProductClick = { productId -> navController.navigate("product_detail/$productId") },
+                onProductClick = { productId ->
+                    navController.navigate("product_detail/$productId")
+                },
                 navItems = bottomNavItems,
-                onNavigate = onNavigate,
-                onAddProductClick = { navController.navigate("product_add_edit") },
-                onAddNewTypeClick = { navController.navigate("add_product_type") }
+                onNavigate = onNavigate
             )
         }
 
@@ -480,7 +479,7 @@ fun AppNavHost(
                 isCollaborator = role == "colaborador",
                 onBackClick = { navController.popBackStack() },
                 onSaveClick = { navController.popBackStack() },
-                navItems = emptyList(),
+                navItems = bottomNavItems,
                 onNavigate = onNavigate
             )
         }
@@ -530,7 +529,7 @@ fun AppNavHost(
             AddEditAnoLetivoScreen(
                 anoLetivoId = idString,
                 onBackClick = { navController.popBackStack() },
-                navItems = emptyList(),
+                navItems = bottomNavItems,
                 onNavigate = onNavigate
             )
         }

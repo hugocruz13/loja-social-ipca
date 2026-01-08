@@ -18,13 +18,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -54,6 +52,7 @@ import pt.ipca.lojasocial.presentation.components.SimpleProductListItem
 import pt.ipca.lojasocial.presentation.navigation.AppScreen
 import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EntregaDetailScreen(
     entregaId: String,
@@ -337,5 +336,6 @@ fun DetailCardWrapper(title: String, content: @Composable () -> Unit) {
 
 @Preview(showBackground = true, name = "Visão Colaborador")
 @Composable
-fun EntregaDetailScreenStaffPreview() {}
+fun EntregaDetailScreenStaffPreview() {
+}
 

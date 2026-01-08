@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterStep2Screen(
     viewModel: AuthViewModel,
@@ -38,8 +40,9 @@ fun RegisterStep2Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
+    val accentGreen = Color(0XFF00713C)
 
-    // Helper function local
+    // Helper function atualizada para disparar a validação do VM
     fun updateStep2Fields(
         category: RequestType? = state.requestCategory,
         education: String = state.educationLevel,
@@ -53,8 +56,8 @@ fun RegisterStep2Screen(
 
     Scaffold(
         topBar = { AppTopBar(title = "Registar", onBackClick = onBack) },
+        containerColor = Color.White
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -66,7 +69,7 @@ fun RegisterStep2Screen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 16.dp)
+                    .padding(vertical = 16.dp)
             )
 
             Column(
@@ -82,33 +85,22 @@ fun RegisterStep2Screen(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
+                // Tipologia (RadioCards)
                 Column(modifier = Modifier.padding(bottom = 24.dp)) {
-                    AppRadioCardItem(
-                        label = "Produtos Alimentares",
-                        isSelected = state.requestCategory == RequestType.FOOD,
-                        onClick = { updateStep2Fields(category = RequestType.FOOD) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    AppRadioCardItem(
-                        label = "Produtos de Higiene Pessoal",
-                        isSelected = state.requestCategory == RequestType.HYGIENE,
-                        onClick = { updateStep2Fields(category = RequestType.HYGIENE) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    AppRadioCardItem(
-                        label = "Produtos de Limpeza",
-                        isSelected = state.requestCategory == RequestType.CLEANING,
-                        onClick = { updateStep2Fields(category = RequestType.CLEANING) }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    AppRadioCardItem(
-                        label = "Todos",
-                        isSelected = state.requestCategory == RequestType.ALL,
-                        onClick = { updateStep2Fields(category = RequestType.ALL) }
-                    )
+                    RequestType.entries.forEach { type ->
+                        AppRadioCardItem(
+                            label = when (type) {
+                                RequestType.FOOD -> "Produtos Alimentares"
+                                RequestType.HYGIENE -> "Produtos de Higiene Pessoal"
+                                RequestType.CLEANING -> "Produtos de Limpeza"
+                                RequestType.ALL -> "Todos"
+                                else -> type.name
+                            },
+                            isSelected = state.requestCategory == type,
+                            onClick = { updateStep2Fields(category = type) }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
 
                 Text(
@@ -120,8 +112,8 @@ fun RegisterStep2Screen(
                 AppTextField(
                     value = state.school,
                     onValueChange = { updateStep2Fields(school = it) },
-                    label = "Nome da Escola / Universidade",
-                    placeholder = "Nome da Escola / Universidade",
+                    label = "Instituição de Ensino",
+                    placeholder = "Ex: IPCA",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
@@ -131,18 +123,18 @@ fun RegisterStep2Screen(
                     label = "Nível de Ensino",
                     selectedValue = state.educationLevel,
                     options = EducationLevels.entries.map { it.name },
-                    onOptionSelected = { novoNivel -> updateStep2Fields(education = novoNivel) },
-                    placeholder = "Selecione nível de ensino",
+                    onOptionSelected = { updateStep2Fields(education = it) },
+                    placeholder = "Selecione o nível",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 16.dp)
                 )
 
                 AppTextField(
                     value = state.courseName,
                     onValueChange = { updateStep2Fields(courseName = it) },
                     label = "Nome do Curso",
-                    placeholder = "Nome do Curso",
+                    placeholder = "Ex: Engenharia de Sistemas",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
@@ -153,34 +145,31 @@ fun RegisterStep2Screen(
                     onValueChange = { updateStep2Fields(studentNumber = it) },
                     label = "Número do Estudante",
                     placeholder = "Insira o seu nº de estudante",
+                    // errorMessage = state.studentNumberError, // Caso tenhas definido no VM
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 32.dp)
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     AppButton(
                         text = "Recuar",
                         onClick = onBack,
                         containerColor = Color(0XFFC7C7C7),
-                        enabled = true,
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)
                     )
-
                     AppButton(
                         text = "Próximo",
                         onClick = onNext,
-                        enabled = viewModel.isStep2Valid(),
-                        containerColor = Color(0XFF00713C),
+                        enabled = state.isStep2Valid, // Validação em tempo real
+                        containerColor = if (state.isStep2Valid) accentGreen else Color(0XFFC7C7C7),
                         modifier = Modifier
                             .weight(1f)
                             .height(56.dp)

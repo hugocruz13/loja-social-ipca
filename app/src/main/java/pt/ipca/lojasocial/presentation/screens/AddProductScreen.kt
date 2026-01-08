@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -37,6 +38,7 @@ import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterProductScreen(
     onBackClick: () -> Unit,

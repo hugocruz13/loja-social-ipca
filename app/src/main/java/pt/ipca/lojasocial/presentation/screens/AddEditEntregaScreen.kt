@@ -195,6 +195,13 @@ fun AddEditEntregaScreen(
                         onQueryChange = viewModel::onBeneficiaryQueryChange,
                         placeholder = "Procurar beneficiário"
                     )
+                    uiState.beneficiaryError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                     if (uiState.searchedBeneficiaries.isNotEmpty()) {
                         LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                             items(uiState.searchedBeneficiaries) { beneficiary ->
@@ -215,7 +222,6 @@ fun AddEditEntregaScreen(
                         onValueChange = {},
                         label = "Nome do Beneficiário",
                         placeholder = "", // Adicionado placeholder obrigatório
-                        readOnly = true,
                         enabled = false // Visualmente desativado
                     )
                 }
@@ -237,7 +243,7 @@ fun AddEditEntregaScreen(
                             value = uiState.date,
                             onValueChange = {},
                             placeholder = "dd/mm/yyyy",
-                            readOnly = true
+                            errorMessage = uiState.dateError
                         )
                         Spacer(
                             modifier = Modifier
@@ -250,8 +256,7 @@ fun AddEditEntregaScreen(
                             label = "Hora",
                             value = uiState.time,
                             onValueChange = {},
-                            placeholder = "HH:mm",
-                            readOnly = true
+                            placeholder = "HH:mm"
                         )
                         Spacer(
                             modifier = Modifier
@@ -262,13 +267,15 @@ fun AddEditEntregaScreen(
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
+                        val repeticoes =
+                            listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Primeira Linha
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
-                                    val isSelected = uiState.repetition == repo // Verifica se está selecionado
+                                    val isSelected =
+                                        uiState.repetition == repo // Verifica se está selecionado
 
                                     AppButton(
                                         text = repo,
@@ -278,9 +285,13 @@ fun AddEditEntregaScreen(
                                             .weight(1f)
                                             .height(40.dp),
                                         // Fundo: Se selecionado usa Verde, se não usa um Cinza mais escuro que o anterior (E2E8F0)
-                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
+                                        containerColor = if (isSelected) accentGreen else Color(
+                                            0xFFE2E8F0
+                                        ),
                                         // Texto: Se selecionado usa Branco, se não usa um Cinza Escuro/Preto para contraste
-                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
+                                        contentColor = if (isSelected) Color.White else Color(
+                                            0xFF1E293B
+                                        )
                                     )
                                 }
                             }
@@ -298,8 +309,12 @@ fun AddEditEntregaScreen(
                                             .weight(1f)
                                             .height(40.dp),
                                         // Mesma lógica de cores aqui
-                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
-                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
+                                        containerColor = if (isSelected) accentGreen else Color(
+                                            0xFFE2E8F0
+                                        ),
+                                        contentColor = if (isSelected) Color.White else Color(
+                                            0xFF1E293B
+                                        )
                                     )
                                 }
                             }
@@ -332,6 +347,15 @@ fun AddEditEntregaScreen(
                         )
                     }
                 }
+            }
+
+            uiState.productsError?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
+                )
             }
 
             DeliveryProductHeader(onAddProductClick = viewModel::showProductPickerDialog)
@@ -368,7 +392,8 @@ fun AddEditEntregaScreen(
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
                 onClick = viewModel::saveDelivery,
-                containerColor = accentGreen,
+                containerColor = if (uiState.isFormValid) accentGreen else Color(0xFFC7C7C7),
+                enabled = uiState.isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

@@ -16,8 +16,6 @@ import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.EmailRequest
 import pt.ipca.lojasocial.domain.models.NotificationRequest
 import pt.ipca.lojasocial.domain.models.NotificationType
-import pt.ipca.lojasocial.domain.models.Product
-import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.domain.models.User
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
@@ -27,6 +25,7 @@ import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
+import pt.ipca.lojasocial.presentation.models.AddEditEntregaUiState
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -35,27 +34,6 @@ import java.util.UUID
 import javax.inject.Inject
 
 private const val TAG = "AddEditEntregaVM"
-
-data class AddEditEntregaUiState(
-    val deliveryId: String? = null,
-    val beneficiaryQuery: String = "",
-    val searchedBeneficiaries: List<Beneficiary> = emptyList(),
-    val selectedBeneficiary: Beneficiary? = null,
-    val date: String = "",
-    val time: String = "",
-    val repetition: String = "Não repetir",
-    val observations: String = "",
-    val availableProducts: List<Product> = emptyList(),
-    val availableStockItems: List<Stock> = emptyList(),
-    val productStockLimits: Map<String, Int> = emptyMap(),
-    val selectedProducts: Map<String, Int> = emptyMap(),
-    val isSaving: Boolean = false,
-    val saveSuccess: Boolean = false,
-    val isProductPickerDialogVisible: Boolean = false,
-    val isDatePickerDialogVisible: Boolean = false,
-    val isTimePickerDialogVisible: Boolean = false,
-    val isImmediateDelivery: Boolean = false
-)
 
 @HiltViewModel
 class AddEditEntregaViewModel @Inject constructor(
@@ -156,6 +134,24 @@ class AddEditEntregaViewModel @Inject constructor(
     }
 
     // --- INTERAÇÕES ---
+
+    private fun validateForm() {
+        _uiState.update { state ->
+            val dateErr = if (state.date.isBlank()) "Selecione uma data" else null
+            val prodErr =
+                if (state.selectedProducts.isEmpty()) "Adicione pelo menos um produto" else null
+            val beneErr =
+                if (state.selectedBeneficiary == null) "Selecione um beneficiário" else null
+
+            state.copy(
+                dateError = dateErr,
+                productsError = prodErr,
+                beneficiaryError = beneErr,
+                isFormValid = dateErr == null && prodErr == null && beneErr == null
+            )
+        }
+    }
+
     fun onBeneficiaryQueryChange(query: String) {
         _uiState.update { it.copy(beneficiaryQuery = query) }
         if (query.length > 2) {
@@ -165,6 +161,7 @@ class AddEditEntregaViewModel @Inject constructor(
                 _uiState.update { it.copy(searchedBeneficiaries = beneficiaries) }
             }
         }
+        validateForm()
     }
 
     fun onBeneficiarySelected(beneficiary: Beneficiary) {
@@ -178,7 +175,14 @@ class AddEditEntregaViewModel @Inject constructor(
     }
 
     fun onDateChange(date: String) {
-        _uiState.update { it.copy(date = date, isImmediateDelivery = isDateToday(date)) }
+        _uiState.update {
+            it.copy(
+                date = date,
+                isImmediateDelivery = isDateToday(date),
+                dateError = null
+            )
+        }
+        validateForm()
     }
 
     fun onTimeChange(time: String) {
@@ -196,7 +200,14 @@ class AddEditEntregaViewModel @Inject constructor(
     fun onProductQuantityChange(productId: String, quantity: Int) {
         val updated = _uiState.value.selectedProducts.toMutableMap()
         if (quantity > 0) updated[productId] = quantity else updated.remove(productId)
-        _uiState.update { it.copy(selectedProducts = updated) }
+
+        _uiState.update {
+            it.copy(
+                selectedProducts = updated,
+                productsError = if (updated.isEmpty()) "Adicione pelo menos um produto" else null
+            )
+        }
+        validateForm()
     }
 
     // --- DIALOGS ---

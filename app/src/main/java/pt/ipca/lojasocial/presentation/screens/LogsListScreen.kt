@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -99,6 +100,7 @@ fun LogsListScreen(
 }
 
 // 2. O Ecrã "Stateless" (Pura UI)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsListContent(
     logs: List<AppLog>,
