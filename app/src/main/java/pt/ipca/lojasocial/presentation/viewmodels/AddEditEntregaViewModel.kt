@@ -51,7 +51,8 @@ data class AddEditEntregaUiState(
     val saveSuccess: Boolean = false,
     val isProductPickerDialogVisible: Boolean = false,
     val isDatePickerDialogVisible: Boolean = false,
-    val isTimePickerDialogVisible: Boolean = false
+    val isTimePickerDialogVisible: Boolean = false,
+    val isImmediateDelivery: Boolean = false
 )
 
 @HiltViewModel
@@ -145,16 +146,18 @@ class AddEditEntregaViewModel @Inject constructor(
                         beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
                     val dateObj = Date(delivery.scheduledDate)
 
+                    val dateStr = simpleDateFormat.format(calendar.time)
                     _uiState.update {
                         it.copy(
                             deliveryId = deliveryId,
                             selectedBeneficiary = beneficiary,
                             beneficiaryQuery = beneficiary?.name ?: "",
-                            date = dateFormat.format(dateObj),
-                            time = timeFormat.format(dateObj),
+                            date = dateStr,
+                            time = timeFormat.format(calendar.time),
                             repetition = "Não repetir",
                             observations = delivery.observations ?: "",
-                            selectedProducts = delivery.items
+                            selectedProducts = delivery.items, // Assuming items are ProductID -> Quantity
+                            isImmediateDelivery = isDateToday(dateStr)
                         )
                     }
                 }
@@ -194,7 +197,8 @@ class AddEditEntregaViewModel @Inject constructor(
     }
 
     fun onDateChange(date: String) {
-        _uiState.update { it.copy(date = date) }
+        val isToday = isDateToday(date)
+        _uiState.update { it.copy(date = date, isImmediateDelivery = isToday) }
     }
 
     fun onTimeChange(time: String) {
@@ -242,7 +246,41 @@ class AddEditEntregaViewModel @Inject constructor(
         _uiState.update { it.copy(isTimePickerDialogVisible = false) }
     }
 
-    // --- SALVAR ---
+    private fun isDateToday(dateString: String): Boolean {
+        return try {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            val today = sdf.format(Date())
+            dateString == today
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun deductStock(items: Map<String, Int>) {
+        try {
+            val allStock = stockRepository.getStockItems()
+            items.forEach { (productId, qtyToDeduct) ->
+                var remaining = qtyToDeduct
+                // FEFO: Sort by expiryDate ascending
+                val relevantStock = allStock
+                    .filter { it.productId == productId && it.quantity > 0 }
+                    .sortedBy { it.expiryDate }
+
+                for (stock in relevantStock) {
+                    if (remaining <= 0) break
+                    val take = kotlin.math.min(remaining, stock.quantity)
+                    stockRepository.updateStockQuantity(stock.id, stock.quantity - take)
+                    remaining -= take
+                }
+                
+                if (remaining > 0) {
+                    Log.w(TAG, "Stock insufficiency for product $productId. Missing: $remaining")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deducting stock", e)
+        }
+    }
 
     fun saveDelivery() {
         viewModelScope.launch {
@@ -363,6 +401,87 @@ class AddEditEntregaViewModel @Inject constructor(
         return list
     }
 
+                val deliveriesToCreate = mutableListOf<Delivery>()
+                
+                // Logic for Immediate Delivery (Only for Staff/Admin, assuming Beneficiary requests are always Under Analysis)
+                val isStaff = currentUser.role != UserRole.BENEFICIARY
+                val isImmediate = isStaff && currentState.isImmediateDelivery // Using state which is updated by date
+                
+                val firstDeliveryStatus = if (isImmediate) DeliveryStatus.DELIVERED else initialStatus
+
+                deliveriesToCreate.add(
+                    baseDelivery.copy(
+                        id = UUID.randomUUID().toString(),
+                        scheduledDate = calendar.timeInMillis,
+                        status = firstDeliveryStatus
+                    )
+                )
+
+                if (currentState.repetition != "Não repetir") {
+                    try {
+                        val allSchoolYears =
+                            schoolYearRepository.getSchoolYears().firstOrNull() ?: emptyList()
+                        val currentSchoolYear = allSchoolYears.find {
+                            val now = System.currentTimeMillis()
+                            now >= it.startDate && now <= it.endDate
+                        }
+
+                        if (currentSchoolYear != null) {
+                            Log.d(
+                                TAG,
+                                "Repeating delivery within school year ending ${
+                                    Date(currentSchoolYear.endDate)
+                                }"
+                            )
+                            while (true) {
+                                when (currentState.repetition) {
+                                    "Mensalmente" -> calendar.add(Calendar.MONTH, 1)
+                                    "Bimensal" -> calendar.add(Calendar.MONTH, 2)
+                                    "Semestral" -> calendar.add(Calendar.MONTH, 6)
+                                }
+
+                                if (calendar.timeInMillis > currentSchoolYear.endDate) {
+                                    Log.d(
+                                        TAG,
+                                        "Next repetition date ${calendar.time} is after school year end. Stopping."
+                                    )
+                                    break
+                                }
+                                // Repeated deliveries are always SCHEDULED (or UNDER_ANALYSIS)
+                                deliveriesToCreate.add(
+                                    baseDelivery.copy(
+                                        id = UUID.randomUUID().toString(),
+                                        scheduledDate = calendar.timeInMillis,
+                                        status = initialStatus
+                                    )
+                                )
+                            }
+                        } else {
+                            Log.w(TAG, "Cannot repeat delivery: No current school year found.")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during repetition logic", e)
+                    }
+                }
+
+                try {
+                    Log.d(TAG, "Attempting to save ${deliveriesToCreate.size} delivery/deliveries.")
+                    deliveriesToCreate.forEach { delivery ->
+                        deliveryRepository.addDelivery(delivery)
+                    }
+                    
+                    // Deduct stock if immediate
+                    if (isImmediate) {
+                        deductStock(currentState.selectedProducts)
+                    }
+                    
+                    _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                    Log.i(TAG, "Successfully saved ${deliveriesToCreate.size} deliveries.")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to save deliveries to repository", e)
+                    _uiState.update { it.copy(isSaving = false) }
+                }
+            }
     private suspend fun sendNotification(
         beneficiary: Beneficiary,
         cal: Calendar,
