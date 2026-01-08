@@ -7,16 +7,19 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.firstOrNull // Importante!
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
+import pt.ipca.lojasocial.domain.models.EmailRequest
+import pt.ipca.lojasocial.domain.models.NotificationRequest
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.models.Stock
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
@@ -29,7 +32,7 @@ import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
-private const val TAG = "AddEditEntregaViewModel"
+private const val TAG = "AddEditEntregaVM"
 
 data class AddEditEntregaUiState(
     val deliveryId: String? = null,
@@ -42,8 +45,8 @@ data class AddEditEntregaUiState(
     val observations: String = "",
     val availableProducts: List<Product> = emptyList(),
     val availableStockItems: List<Stock> = emptyList(),
-    val productStockLimits: Map<String, Int> = emptyMap(), // ProductID -> Total Quantity
-    val selectedProducts: Map<String, Int> = emptyMap(), // ProductID -> Quantity
+    val productStockLimits: Map<String, Int> = emptyMap(),
+    val selectedProducts: Map<String, Int> = emptyMap(),
     val isSaving: Boolean = false,
     val saveSuccess: Boolean = false,
     val isProductPickerDialogVisible: Boolean = false,
@@ -59,15 +62,55 @@ class AddEditEntregaViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val stockRepository: StockRepository,
     private val schoolYearRepository: SchoolYearRepository,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditEntregaUiState())
     val uiState: StateFlow<AddEditEntregaUiState> = _uiState.asStateFlow()
 
+    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val dateTimeFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+
     init {
         loadAvailableProductsAndStock()
         checkUserRoleAndSetup()
+    }
+
+    // --- CARREGAMENTO DE DADOS ---
+
+    private fun loadAvailableProductsAndStock() {
+        viewModelScope.launch {
+            try {
+                // 1. Carregar Stock
+                val stockItems = stockRepository.getStockItems().filter { it.quantity > 0 }
+
+                // 2. Preparar limites
+                val stockLimits = stockItems
+                    .groupBy { it.productId }
+                    .mapValues { (_, items) -> items.sumOf { it.quantity } }
+
+                val availableProductIds = stockItems.map { it.productId }.toSet()
+
+                // 3. Carregar Produtos (Realtime Flow -> Collect)
+                productRepository.getProducts().collect { allProductsList ->
+                    val filteredProducts = allProductsList.filter { product ->
+                        product.id in availableProductIds
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            availableStockItems = stockItems,
+                            availableProducts = filteredProducts,
+                            productStockLimits = stockLimits
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading data", e)
+            }
+        }
     }
 
     private fun checkUserRoleAndSetup() {
@@ -80,29 +123,28 @@ class AddEditEntregaViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 selectedBeneficiary = beneficiary,
-                                beneficiaryQuery = beneficiary.name // Optional: display name
+                                beneficiaryQuery = beneficiary.name
                             )
                         }
-                        Log.d(TAG, "Auto-selected beneficiary: ${beneficiary.name}")
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error checking user role for auto-selection", e)
+                Log.e(TAG, "Error checking user role", e)
             }
         }
     }
 
+    // AQUI ESTAVA O ERRO
     fun loadDelivery(deliveryId: String) {
         viewModelScope.launch {
             try {
-                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                // CORREÇÃO: Adicionado .firstOrNull() para tirar o objeto do Flow
+                val delivery = deliveryRepository.getDeliveryById(deliveryId).firstOrNull()
+
                 if (delivery != null) {
                     val beneficiary =
                         beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                    val calendar =
-                        Calendar.getInstance().apply { timeInMillis = delivery.scheduledDate }
-                    val simpleDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    val dateObj = Date(delivery.scheduledDate)
 
                     val dateStr = simpleDateFormat.format(calendar.time)
                     _uiState.update {
@@ -118,41 +160,14 @@ class AddEditEntregaViewModel @Inject constructor(
                             isImmediateDelivery = isDateToday(dateStr)
                         )
                     }
-                } else {
-                    Log.w(TAG, "loadDelivery: No delivery found with ID: $deliveryId")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "loadDelivery: Error loading delivery", e)
+                Log.e(TAG, "Error loading delivery", e)
             }
         }
     }
 
-
-    private fun loadAvailableProductsAndStock() {
-        viewModelScope.launch {
-            try {
-                val stockItems = stockRepository.getStockItems().filter { it.quantity > 0 }
-                val allProducts = productRepository.getProducts()
-
-                val stockLimits = stockItems
-                    .groupBy { it.productId }
-                    .mapValues { (_, items) -> items.sumOf { it.quantity } }
-
-                val availableProductIds = stockItems.map { it.productId }.toSet()
-                val availableProducts = allProducts.filter { it.id in availableProductIds }
-
-                _uiState.update {
-                    it.copy(
-                        availableStockItems = stockItems,
-                        availableProducts = availableProducts,
-                        productStockLimits = stockLimits
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "loadAvailableProductsAndStock: Error loading data", e)
-            }
-        }
-    }
+    // --- INTERAÇÕES --- (Igual ao anterior)
 
     fun onBeneficiaryQueryChange(query: String) {
         _uiState.update { it.copy(beneficiaryQuery = query) }
@@ -163,7 +178,7 @@ class AddEditEntregaViewModel @Inject constructor(
                         .filter { it.name.contains(query, ignoreCase = true) }
                     _uiState.update { it.copy(searchedBeneficiaries = beneficiaries) }
                 } catch (e: Exception) {
-                    Log.e(TAG, "onBeneficiaryQueryChange: Error searching beneficiaries", e)
+                    Log.e(TAG, "Error searching", e)
                 }
             }
         } else {
@@ -200,14 +215,13 @@ class AddEditEntregaViewModel @Inject constructor(
 
     fun onProductQuantityChange(productId: String, quantity: Int) {
         val updatedProducts = _uiState.value.selectedProducts.toMutableMap()
-        if (quantity > 0) {
-            updatedProducts[productId] = quantity
-        } else {
-            updatedProducts.remove(productId)
-        }
+        if (quantity > 0) updatedProducts[productId] = quantity else updatedProducts.remove(
+            productId
+        )
         _uiState.update { it.copy(selectedProducts = updatedProducts) }
     }
 
+    // --- DIALOGS ---
     fun showProductPickerDialog() {
         _uiState.update { it.copy(isProductPickerDialogVisible = true) }
     }
@@ -271,76 +285,121 @@ class AddEditEntregaViewModel @Inject constructor(
     fun saveDelivery() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            val currentState = _uiState.value
-            val currentUser = getCurrentUserUseCase()
-            val isEditing = currentState.deliveryId != null
+            val state = _uiState.value
 
-            if (currentState.selectedBeneficiary == null || currentUser == null || currentState.selectedProducts.isEmpty() || currentState.date.isBlank() || currentState.time.isBlank()) {
-                Log.w(
-                    TAG,
-                    "Validation failed: Beneficiary: ${currentState.selectedBeneficiary}, User: $currentUser, Products: ${currentState.selectedProducts.size}, Date: ${currentState.date}, Time: ${currentState.time}"
-                )
+            if (state.selectedBeneficiary == null || state.selectedProducts.isEmpty() || state.date.isBlank() || state.time.isBlank()) {
                 _uiState.update { it.copy(isSaving = false) }
                 return@launch
             }
 
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            val initialDate: Date = try {
-                sdf.parse("${currentState.date} ${currentState.time}") ?: run {
-                    Log.e(TAG, "Date/Time parsing returned null.")
-                    _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
-                    return@launch
-                }
+            val initialDate = try {
+                dateTimeFormat.parse("${state.date} ${state.time}")
             } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Could not parse date and time: ${currentState.date} ${currentState.time}",
-                    e
-                )
-                _uiState.update { it.copy(isSaving = false, saveSuccess = false) }
+                null
+            }
+            if (initialDate == null) {
+                _uiState.update { it.copy(isSaving = false) }
                 return@launch
             }
+
             val calendar = Calendar.getInstance().apply { time = initialDate }
+            val currentUser = getCurrentUserUseCase() ?: return@launch
 
-            if (isEditing) {
-                // --- LÓGICA DE EDIÇÃO ---
-                val id = currentState.deliveryId!!
-                Log.d(TAG, "Editing delivery $id. Updating Date, Obs, Items. Ignoring Beneficiary.")
-                try {
-                    // Update Date
-                    deliveryRepository.updateDeliveryDate(id, calendar.timeInMillis)
-                    // Update Observations
-                    deliveryRepository.updateDeliveryObservations(id, currentState.observations)
-                    // Update Items
-                    deliveryRepository.updateDeliveryItems(id, currentState.selectedProducts)
-
-                    Log.i(TAG, "Successfully updated delivery $id")
-                    _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to update delivery $id", e)
-                    _uiState.update { it.copy(isSaving = false) }
-                }
-
-            } else {
-                // --- LÓGICA DE CRIAÇÃO ---
-                Log.d(TAG, "Creating new delivery. Repetition: ${currentState.repetition}")
-
-                val initialStatus = if (currentUser.role == UserRole.BENEFICIARY) {
-                    DeliveryStatus.UNDER_ANALYSIS
+            try {
+                if (state.deliveryId != null) {
+                    handleUpdateDelivery(state.deliveryId, state, calendar, currentUser)
                 } else {
-                    DeliveryStatus.SCHEDULED
+                    handleCreateDelivery(state, calendar, currentUser)
                 }
+                _uiState.update { it.copy(saveSuccess = true) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save delivery", e)
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
+    }
 
-                val baseDelivery = Delivery(
-                    id = "",
-                    beneficiaryId = currentState.selectedBeneficiary.id,
-                    date = System.currentTimeMillis(),
-                    scheduledDate = 0,
-                    status = initialStatus, // Use determined status
-                    items = currentState.selectedProducts,
-                    observations = currentState.observations,
-                    createdBy = currentUser.id
+    private suspend fun handleUpdateDelivery(
+        id: String,
+        state: AddEditEntregaUiState,
+        cal: Calendar,
+        user: pt.ipca.lojasocial.domain.models.User
+    ) {
+        deliveryRepository.updateDeliveryDate(id, cal.timeInMillis)
+        deliveryRepository.updateDeliveryObservations(id, state.observations)
+        deliveryRepository.updateDeliveryItems(id, state.selectedProducts)
+
+        if (user.role != UserRole.BENEFICIARY && state.selectedBeneficiary != null) {
+            sendNotification(state.selectedBeneficiary, cal, isUpdate = true)
+        }
+    }
+
+    private suspend fun handleCreateDelivery(
+        state: AddEditEntregaUiState,
+        cal: Calendar,
+        user: pt.ipca.lojasocial.domain.models.User
+    ) {
+        val initialStatus =
+            if (user.role == UserRole.BENEFICIARY) DeliveryStatus.UNDER_ANALYSIS else DeliveryStatus.SCHEDULED
+
+        val baseDelivery = Delivery(
+            id = "",
+            beneficiaryId = state.selectedBeneficiary!!.id,
+            date = System.currentTimeMillis(),
+            scheduledDate = 0,
+            status = initialStatus,
+            items = state.selectedProducts,
+            observations = state.observations,
+            createdBy = user.id
+        )
+
+        val deliveries = generateRecurringDeliveries(baseDelivery, cal, state.repetition)
+        deliveries.forEach { deliveryRepository.addDelivery(it) }
+
+        if (user.role != UserRole.BENEFICIARY) {
+            sendNotification(state.selectedBeneficiary, cal, isUpdate = false)
+        }
+    }
+
+    private suspend fun generateRecurringDeliveries(
+        base: Delivery,
+        startCal: Calendar,
+        repetition: String
+    ): List<Delivery> {
+        val list = mutableListOf<Delivery>()
+        list.add(
+            base.copy(
+                id = UUID.randomUUID().toString(),
+                scheduledDate = startCal.timeInMillis
+            )
+        )
+
+        if (repetition == "Não repetir") return list
+
+        val allSchoolYears = schoolYearRepository.getSchoolYears().firstOrNull() ?: emptyList()
+        val currentYear =
+            allSchoolYears.find { System.currentTimeMillis() in it.startDate..it.endDate }
+                ?: return list
+
+        val iterCal = startCal.clone() as Calendar
+        while (true) {
+            when (repetition) {
+                "Mensalmente" -> iterCal.add(Calendar.MONTH, 1)
+                "Bimensal" -> iterCal.add(Calendar.MONTH, 2)
+                "Semestral" -> iterCal.add(Calendar.MONTH, 6)
+                else -> break
+            }
+            if (iterCal.timeInMillis > currentYear.endDate) break
+            list.add(
+                base.copy(
+                    id = UUID.randomUUID().toString(),
+                    scheduledDate = iterCal.timeInMillis
                 )
+            )
+        }
+        return list
+    }
 
                 val deliveriesToCreate = mutableListOf<Delivery>()
                 
@@ -423,6 +482,36 @@ class AddEditEntregaViewModel @Inject constructor(
                     _uiState.update { it.copy(isSaving = false) }
                 }
             }
+    private suspend fun sendNotification(
+        beneficiary: Beneficiary,
+        cal: Calendar,
+        isUpdate: Boolean
+    ) {
+        val dateStr = dateTimeFormat.format(cal.time)
+        val title = if (isUpdate) "Entrega Atualizada 📝" else "Nova Entrega Agendada! 📦"
+        val msg =
+            if (isUpdate) "A tua entrega foi alterada para: $dateStr" else "Tens uma recolha marcada para $dateStr."
+
+        try {
+            communicationRepository.sendNotification(
+                NotificationRequest(
+                    userId = beneficiary.id,
+                    title = title,
+                    message = msg,
+                    data = mapOf("screen" to "entregas")
+                )
+            )
+            communicationRepository.sendEmail(
+                EmailRequest(
+                    to = beneficiary.email,
+                    subject = "Loja Social - $title",
+                    body = "<p>Olá ${beneficiary.name},</p><p>$msg</p>",
+                    isHtml = true,
+                    senderName = "Loja Social IPCA"
+                )
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sending notification", e)
         }
     }
 }

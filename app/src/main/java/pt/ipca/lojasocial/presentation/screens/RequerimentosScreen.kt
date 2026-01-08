@@ -5,20 +5,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,8 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppFilterDropdown
@@ -35,6 +40,7 @@ import pt.ipca.lojasocial.presentation.components.AppSearchBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.RequerimentoListItem
+import pt.ipca.lojasocial.presentation.models.RequestUiModel
 import pt.ipca.lojasocial.presentation.viewmodels.RequerimentosViewModel
 
 @Composable
@@ -50,12 +56,44 @@ fun RequerimentosScreen(
     val requestsList by viewModel.filteredRequests.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    // Atualiza a lista sempre que o ecrã fica visível (ex: ao voltar do detalhe)
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.loadRequests()
+    // 1. Lógica de Inicialização (Forçar filtro ANALISE)
+    LaunchedEffect(Unit) {
+        if (selectedFilter == null) {
+            viewModel.onFilterChange(StatusType.ANALISE)
+        }
     }
 
-    // Define EXATAMENTE os estados que queres no filtro
+    // ❌ REMOVIDO: LifecycleEventEffect com loadRequests()
+    // Como estamos a usar Flow, a lista atualiza-se sozinha assim que o ecrã abre.
+
+    // 2. Passar dados para a UI
+    RequerimentosScreenContent(
+        searchQuery = searchQuery,
+        selectedFilter = selectedFilter,
+        requestsList = requestsList,
+        isLoading = isLoading,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onFilterChange = viewModel::onFilterChange,
+        onBackClick = onBackClick,
+        onRequerimentoClick = onRequerimentoClick,
+        navItems = navItems,
+        onNavigate = onNavigate
+    )
+}
+
+@Composable
+fun RequerimentosScreenContent(
+    searchQuery: String,
+    selectedFilter: StatusType?,
+    requestsList: List<RequestUiModel>,
+    isLoading: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onFilterChange: (StatusType?) -> Unit,
+    onBackClick: () -> Unit,
+    onRequerimentoClick: (String) -> Unit,
+    navItems: List<BottomNavItem>,
+    onNavigate: (String) -> Unit
+) {
     val statusOptions = listOf(
         StatusType.ANALISE,
         StatusType.APROVADA,
@@ -84,81 +122,111 @@ fun RequerimentosScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 1. Barra de Pesquisa
-            AppSearchBar(
-                query = searchQuery,
-                onQueryChange = viewModel::onSearchQueryChange,
-                placeholder = "Procurar por nome...",
-                modifier = Modifier.padding(16.dp)
-            )
-
-            // 2. Filtro (Dropdown) - Colocado logo abaixo da pesquisa
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp) // Alinhado com a search bar
-                    .padding(bottom = 16.dp),    // Espaço antes da lista
-                verticalAlignment = Alignment.CenterVertically
+            // --- HEADER: PESQUISA E FILTRO ---
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                AppFilterDropdown(
-                    label = "Estado",
-                    // Se houver filtro, mostra o nome, senão vazio (mostra label)
-                    selectedValue = selectedFilter?.name ?: "",
-                    // Converte os Enums para String para mostrar na lista
-                    options = statusOptions.map { it.name },
-                    leadingIcon = Icons.Default.Tune,
-                    onOptionSelected = { selectedName ->
-                        if (selectedName.isEmpty()) {
-                            // Se veio vazio (Limpar), passa null para o ViewModel
-                            viewModel.onFilterChange(null)
-                        } else {
-                            // Converte a String de volta para Enum
-                            val status = StatusType.valueOf(selectedName)
-                            viewModel.onFilterChange(status)
-                        }
-                    },
-                    modifier = Modifier.wrapContentWidth() // Ocupa apenas o espaço necessário
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    AppSearchBar(
+                        query = searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        placeholder = "Procurar por beneficiário...",
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Filtrar estado:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        AppFilterDropdown(
+                            label = "Todos",
+                            selectedValue = selectedFilter?.name ?: "Todos",
+                            options = statusOptions.map { it.name },
+                            leadingIcon = Icons.Default.FilterList,
+                            onOptionSelected = { name ->
+                                val status = try {
+                                    StatusType.valueOf(name)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                                onFilterChange(status)
+                            },
+                            modifier = Modifier.width(200.dp)
+                        )
+                    }
+                }
             }
 
-            // 3. Lista de Resultados
-            Box(modifier = Modifier.fillMaxSize()) {
+            // --- LISTA DE CONTEÚDO ---
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF00713C)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 } else if (requestsList.isEmpty()) {
                     Column(
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = Color.Gray
+                        )
+                        Spacer(Modifier.height(16.dp))
                         Text(
-                            text = "Nenhum resultado encontrado.",
+                            text = "Nenhum requerimento encontrado.",
                             color = Color.Gray,
                             style = MaterialTheme.typography.bodyLarge
                         )
+
                         if (selectedFilter != null || searchQuery.isNotEmpty()) {
                             TextButton(onClick = {
-                                viewModel.onFilterChange(null)
-                                viewModel.onSearchQueryChange("")
+                                onFilterChange(null)
+                                onSearchQueryChange("")
                             }) {
-                                Text("Limpar filtros", color = Color(0xFF00713C))
+                                Text("Limpar Filtros", color = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(requestsList) { req ->
                             RequerimentoListItem(
                                 applicantName = req.beneficiaryName,
                                 avatarUrl = null,
-                                status = req.status, // Passa o StatusType para o item saber a cor
-                                onClick = { onRequerimentoClick(req.requestId) }
+                                status = req.status,
+                                onClick = {
+                                    onRequerimentoClick(req.requestId)
+                                }
                             )
                         }
                     }

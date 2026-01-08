@@ -3,6 +3,13 @@ package pt.ipca.lojasocial.domain.models
 import java.util.UUID
 
 
+enum class EducationLevels {
+    LICENCIATURA,
+    MESTRADO,
+    DOUTORADO,
+    CTESP
+}
+
 /**
  * Define o tipo de apoio solicitado.
  */
@@ -32,7 +39,7 @@ data class Request(
     val schoolYearId: String,
     val submissionDate: Long = System.currentTimeMillis(),
     val status: StatusType = StatusType.ANALISE,
-    val type: RequestType = RequestType.FOOD,
+    val type: RequestType? = RequestType.FOOD,
     val documents: Map<String, String?> = emptyMap(),
     val observations: String = ""
 )

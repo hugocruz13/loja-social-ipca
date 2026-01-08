@@ -48,19 +48,16 @@ class BeneficiariesViewModel @Inject constructor(
     private val _selectedStatus = MutableStateFlow("")
     val selectedStatus: StateFlow<String> = _selectedStatus.asStateFlow()
 
-    // Lógica da Lista Filtrada (Mantive igual)
     val filteredBeneficiaries: StateFlow<List<Beneficiary>> = combine(
-        _beneficiaries, _searchQuery, _selectedYear, _selectedStatus
-    ) { list, query, year, status ->
+        _beneficiaries, _searchQuery, _selectedStatus
+    ) { list, query, status ->
         list.filter { ben ->
-            val matchesQuery = query.isEmpty() || ben.name.contains(
-                query,
-                ignoreCase = true
-            ) || ben.email.contains(query, ignoreCase = true)
-            val matchesYear = year.isEmpty() || ben.schoolYearId == year
-            val matchesStatus =
-                status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
-            matchesQuery && matchesYear && matchesStatus
+            val matchesQuery = query.isEmpty() || ben.name.contains(query, ignoreCase = true) ||
+                    ben.email.contains(query, ignoreCase = true)
+
+            val matchesStatus = status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
+
+            matchesQuery && matchesStatus
         }
     }.stateIn(
         scope = viewModelScope,

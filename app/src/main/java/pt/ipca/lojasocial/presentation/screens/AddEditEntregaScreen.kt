@@ -262,36 +262,44 @@ fun AddEditEntregaScreen(
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes =
-                            listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
+                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
+
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Primeira Linha
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
+                                    val isSelected = uiState.repetition == repo // Verifica se está selecionado
+
                                     AppButton(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
-                                        enabled = entregaId == null, // Desativado na edição
+                                        enabled = entregaId == null,
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(40.dp),
-                                        containerColor = if (uiState.repetition == repo) accentGreen else Color(
-                                            0xFFF1F1F5
-                                        ),
+                                        // Fundo: Se selecionado usa Verde, se não usa um Cinza mais escuro que o anterior (E2E8F0)
+                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
+                                        // Texto: Se selecionado usa Branco, se não usa um Cinza Escuro/Preto para contraste
+                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
                                     )
                                 }
                             }
+
+                            // Segunda Linha
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.takeLast(2).forEach { repo ->
+                                    val isSelected = uiState.repetition == repo
+
                                     AppButton(
                                         text = repo,
                                         onClick = { viewModel.onRepetitionChange(repo) },
-                                        enabled = entregaId == null, // Desativado na edição
+                                        enabled = entregaId == null,
                                         modifier = Modifier
                                             .weight(1f)
                                             .height(40.dp),
-                                        containerColor = if (uiState.repetition == repo) accentGreen else Color(
-                                            0xFFF1F1F5
-                                        ),
+                                        // Mesma lógica de cores aqui
+                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
+                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
                                     )
                                 }
                             }

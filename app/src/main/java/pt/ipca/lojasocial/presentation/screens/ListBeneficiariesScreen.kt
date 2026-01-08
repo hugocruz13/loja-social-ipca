@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -38,7 +36,6 @@ import pt.ipca.lojasocial.presentation.components.AppFilterDropdown
 import pt.ipca.lojasocial.presentation.components.AppSearchBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BeneficiarioListItem
-import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
 
 @Composable
@@ -54,16 +51,12 @@ fun ListBeneficiariesScreen(
     val selectedStatus by viewModel.selectedStatus.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    val statusOptions = listOf("Ativo", "Inativo", "Analise")
+
     // IMPORTANTE: Agora observamos o StateFlow 'filteredBeneficiaries' criado no ViewModel
     // Isto garante que a lista atualiza sozinha quando a pesquisa muda.
     val beneficiariesList by viewModel.filteredBeneficiaries.collectAsState()
 
-    // Itens da Bottom Bar
-    val navItems = listOf(
-        BottomNavItem("home", Icons.Filled.Home, "Home"),
-        BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-        BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-    )
 
     Scaffold(
         topBar = {
@@ -74,7 +67,7 @@ fun ListBeneficiariesScreen(
         },
         bottomBar = {
             AppBottomBar(
-                navItems = navItems,
+                navItems = emptyList(),
                 currentRoute = "home",
                 onItemSelected = { /* Navegação futura */ }
             )
@@ -114,30 +107,13 @@ fun ListBeneficiariesScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Filtro de Ano
-                // Nota: As options devem corresponder aos IDs que tens no Firebase ("2024_2025")
-                AppFilterDropdown(
-                    label = "Ano Letivo",
-                    selectedValue = selectedYear,
-                    options = listOf(
-                        "",
-                        "2023_2024",
-                        "2024_2025",
-                        "2025_2026"
-                    ), // "" para limpar filtro
-                    onOptionSelected = viewModel::onYearSelected,
-                    leadingIcon = Icons.Default.CalendarToday,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Filtro de Status
                 AppFilterDropdown(
                     label = "Estado",
                     selectedValue = selectedStatus,
-                    options = listOf("", "Ativo", "Inativo"), // "" para limpar filtro
-                    onOptionSelected = viewModel::onStatusSelected,
+                    options = statusOptions,
                     leadingIcon = Icons.Default.Tune,
-                    modifier = Modifier.weight(1f)
+                    onOptionSelected = { selectedName ->viewModel.onStatusSelected(selectedName)},
+                    modifier = Modifier.wrapContentWidth()
                 )
             }
 

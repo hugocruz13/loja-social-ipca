@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.campaign
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import javax.inject.Inject
@@ -24,7 +25,7 @@ class GetCampaignByIdUseCase @Inject constructor(
      * @param id O identificador da campanha a pesquisar.
      * @return O objeto [Campaign] se encontrado, ou `null` caso não exista.
      */
-    suspend operator fun invoke(id: String): Campaign? {
+    operator fun invoke(id: String): Flow<Campaign?> {
         return repository.getCampaignById(id)
     }
 }

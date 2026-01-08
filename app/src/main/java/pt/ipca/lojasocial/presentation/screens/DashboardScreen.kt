@@ -1,6 +1,7 @@
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,16 +23,10 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -48,6 +43,11 @@ import pt.ipca.lojasocial.presentation.components.AppAccessCard
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppInfoCard
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
+import androidx.hilt.navigation.compose.hiltViewModel // Para injetar o ViewModel
+import androidx.compose.runtime.collectAsState     // Para ler o valor dinâmico
+import androidx.compose.runtime.getValue           // Para usar "by"
+import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel // O teu ViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
 
 // Definimos um Enum simples para controlar a UI na View
 enum class UserRole { STAFF, BENEFICIARY }
@@ -56,22 +56,22 @@ enum class UserRole { STAFF, BENEFICIARY }
 fun DashboardScreen(
     userName: String,
     role: UserRole,
-    onNavigateTo: (String) -> Unit
+    navItems: List<BottomNavItem>, // <--- Adicionado
+    onNavigate: (String) -> Unit,   // <--- Renomeado para padronizar
+    viewModel: CampanhasViewModel = hiltViewModel(),
+    entregasViewModel: EntregasViewModel = hiltViewModel()
 ) {
+    val activeCount by viewModel.activeCount.collectAsState()
+    val pendingDeliveriesCount by entregasViewModel.pendingCount.collectAsState()
     Scaffold(
         bottomBar = {
-            val navItems = listOf(
-                BottomNavItem("home", Icons.Filled.Home, "Home"),
-                BottomNavItem("notifications", Icons.Filled.Notifications, "Notificações"),
-                BottomNavItem("settings", Icons.Filled.Settings, "Configurações"),
-            )
             AppBottomBar(
-                navItems = navItems,
-                currentRoute = "home",
-                onItemSelected = { /* Navegação */ }
+                navItems = navItems, // <--- Passa a lista recebida
+                currentRoute = "dashboard", // Rota fixa deste ecrã
+                onItemSelected = { item -> onNavigate(item.route) } // <--- Conecta a navegação
             )
         },
-        containerColor = Color(0xFFF8FAFC) // Cor de fundo leve (Off-white)
+        containerColor = Color(0xFFF8FAFC)
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -80,7 +80,11 @@ fun DashboardScreen(
                 .padding(16.dp)
         ) {
             // 1. Header (Bem-vindo + Notificações)
-            DashboardHeader(userName = userName)
+            DashboardHeader(
+                userName = userName,
+                onNotificationClick = { onNavigate("notification") },
+                onProfileClick = { onNavigate("profile") }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -93,12 +97,12 @@ fun DashboardScreen(
             ) {
                 // --- SECÇÃO DE INFO (STATS) ---
                 if (role == UserRole.STAFF) {
-                    item { AppInfoCard("Campanhas Ativas", "5", Icons.Default.Campaign) }
-                    item { AppInfoCard("Entregas Pendentes", "12", Icons.Default.LocalShipping) }
+                    item { AppInfoCard ("Campanhas Ativas", activeCount.toString(), Icons.Default.Campaign)}
+                    item {AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping )}
                 } else {
                     // Beneficiário vê apenas Entregas Pendentes em largura total
                     item(span = { GridItemSpan(2) }) {
-                        AppInfoCard("Entregas Pendentes", "12", Icons.Default.LocalShipping)
+                        AppInfoCard("Entregas Pendentes", pendingDeliveriesCount.toString(), Icons.Default.LocalShipping)
                     }
                 }
 
@@ -110,61 +114,58 @@ fun DashboardScreen(
                         AppAccessCard(
                             "Beneficiários",
                             Icons.Default.Groups,
-                            { onNavigateTo("beneficiarios") })
+                            { onNavigate("beneficiaries") })
                     }
                     item {
                         AppAccessCard(
                             "Produtos / Stock",
                             Icons.Default.Inventory,
-                            { onNavigateTo("stock") })
+                            { onNavigate("stock") })
                     }
                     item {
                         AppAccessCard(
                             "Entregas",
                             Icons.Default.LocalShipping,
-                            { onNavigateTo("entregas") })
+                            { onNavigate("entregas") })
                     }
                     item {
                         AppAccessCard(
                             "Campanhas",
                             Icons.Default.Campaign,
-                            { onNavigateTo("campanhas") })
+                            { onNavigate("campanhas") })
                     }
 
-                    // --- ALTERAÇÃO AQUI ---
-                    // Mudou de Reports para Registo de Atividades
                     item {
                         AppAccessCard(
                             "Registo de Atividades",
                             Icons.Default.History,
-                            { onNavigateTo("logs") })
+                            { onNavigate("logs") })
                     }
-                    // ---------------------
 
                     item {
                         AppAccessCard(
                             "Requerimentos",
                             Icons.Default.Assignment,
-                            { onNavigateTo("requerimentos") })
+                            { onNavigate("requerimentos") })
                     }
                     item {
                         AppAccessCard(
                             "Ano Letivo",
                             Icons.Default.DateRange,
-                            { onNavigateTo("ano_letivo") })
+                            { onNavigate("ano_letivo") })
                     }
                 } else {
                     item {
                         AppAccessCard(
                             "Entregas",
                             Icons.Default.LocalShipping,
-                            { onNavigateTo("entregas") })
+                            { onNavigate("entregas") })
                     }
                     item {
                         AppAccessCard(
                             "Canal de Apoio",
                             Icons.Default.SupportAgent,
-                            { onNavigateTo("apoio") })
+                            { onNavigate("apoio") })
                     }
                 }
             }
@@ -173,14 +174,21 @@ fun DashboardScreen(
 }
 
 @Composable
-fun DashboardHeader(userName: String) {
+fun DashboardHeader(
+    userName: String,
+    onNotificationClick: () -> Unit,
+    onProfileClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // Avatar Placeholder (Verde escuro como na imagem)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { onProfileClick() } // Atalho para perfil
+        ) {
+            // Avatar Placeholder
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -206,20 +214,6 @@ fun DashboardHeader(userName: String) {
                 )
             }
         }
-
-        // Ícone de Notificação com Badge
-        BadgedBox(
-            badge = {
-                Badge(containerColor = Color(0xFFEF4444)) { Text("2") }
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = "Notificações",
-                tint = Color(0xFF1E293B),
-                modifier = Modifier.size(28.dp)
-            )
-        }
     }
 }
 
@@ -228,11 +222,21 @@ fun DashboardHeader(userName: String) {
 @Preview(showBackground = true, name = "Dashboard Colaborador")
 @Composable
 fun StaffDashboardPreview() {
-    DashboardScreen(userName = "João Silva", role = UserRole.STAFF, onNavigateTo = {})
+    DashboardScreen(
+        userName = "João Silva",
+        role = UserRole.STAFF,
+        navItems = emptyList(),
+        onNavigate = {}
+    )
 }
 
 @Preview(showBackground = true, name = "Dashboard Beneficiário")
 @Composable
 fun BeneficiaryDashboardPreview() {
-    DashboardScreen(userName = "Filipe Luís", role = UserRole.BENEFICIARY, onNavigateTo = {})
+    DashboardScreen(
+        userName = "Filipe Luís",
+        role = UserRole.BENEFICIARY,
+        navItems = emptyList(),
+        onNavigate = {}
+    )
 }

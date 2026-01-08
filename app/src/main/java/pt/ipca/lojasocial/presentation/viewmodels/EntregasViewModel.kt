@@ -14,6 +14,7 @@ import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
+import pt.ipca.lojasocial.domain.use_cases.delivery.GetPendingDeliveriesCountUseCase
 import pt.ipca.lojasocial.presentation.models.DeliveryUiModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,7 +25,8 @@ import javax.inject.Inject
 class EntregasViewModel @Inject constructor(
     private val deliveryRepository: DeliveryRepository,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val beneficiaryRepository: BeneficiaryRepository
+    private val beneficiaryRepository: BeneficiaryRepository,
+    private val getPendingDeliveriesCountUseCase: GetPendingDeliveriesCountUseCase
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -36,14 +38,19 @@ class EntregasViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _selectedFilter = MutableStateFlow("All")
+    private val _selectedFilter = MutableStateFlow("Agendada")
     val selectedFilter = _selectedFilter.asStateFlow()
 
     private val _allDeliveries = MutableStateFlow<List<DeliveryUiModel>>(emptyList())
+    private val _pendingCount = MutableStateFlow(0)
+    val pendingCount = _pendingCount.asStateFlow()
 
+    // Lógica de Filtro
     val deliveries: StateFlow<List<DeliveryUiModel>> =
         combine(_allDeliveries, _searchQuery, _selectedFilter) { deliveries, query, filter ->
-            val filteredList = if (filter == "All") {
+
+            // 1. Filtrar por Estado
+            val filteredByStatus = if (filter == "All") {
                 deliveries
             } else {
                 val statusToFilter = when (filter) {
@@ -52,18 +59,20 @@ class EntregasViewModel @Inject constructor(
                     "Cancelada" -> DeliveryStatus.CANCELLED
                     else -> null
                 }
-                deliveries.filter { it.delivery.status == statusToFilter }
+                if (statusToFilter != null) {
+                    deliveries.filter { it.delivery.status == statusToFilter }
+                } else deliveries
             }
 
+            // 2. Filtrar por Texto
             if (query.isBlank()) {
-                filteredList
+                filteredByStatus
             } else {
                 val lowerCaseQuery = query.lowercase(Locale.getDefault())
-                filteredList.filter { uiModel ->
-                    val formattedDate = SimpleDateFormat(
-                        "dd MMM yyyy",
-                        Locale.getDefault()
-                    ).format(Date(uiModel.delivery.scheduledDate))
+                filteredByStatus.filter { uiModel ->
+                    val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        .format(Date(uiModel.delivery.scheduledDate))
+
                     uiModel.delivery.id.contains(lowerCaseQuery, ignoreCase = true) ||
                             uiModel.beneficiaryName.contains(lowerCaseQuery, ignoreCase = true) ||
                             formattedDate.contains(lowerCaseQuery, ignoreCase = true) ||
@@ -76,9 +85,9 @@ class EntregasViewModel @Inject constructor(
             emptyList()
         )
 
-
     init {
         loadDeliveries()
+        loadPendingCount()
     }
 
     fun onSearchQueryChange(query: String) {
@@ -89,11 +98,27 @@ class EntregasViewModel @Inject constructor(
         _selectedFilter.value = filter
     }
 
+    fun loadPendingCount() {
+        viewModelScope.launch {
+            try {
+                val currentUser = getCurrentUserUseCase()
+
+                if (currentUser != null) {
+                    val count = getPendingDeliveriesCountUseCase(currentUser.role, currentUser.id)
+                    _pendingCount.value = count
+                }
+            } catch (e: Exception) {
+                _pendingCount.value = 0
+            }
+        }
+    }
+
     // Tornada pública para permitir refresh manual
     fun loadDeliveries() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
+
             try {
                 val currentUser = getCurrentUserUseCase()
                 if (currentUser == null) {
@@ -102,28 +127,38 @@ class EntregasViewModel @Inject constructor(
                     return@launch
                 }
 
-                val rawDeliveries = when (currentUser.role) {
+                // Decide qual o Flow a escutar
+                val flowToCollect = when (currentUser.role) {
                     UserRole.STAFF -> deliveryRepository.getDeliveries()
                     UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(
                         currentUser.id
                     )
                 }
 
-                // Ordenação: Data mais próxima primeiro
-                val sortedDeliveries = rawDeliveries.sortedBy { it.scheduledDate }
+                // "Ligar o rádio"
+                flowToCollect.collect { domainDeliveries ->
 
-                val uiModels = sortedDeliveries.map { delivery ->
-                    val beneficiary =
-                        beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                    DeliveryUiModel(
-                        delivery = delivery,
-                        beneficiaryName = beneficiary?.name ?: "Beneficiário Desconhecido"
-                    )
+                    // Ordenação: Data mais próxima primeiro
+                    val sortedDeliveries = domainDeliveries.sortedBy { it.scheduledDate }
+
+                    // Mapeamento para UI Model (Buscar nomes dos beneficiários)
+                    val uiModels = sortedDeliveries.map { delivery ->
+
+                        val beneficiary =
+                            beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+
+                        DeliveryUiModel(
+                            delivery = delivery,
+                            beneficiaryName = beneficiary?.name ?: "A carregar..."
+                        )
+                    }
+
+                    _allDeliveries.value = uiModels
+                    _isLoading.value = false
                 }
-                _allDeliveries.value = uiModels
+
             } catch (e: Exception) {
-                _error.value = "Falha ao carregar as entregas: ${e.message}"
-            } finally {
+                _error.value = "Falha ao ligar stream de entregas: ${e.message}"
                 _isLoading.value = false
             }
         }

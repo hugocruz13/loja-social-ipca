@@ -8,8 +8,6 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,22 +17,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.use_cases.UploadImageUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.AddCampaignUseCase
+import pt.ipca.lojasocial.domain.use_cases.campaign.GetActiveCampaignsCountUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
-import pt.ipca.lojasocial.presentation.screens.CampanhaModel
+import pt.ipca.lojasocial.presentation.models.CampanhaUiModel
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
-
+/**
+ * ViewModel responsável pela gestão de Campanhas com suporte a Tempo Real.
+ * Atualizado para consumir Flows do Repositório.
+ */
 @HiltViewModel
 class CampanhasViewModel @Inject constructor(
     private val getCampaignsUseCase: GetCampaignsUseCase,
@@ -42,8 +43,7 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
-    private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore,
+    private val GetActiveCampaignsCountUseCase: GetActiveCampaignsCountUseCase,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -53,20 +53,37 @@ class CampanhasViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
-    private val _campanhas = MutableStateFlow<List<CampanhaModel>>(emptyList())
+    private val _selectedStatusFilter = MutableStateFlow<StatusType?>(null)
+    val selectedStatusFilter = _selectedStatusFilter.asStateFlow()
 
-    private val _selectedCampanha = MutableStateFlow<CampanhaModel?>(null)
+    private val _campanhas = MutableStateFlow<List<CampanhaUiModel>>(emptyList())
+
+    private val _selectedCampanha = MutableStateFlow<CampanhaUiModel?>(null)
     val selectedCampanha = _selectedCampanha.asStateFlow()
+    private val _activeCount = MutableStateFlow(0)
 
+    val activeCount = _activeCount.asStateFlow()
 
-    val filteredCampanhas = combine(_campanhas, _searchQuery) { list, query ->
-        if (query.isBlank()) {
-            list
-        } else {
-            list.filter { item ->
+    val filteredCampanhas = combine(
+        _campanhas,
+        _searchQuery,
+        _selectedStatusFilter
+    ) { list, query, selectedStatus ->
+        list.filter { item ->
+            val matchesSearch = if (query.isBlank()) {
+                true
+            } else {
                 item.nome.contains(query, ignoreCase = true) ||
                         item.desc.contains(query, ignoreCase = true)
             }
+
+            val matchesStatus = if (selectedStatus == null) {
+                true
+            } else {
+                item.status == selectedStatus
+            }
+
+            matchesSearch && matchesStatus
         }
     }.stateIn(
         scope = viewModelScope,
@@ -80,69 +97,100 @@ class CampanhasViewModel @Inject constructor(
 
     init {
         loadCampanhas()
+        loadActiveCount()
     }
 
+    /**
+     * Inicia a observação das campanhas em tempo real.
+     * O 'collect' mantém-se ativo enquanto o ViewModel existir.
+     */
     fun loadCampanhas() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val result = getCampaignsUseCase()
-                _campanhas.value = result.map { domain ->
+                // MUDANÇA: Agora fazemos 'collect' ao Flow
+                getCampaignsUseCase().collect { domainList ->
 
-
-                    CampanhaModel(
-                        id = domain.id,
-                        nome = domain.title,
-                        desc = domain.description,
-                        status = when (domain.status) {
-                            CampaignStatus.ACTIVE -> StatusType.ATIVA
-                            CampaignStatus.PLANNED -> StatusType.AGENDADA
-                            CampaignStatus.INACTIVE -> StatusType.COMPLETA
-                            else -> StatusType.AGENDADA
-                        },
-                        icon = mapIcon(domain.title),
-                        startDate = domain.startDate,
-                        endDate = domain.endDate
-                    )
+                    // Mapeamento de Domain -> UI Model
+                    _campanhas.value = domainList.map { domain ->
+                        CampanhaUiModel(
+                            id = domain.id,
+                            nome = domain.title,
+                            desc = domain.description,
+                            status = when (domain.status) {
+                                CampaignStatus.ACTIVE -> StatusType.ATIVA
+                                CampaignStatus.PLANNED -> StatusType.AGENDADA
+                                CampaignStatus.INACTIVE -> StatusType.COMPLETA
+                                // Apanha null ou outros casos
+                                else -> StatusType.AGENDADA
+                            },
+                            icon = mapIcon(domain.title),
+                            startDate = domain.startDate,
+                            endDate = domain.endDate,
+                            // 🚨 CORREÇÃO CRÍTICA: Mapear a imagem aqui para aparecer na lista 🚨
+                            imageUrl = domain.imageUrl
+                        )
+                    }
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
-            } finally {
+                android.util.Log.e("ViewModel", "Erro ao carregar campanhas", e)
                 _isLoading.value = false
             }
         }
     }
 
+    fun loadActiveCount() {
+        viewModelScope.launch {
+            try {
+                val count = GetActiveCampaignsCountUseCase()
+                _activeCount.value = count
+            } catch (e: Exception) {
+                _activeCount.value = 0
+            }
+        }
+    }
+
+    /**
+     * Inicia a observação de uma campanha específica em tempo real.
+     */
     fun loadCampanhaById(id: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val domain = getCampaignByIdUseCase(id)
-                if (domain != null) {
-
-                    android.util.Log.d("DETALHE_DEBUG", "URL vindo do Domain: ${domain.imageUrl}")
-                    _selectedCampanha.value = CampanhaModel(
-                        id = domain.id,
-                        nome = domain.title,
-                        desc = domain.description,
-                        status = when (domain.status) {
-                            CampaignStatus.ACTIVE -> StatusType.ATIVA
-                            CampaignStatus.PLANNED -> StatusType.AGENDADA
-                            else -> StatusType.COMPLETA
-                        },
-                        icon = Icons.Default.Campaign,
-                        startDate = domain.startDate,
-                        endDate = domain.endDate,
-                        type = domain.type,
-                        imageUrl = domain.imageUrl
-                    )
+                // MUDANÇA: Agora fazemos 'collect' ao Flow
+                getCampaignByIdUseCase(id).collect { domain ->
+                    if (domain != null) {
+                        android.util.Log.d("DETALHE_DEBUG", "URL Realtime: ${domain.imageUrl}")
+                        _selectedCampanha.value = CampanhaUiModel(
+                            id = domain.id,
+                            nome = domain.title,
+                            desc = domain.description,
+                            status = when (domain.status) {
+                                CampaignStatus.ACTIVE -> StatusType.ATIVA
+                                CampaignStatus.PLANNED -> StatusType.AGENDADA
+                                else -> StatusType.COMPLETA
+                            },
+                            icon = Icons.Default.Campaign,
+                            startDate = domain.startDate,
+                            endDate = domain.endDate,
+                            type = domain.type,
+                            imageUrl = domain.imageUrl
+                        )
+                    } else {
+                        // Se for null (apagado), podemos limpar a seleção
+                        _selectedCampanha.value = null
+                    }
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
-            } finally {
+                android.util.Log.e("ViewModel", "Erro detalhe campanha", e)
                 _isLoading.value = false
             }
         }
     }
 
+    // --- MÉTODOS DE APOIO E ESCRITA (Mantêm-se praticamente iguais) ---
 
     private fun mapIcon(category: String?): androidx.compose.ui.graphics.vector.ImageVector {
         return when (category?.uppercase()) {
@@ -161,7 +209,6 @@ class CampanhasViewModel @Inject constructor(
     private val _isSaveSuccess = MutableSharedFlow<Boolean>()
     val isSaveSuccess = _isSaveSuccess.asSharedFlow()
 
-
     fun saveCampanha(
         id: String?,
         nome: String,
@@ -174,22 +221,31 @@ class CampanhasViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val campanhaAtual = if (id != null) getCampaignByIdUseCase(id) else null
+                // Assumindo que a imagem antiga vem do model selecionado ou da lista
+                // Procuramos na lista atual para ter a referência caso o _selectedCampanha não esteja carregado
+                val imageUrlAtual = _selectedCampanha.value?.imageUrl
+                    ?: _campanhas.value.find { it.id == id }?.imageUrl
+                    ?: ""
 
-                val startTs = if (dataInicioStr.isBlank() && campanhaAtual != null)
-                    campanhaAtual.startDate else parseDateToLong(dataInicioStr)
+                val startDateAtual = _selectedCampanha.value?.startDate ?: 0L
+                val endDateAtual = _selectedCampanha.value?.endDate ?: 0L
 
-                val endTs = if (dataFimStr.isBlank() && campanhaAtual != null)
-                    campanhaAtual.endDate else parseDateToLong(dataFimStr)
+                val startTs =
+                    if (dataInicioStr.isBlank() && id != null) startDateAtual else parseDateToLong(
+                        dataInicioStr
+                    )
+                val endTs =
+                    if (dataFimStr.isBlank() && id != null) endDateAtual else parseDateToLong(
+                        dataFimStr
+                    )
 
-                var downloadUrl: String? = campanhaAtual?.imageUrl
+                var downloadUrl: String? = imageUrlAtual.ifEmpty { null }
 
                 if (imageUri != null) {
                     val fileName = "campanhas/${UUID.randomUUID()}.jpg"
                     downloadUrl = uploadImageUseCase(imageUri, fileName)
                 }
 
-                // Cálculo de estado (Regra de negócio que poderia estar num UseCase de validação)
                 val hojeTs = clearTime(System.currentTimeMillis())
                 val statusCalculado = when {
                     endTs < hojeTs -> CampaignStatus.INACTIVE
@@ -208,7 +264,6 @@ class CampanhasViewModel @Inject constructor(
                     imageUrl = downloadUrl ?: ""
                 )
 
-                // A lógica de Log agora acontece dentro destes invokes
                 if (id == null) {
                     addCampaignUseCase(campaign)
                 } else {
@@ -222,20 +277,6 @@ class CampanhasViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
-        }
-    }
-
-    private suspend fun saveLog(acao: String, detalhe: String) {
-        try {
-            val log = hashMapOf(
-                "acao" to acao,
-                "detalhe" to detalhe,
-                "utilizador" to (auth.currentUser?.email ?: "Sistema"),
-                "timestamp" to System.currentTimeMillis()
-            )
-            firestore.collection("logs").add(log).await()
-        } catch (e: Exception) {
-            android.util.Log.e("LOG_ERROR", "Falha ao gravar log: ${e.message}")
         }
     }
 
@@ -258,7 +299,6 @@ class CampanhasViewModel @Inject constructor(
         }
     }
 
-
     private fun clearTime(timestamp: Long): Long {
         val cal = Calendar.getInstance()
         cal.timeInMillis = timestamp
@@ -267,6 +307,10 @@ class CampanhasViewModel @Inject constructor(
         cal.set(Calendar.SECOND, 0)
         cal.set(Calendar.MILLISECOND, 0)
         return cal.timeInMillis
+    }
+
+    fun onFilterChange(status: StatusType?) {
+        _selectedStatusFilter.value = status
     }
 
 }

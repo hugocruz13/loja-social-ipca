@@ -35,15 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
-data class NotificationModel(
-    val id: Int,
-    val title: String,
-    val timestamp: String,
-    val dateLabel: String,
-    val icon: ImageVector,
-    val isUnread: Boolean
-)
+import pt.ipca.lojasocial.presentation.models.NotificationUiModel
 
 @Composable
 fun AppNotificationItem(
@@ -121,8 +113,8 @@ fun AppNotificationItem(
 
 @Composable
 fun NotificationsList(
-    notifications: List<NotificationModel>,
-    onNotificationClick: (NotificationModel) -> Unit
+    notifications: List<NotificationUiModel>, // <--- Tipo Correto
+    onNotificationClick: (NotificationUiModel) -> Unit
 ) {
     val grouped = notifications.groupBy { it.dateLabel }
 
@@ -140,6 +132,7 @@ fun NotificationsList(
                 )
             }
 
+            // Graças ao import 'androidx.compose.foundation.lazy.items', isto agora funciona:
             items(items) { notification ->
                 AppNotificationItem(
                     title = notification.title,
@@ -158,18 +151,31 @@ fun NotificationsList(
 @Preview(showBackground = true)
 @Composable
 fun NotificationListFullPreview() {
+    // Atualizei o Preview para usar NotificationUiModel e IDs String
     val demoNotifications = listOf(
-        NotificationModel(
-            1, "Estado da entrega 123 alterado para 'Em Progresso'.",
-            "5m atrás", "HOJE", Icons.Filled.LocalShipping, true
+        NotificationUiModel(
+            id = "1",
+            title = "Estado da entrega 123 alterado para 'Em Progresso'.",
+            timestamp = "5m atrás",
+            dateLabel = "HOJE",
+            icon = Icons.Filled.LocalShipping,
+            isUnread = true
         ),
-        NotificationModel(
-            2, "Stock de 'Arroz' está baixo.",
-            "10:30 AM", "HOJE", Icons.Filled.Description, false
+        NotificationUiModel(
+            id = "2",
+            title = "Stock de 'Arroz' está baixo.",
+            timestamp = "10:30 AM",
+            dateLabel = "HOJE",
+            icon = Icons.Filled.Description,
+            isUnread = false
         ),
-        NotificationModel(
-            3, "Definições alteradas.",
-            "Yesterday", "ONTEM", Icons.Filled.Settings, false
+        NotificationUiModel(
+            id = "3",
+            title = "Definições alteradas.",
+            timestamp = "Yesterday",
+            dateLabel = "ONTEM",
+            icon = Icons.Filled.Settings,
+            isUnread = false
         )
     )
 

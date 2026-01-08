@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
 
@@ -20,7 +21,7 @@ interface DeliveryRepository {
      *
      * @return Lista de [Delivery].
      */
-    suspend fun getDeliveries(): List<Delivery>
+    fun getDeliveries(): Flow<List<Delivery>>
 
     /**
      * Obtém os detalhes de uma entrega específica.
@@ -28,7 +29,7 @@ interface DeliveryRepository {
      * @param id O identificador único da entrega.
      * @return [Delivery] se encontrada, ou `null` caso contrário.
      */
-    suspend fun getDeliveryById(id: String): Delivery?
+    fun getDeliveryById(id: String): Flow<Delivery?>
 
     /**
      * Regista uma nova entrega ou agendamento no sistema.
@@ -102,7 +103,7 @@ interface DeliveryRepository {
      * @param beneficiaryId O identificador do beneficiário.
      * @return Lista de entregas associadas a este beneficiário.
      */
-    suspend fun getDeliveriesByBeneficiary(beneficiaryId: String): List<Delivery>
+    fun getDeliveriesByBeneficiary(beneficiaryId: String): Flow<List<Delivery>>
 
 
     // --- Para Notificações e Agendamento ---
@@ -117,4 +118,6 @@ interface DeliveryRepository {
      * @return Lista de entregas agendadas próximas.
      */
     suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery>
+
+    suspend fun getPendingDeliveriesCount(userId: String?): Int
 }

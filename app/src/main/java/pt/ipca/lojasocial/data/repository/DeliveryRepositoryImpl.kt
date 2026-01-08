@@ -2,6 +2,9 @@ package pt.ipca.lojasocial.data.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.mapper.DeliveryMapper
 import pt.ipca.lojasocial.data.remote.dto.DeliveryDto
@@ -16,145 +19,135 @@ class DeliveryRepositoryImpl @Inject constructor(
 
     private val collection = firestore.collection("entregas")
     private val beneficiariesCollection = firestore.collection("beneficiarios")
+    private val TAG = "DeliveryRepo"
 
-    override suspend fun getDeliveries(): List<Delivery> {
-        return try {
-            val snapshot = collection.get().await()
-            snapshot.documents.mapNotNull { doc ->
-                val deliveryDto = doc.toObject(DeliveryDto::class.java)
-                if (deliveryDto != null) {
-                    DeliveryMapper.toDomain(doc.id, deliveryDto)
-                } else {
-                    null
-                }
+    // Todas as entregas (para Staff)
+    override fun getDeliveries(): Flow<List<Delivery>> = callbackFlow {
+        val listener = collection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e(TAG, "Erro realtime all deliveries: ${error.message}")
+                close(error)
+                return@addSnapshotListener
             }
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error getting deliveries: ${e.message}", e)
-            emptyList()
+
+            if (snapshot != null) {
+                val deliveries = snapshot.documents.mapNotNull { doc ->
+                    val dto = doc.toObject(DeliveryDto::class.java)
+                    if (dto != null) DeliveryMapper.toDomain(doc.id, dto) else null
+                }
+                trySend(deliveries)
+            }
         }
+        awaitClose { listener.remove() }
     }
 
-    override suspend fun addDelivery(delivery: Delivery) {
-        try {
-            val deliveryDto = DeliveryMapper.toDto(delivery, firestore)
-            collection.document(delivery.id).set(deliveryDto).await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error adding delivery: ${e.message}", e)
-            throw e
-        }
-    }
+    // Entregas de um Beneficiário Específico
+    override fun getDeliveriesByBeneficiary(beneficiaryId: String): Flow<List<Delivery>> =
+        callbackFlow {
+            // Criar referência para consulta correta
+            val beneficiaryRef = beneficiariesCollection.document(beneficiaryId)
 
-    override suspend fun getDeliveryById(id: String): Delivery? {
-        return try {
-            val doc = collection.document(id).get().await()
-            if (doc.exists()) {
-                val deliveryDto = doc.toObject(DeliveryDto::class.java)
-                if (deliveryDto != null) {
-                    DeliveryMapper.toDomain(id, deliveryDto)
+            val listener = collection
+                .whereEqualTo("idBeneficiario", beneficiaryRef) // Filtra no Firebase
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        Log.e(TAG, "Erro realtime beneficiary deliveries: ${error.message}")
+                        close(error)
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot != null) {
+                        val deliveries = snapshot.documents.mapNotNull { doc ->
+                            val dto = doc.toObject(DeliveryDto::class.java)
+                            if (dto != null) DeliveryMapper.toDomain(doc.id, dto) else null
+                        }
+                        trySend(deliveries)
+                    }
+                }
+            awaitClose { listener.remove() }
+        }
+
+    // Detalhe de uma Entrega
+    override fun getDeliveryById(id: String): Flow<Delivery?> = callbackFlow {
+        val listener = collection.document(id).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                val dto = snapshot.toObject(DeliveryDto::class.java)
+                if (dto != null) {
+                    trySend(DeliveryMapper.toDomain(id, dto))
                 } else {
-                    null
+                    trySend(null)
                 }
             } else {
-                null
+                trySend(null)
             }
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error getting delivery by ID: ${e.message}", e)
-            null
         }
+        awaitClose { listener.remove() }
     }
 
-    override suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery> {
-        return try {
-            val snapshot = collection
-                .whereLessThanOrEqualTo("dataHoraPlaneada", timestampLimit)
-                .get()
-                .await()
+    // --- MÉTODOS DE ESCRITA ---
 
-            snapshot.documents.mapNotNull { doc ->
-                val deliveryDto = doc.toObject(DeliveryDto::class.java)
-                if (deliveryDto != null) {
-                    DeliveryMapper.toDomain(doc.id, deliveryDto)
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error getting upcoming deliveries: ${e.message}", e)
-            emptyList()
-        }
-    }
-
-    override suspend fun getDeliveriesByBeneficiary(beneficiaryId: String): List<Delivery> {
-        return try {
-            val beneficiaryRef = beneficiariesCollection.document(beneficiaryId)
-            val snapshot = collection.whereEqualTo("idBeneficiario", beneficiaryRef).get().await()
-            snapshot.documents.mapNotNull { doc ->
-                val deliveryDto = doc.toObject(DeliveryDto::class.java)
-                if (deliveryDto != null) {
-                    DeliveryMapper.toDomain(doc.id, deliveryDto)
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "DeliveryRepositoryImpl",
-                "Error getting deliveries by beneficiary: ${e.message}",
-                e
-            )
-            emptyList()
-        }
+    override suspend fun addDelivery(delivery: Delivery) {
+        val dto = DeliveryMapper.toDto(delivery, firestore)
+        collection.document(delivery.id).set(dto).await()
     }
 
     override suspend fun deleteDelivery(id: String) {
-        try {
-            collection.document(id).delete().await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error deleting delivery: ${e.message}", e)
-            throw e
-        }
+        collection.document(id).delete().await()
     }
 
     override suspend fun updateDeliveryStatus(id: String, status: DeliveryStatus) {
-        try {
-            val statusString = when (status) {
-                DeliveryStatus.SCHEDULED -> "AGENDADA"
-                DeliveryStatus.DELIVERED -> "ENTREGUE"
-                DeliveryStatus.CANCELLED -> "CANCELADA"
-                DeliveryStatus.REJECTED -> "REJEITADA"
-                DeliveryStatus.UNDER_ANALYSIS -> "EM_ANALISE"
-            }
-            collection.document(id).update("estado", statusString).await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error updating delivery status: ${e.message}", e)
-            throw e
+        val statusString = when (status) {
+            DeliveryStatus.SCHEDULED -> "AGENDADA"
+            DeliveryStatus.DELIVERED -> "ENTREGUE"
+            DeliveryStatus.CANCELLED -> "CANCELADA"
+            DeliveryStatus.REJECTED -> "REJEITADA"
+            DeliveryStatus.UNDER_ANALYSIS -> "EM_ANALISE"
         }
+        collection.document(id).update("estado", statusString).await()
     }
 
     override suspend fun updateDeliveryItems(id: String, items: Map<String, Int>) {
-        try {
-            collection.document(id).update("produtosEntregues", items).await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error updating delivery items: ${e.message}", e)
-            throw e
-        }
+        collection.document(id).update("produtosEntregues", items).await()
     }
 
     override suspend fun updateDeliveryDate(id: String, timestamp: Long) {
-        try {
-            collection.document(id).update("dataHoraPlaneada", timestamp).await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error updating delivery date: ${e.message}", e)
-            throw e
-        }
+        collection.document(id).update("dataHoraPlaneada", timestamp).await()
     }
 
     override suspend fun updateDeliveryObservations(id: String, observations: String) {
-        try {
-            collection.document(id).update("observacoes", observations).await()
-        } catch (e: Exception) {
-            Log.e("DeliveryRepositoryImpl", "Error updating delivery observations: ${e.message}", e)
-            throw e
+        collection.document(id).update("observacoes", observations).await()
+    }
+
+    override suspend fun getUpcomingDeliveries(timestampLimit: Long): List<Delivery> {
+        // Mantido estático (útil para workers que correm em background e morrem logo a seguir)
+        val snapshot =
+            collection.whereLessThanOrEqualTo("dataHoraPlaneada", timestampLimit).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val dto = doc.toObject(DeliveryDto::class.java)
+            if (dto != null) DeliveryMapper.toDomain(doc.id, dto) else null
         }
     }
+
+    override suspend fun getPendingDeliveriesCount(userId: String?): Int {
+        return try {
+            var query = collection.whereEqualTo("estado", "AGENDADA")
+
+            if (userId != null) {
+                val beneficiaryRef = beneficiariesCollection.document(userId)
+                query = query.whereEqualTo("idBeneficiario", beneficiaryRef)
+            }
+
+            val snapshot = query.get().await()
+            snapshot.size()
+        } catch (e: Exception) {
+            Log.e("DeliveryRepo", "Erro ao contar entregas: ${e.message}")
+            0
+        }
+    }
+
 }

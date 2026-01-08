@@ -36,8 +36,15 @@ class ProductViewModel @Inject constructor(
     private val _selectedProduct = MutableStateFlow<Product?>(null)
     val selectedProduct = _selectedProduct.asStateFlow()
 
+    private val _lastCreatedProduct = MutableStateFlow<Product?>(null)
+    val lastCreatedProduct = _lastCreatedProduct.asStateFlow()
+
+    // Filtros de Pesquisa (Nome e Tipo)
     private val _searchQuery = MutableStateFlow("")
     private val _selectedType = MutableStateFlow("")
+
+    val searchQuery = _searchQuery.asStateFlow()
+    val selectedType = _selectedType.asStateFlow()
 
     val filteredProducts: StateFlow<List<Product>> = combine(
         _products,
@@ -45,12 +52,8 @@ class ProductViewModel @Inject constructor(
         _selectedType
     ) { list, query, type ->
         list.filter { product ->
-            val matchesQuery =
-                query.isEmpty() || product.name.contains(query, ignoreCase = true)
-
-            val matchesType =
-                type.isEmpty() || product.type.name.equals(type, ignoreCase = true)
-
+            val matchesQuery = query.isEmpty() || product.name.contains(query, ignoreCase = true)
+            val matchesType = type.isEmpty() || product.type.name.equals(type, ignoreCase = true)
             matchesQuery && matchesType
         }
     }.stateIn(
@@ -63,33 +66,57 @@ class ProductViewModel @Inject constructor(
         loadProducts()
     }
 
+    // Carregar produtos
     fun loadProducts() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _products.value = getProductsUseCase()
+                // Collect do Flow
+                getProductsUseCase().collect { productsList ->
+                    _products.value = productsList
+                    _isLoading.value = false
+                }
             } catch (e: Exception) {
                 _errorMessage.value = e.message
-            } finally {
                 _isLoading.value = false
             }
         }
     }
 
+    // Carregar Detalhe
+    fun loadProductById(id: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                getProductByIdUseCase(id).collect { product ->
+                    _selectedProduct.value = product
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = e.message
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // --- ESCRITA ---
+
     fun addProduct(product: Product, imageUri: Uri?) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val productWithId = product.copy(
-                    id = UUID.randomUUID().toString()
+
+                val productToSend = product.copy(
+                    id = product.id.ifBlank { UUID.randomUUID().toString() }
                 )
 
                 addProductUseCase(
-                    product = productWithId,
+                    product = productToSend,
                     imageUri = imageUri
                 )
 
-                loadProducts()
+                _lastCreatedProduct.value = productToSend
+
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao adicionar produto: ${e.message}"
             } finally {
@@ -98,16 +125,12 @@ class ProductViewModel @Inject constructor(
         }
     }
 
-    fun loadProductById(id: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                _selectedProduct.value = getProductByIdUseCase(id)
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
-        }
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
     }
+
+    fun onTypeSelected(type: String) {
+        _selectedType.value = type
+    }
+
 }
