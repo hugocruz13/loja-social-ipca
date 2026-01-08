@@ -2,7 +2,7 @@ package pt.ipca.lojasocial.presentation.state
 
 import android.net.Uri
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
-import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestType
 import pt.ipca.lojasocial.domain.models.StatusType
 
 data class AuthState(
@@ -54,7 +54,7 @@ data class AuthState(
     val birthDate: String = "",
 
     // Passo 2: Dados Escolares e Socioeconómicos
-    val requestCategory: RequestCategory? = null,
+    val requestCategory: RequestType? = null,
     val educationLevel: String = "",
     val dependents: Int = 0,
     val school: String = "",

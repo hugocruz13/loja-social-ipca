@@ -318,7 +318,7 @@ fun RequerimentoDetailScreen(
 
             AppExpandableCard(title = "Dados do Pedido", content = {
                 Column {
-                    InfoRow(label = "Tipo", value = data.type.name)
+                    InfoRow(label = "Tipo", value = data.type?.name ?: "ALL")
                 }
             })
 

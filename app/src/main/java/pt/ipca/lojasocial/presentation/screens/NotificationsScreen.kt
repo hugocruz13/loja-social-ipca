@@ -1,58 +1,33 @@
 package pt.ipca.lojasocial.presentation.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
-import pt.ipca.lojasocial.presentation.components.NotificationModel
+// Importa o teu componente de lista (deves atualizá-lo para aceitar o novo modelo)
 import pt.ipca.lojasocial.presentation.components.NotificationsList
+import pt.ipca.lojasocial.presentation.viewmodels.NotificationsViewModel
 
 @Composable
 fun NotificationsScreen(
     onBackClick: () -> Unit,
     navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: NotificationsViewModel = hiltViewModel()
 ) {
-    // 1. LISTA SIMULADA / TROCAR PELO BACKEND
-    val notifications = remember {
-        mutableStateListOf(
-            NotificationModel(
-                id = 1,
-                title = "Estado da entrega 123 alterado para 'Em Progresso'.",
-                timestamp = "5m atrás",
-                dateLabel = "HOJE",
-                icon = Icons.Filled.LocalShipping,
-                isUnread = true
-            ),
-            NotificationModel(
-                id = 2,
-                title = "Stock de 'Arroz' está baixo.",
-                timestamp = "10:30 AM",
-                dateLabel = "HOJE",
-                icon = Icons.Filled.Description,
-                isUnread = false
-            ),
-            NotificationModel(
-                id = 3,
-                title = "Definições alteradas.",
-                timestamp = "Yesterday",
-                dateLabel = "ONTEM",
-                icon = Icons.Filled.Settings,
-                isUnread = false
-            )
-        )
-    }
+    // 1. Obtém a lista atualizada em tempo real
+    val notifications by viewModel.notifications.collectAsState()
 
     Scaffold(
         topBar = {
@@ -64,25 +39,44 @@ fun NotificationsScreen(
         bottomBar = {
             AppBottomBar(
                 navItems = navItems,
-                currentRoute = "notification",
-                onItemSelected = { item ->
-                    onNavigate(item.route)
-                }
+                currentRoute = "notification", // Verifica se a rota é esta
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            NotificationsList(
-                notifications = notifications,
-                onNotificationClick = { clickedNotification ->
-                    val index = notifications.indexOfFirst { it.id == clickedNotification.id }
-                    if (index != -1 && notifications[index].isUnread) {
-                        notifications[index] = notifications[index].copy(isUnread = false)
+        Box(modifier = Modifier
+            .padding(paddingValues)
+            .fillMaxSize()) {
+
+            if (notifications.isEmpty()) {
+                // Estado Vazio
+                Text(
+                    text = "Não tens notificações novas.",
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            } else {
+                // Lista de Notificações
+                // ATENÇÃO: Vai ao ficheiro NotificationsList.kt e altera o tipo da lista para List<NotificationUiModel>
+                NotificationsList(
+                    notifications = notifications,
+                    onNotificationClick = { notification ->
+
+                        // 1. Marcar como lida
+                        if (notification.isUnread) {
+                            viewModel.markAsRead(notification.id)
+                        }
+
+                        // 2. Navegação Inteligente (Baseada no campo 'screen' do Firestore)
+                        if (!notification.screenDestination.isNullOrBlank()) {
+                            // Exemplo: se screen="entregas", navega para "entregas_screen"
+                            onNavigate(notification.screenDestination)
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
-

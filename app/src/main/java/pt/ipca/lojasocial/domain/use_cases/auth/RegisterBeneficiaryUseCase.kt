@@ -4,8 +4,6 @@ import android.net.Uri
 import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.Request
-import pt.ipca.lojasocial.domain.models.RequestCategory
-import pt.ipca.lojasocial.domain.models.RequestType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
@@ -74,8 +72,7 @@ class RegisterBeneficiaryUseCase @Inject constructor(
             beneficiaryId = newUserId,
             schoolYearId = "2024_2025",
             status = StatusType.ANALISE,
-
-            type = mapCategoryToType(state.requestCategory),
+            type = state.requestCategory,
 
             // Passamos o MAPA de documentos
             documents = uploadedDocs,
@@ -84,17 +81,6 @@ class RegisterBeneficiaryUseCase @Inject constructor(
         )
 
         requestRepository.addRequest(newRequest)
-    }
-
-    // --- Helpers ---
-
-    private fun mapCategoryToType(category: RequestCategory?): RequestType {
-        return when (category) {
-            RequestCategory.ALIMENTARES -> RequestType.FOOD
-            RequestCategory.HIGIENE -> RequestType.HYGIENE
-            RequestCategory.LIMPEZA -> RequestType.CLEANING
-            else -> RequestType.ALL
-        }
     }
 
     private fun convertDateToSeconds(dateString: String): Int {

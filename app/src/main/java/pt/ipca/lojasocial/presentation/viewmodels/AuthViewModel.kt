@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.EmailRequest
-import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
@@ -278,7 +278,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun updateStep2(
-        category: RequestCategory?,
+        category: RequestType?,
         education: String,
         dependents: Int,
         school: String,
