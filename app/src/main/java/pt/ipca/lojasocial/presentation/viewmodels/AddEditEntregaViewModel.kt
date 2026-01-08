@@ -151,7 +151,7 @@ class AddEditEntregaViewModel @Inject constructor(
             )
         }
     }
-    
+
     fun onBeneficiaryQueryChange(query: String) {
         _uiState.update { it.copy(beneficiaryQuery = query) }
         if (query.length > 2) {

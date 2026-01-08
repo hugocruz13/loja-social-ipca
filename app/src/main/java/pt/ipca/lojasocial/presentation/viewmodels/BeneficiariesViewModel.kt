@@ -55,7 +55,8 @@ class BeneficiariesViewModel @Inject constructor(
             val matchesQuery = query.isEmpty() || ben.name.contains(query, ignoreCase = true) ||
                     ben.email.contains(query, ignoreCase = true)
 
-            val matchesStatus = status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
+            val matchesStatus =
+                status.isEmpty() || ben.status.name.equals(status, ignoreCase = true)
 
             matchesQuery && matchesStatus
         }

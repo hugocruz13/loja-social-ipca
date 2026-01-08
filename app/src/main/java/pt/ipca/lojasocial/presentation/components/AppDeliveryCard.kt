@@ -116,7 +116,9 @@ fun AppDeliveryDetailCard(
                 if (showEditButton) {
                     IconButton(
                         onClick = onEditClick,
-                        modifier = Modifier.background(Color(0xFFF5F5F5), CircleShape).size(32.dp)
+                        modifier = Modifier
+                            .background(Color(0xFFF5F5F5), CircleShape)
+                            .size(32.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
