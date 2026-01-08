@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.delivery
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import javax.inject.Inject
@@ -27,7 +28,7 @@ class GetDeliveriesByBeneficiaryUseCase @Inject constructor(
      * @param beneficiaryId O identificador único do beneficiário.
      * @return Lista de [Delivery] (ordenada conforme a implementação do repositório, geralmente cronologicamente).
      */
-    suspend operator fun invoke(beneficiaryId: String): List<Delivery> {
+    operator fun invoke(beneficiaryId: String): Flow<List<Delivery>> {
         return repository.getDeliveriesByBeneficiary(beneficiaryId)
     }
 }

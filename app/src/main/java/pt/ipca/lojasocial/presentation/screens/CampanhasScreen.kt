@@ -29,6 +29,7 @@ import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 
+// O Modelo tem de ter a propriedade imageUrl
 data class CampanhaModel(
     val id: String,
     val nome: String,
@@ -38,7 +39,7 @@ data class CampanhaModel(
     val startDate: Long = 0L,
     val endDate: Long = 0L,
     val type: pt.ipca.lojasocial.domain.models.CampaignType = pt.ipca.lojasocial.domain.models.CampaignType.INTERNAL,
-    val imageUrl: String? = null
+    val imageUrl: String? = null // <--- IMPORTANTE: Este campo tem de existir
 )
 
 @Composable
@@ -61,8 +62,6 @@ fun CampanhasScreen(
         StatusType.COMPLETA
     )
 
-
-
     Scaffold(
         topBar = {
             AppTopBar(
@@ -74,9 +73,7 @@ fun CampanhasScreen(
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "",
-                onItemSelected = { item ->
-                    onNavigate(item.route)
-                }
+                onItemSelected = { item -> onNavigate(item.route) }
             )
         },
         floatingActionButton = {
@@ -127,7 +124,13 @@ fun CampanhasScreen(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                // Adicionei bottom padding para o FAB e a BottomBar não taparem o último item
+                contentPadding = PaddingValues(
+                    top = 8.dp,
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = 80.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(campanhas) { item ->
@@ -136,6 +139,7 @@ fun CampanhasScreen(
                         descricao = item.desc,
                         status = item.status,
                         campaignIcon = item.icon,
+                        imageUrl = item.imageUrl,
                         onClick = { onCampanhaClick(item.id) }
                     )
                 }
@@ -143,4 +147,3 @@ fun CampanhasScreen(
         }
     }
 }
-

@@ -6,9 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.use_cases.request.GetRequestsWithDetailsUseCase
 import pt.ipca.lojasocial.presentation.models.RequestUiModel
@@ -16,36 +16,40 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RequerimentosViewModel @Inject constructor(
-    private val getRequestsWithDetailsUseCase: GetRequestsWithDetailsUseCase
+    getRequestsWithDetailsUseCase: GetRequestsWithDetailsUseCase
 ) : ViewModel() {
 
-    private val _allRequests = MutableStateFlow<List<RequestUiModel>>(emptyList())
-
-    // Estado da Pesquisa (Texto)
+    // 1. Estados de UI (Pesquisa e Filtros)
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery
+    val searchQuery = _searchQuery.asStateFlow()
 
-    // Estado do Filtro (Enum StatusType ou null se estiver limpo)
     private val _selectedStatusFilter = MutableStateFlow<StatusType?>(null)
-    val selectedStatusFilter: StateFlow<StatusType?> = _selectedStatusFilter
+    val selectedStatusFilter = _selectedStatusFilter.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
 
-    // --- LÓGICA DE FILTRAGEM COMBINADA ---
+    // 2. O FLUXO DE DADOS (Aqui está a correção)
+    // Em vez de usares _allRequests, usas o UseCase diretamente aqui.
+    private val requestsFlow = getRequestsWithDetailsUseCase("2024_2025")
+
+    // 3. COMBINAR TUDO (DB + Filtros)
     val filteredRequests: StateFlow<List<RequestUiModel>> = combine(
-        _allRequests,
+        requestsFlow, // <--- O Flow entra aqui diretamente
         _searchQuery,
         _selectedStatusFilter
-    ) { list, query, statusFilter ->
-        var result = list
+    ) { requests, query, statusFilter ->
 
-        // 1. Filtrar por Estado (Dropdown)
+        // Assim que recebemos dados, desligamos o loading
+        _isLoading.value = false
+
+        var result = requests
+
+        // Aplicar Filtros
         if (statusFilter != null) {
             result = result.filter { it.status == statusFilter }
         }
 
-        // 2. Filtrar por Texto (Barra de Pesquisa)
         if (query.isNotBlank()) {
             result = result.filter {
                 it.beneficiaryName.contains(query, ignoreCase = true)
@@ -53,29 +57,17 @@ class RequerimentosViewModel @Inject constructor(
         }
 
         result
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    // Carrega dados iniciais
-    fun loadRequests() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                // Aqui defines o ano letivo (pode ser dinâmico futuramente)
-                val result = getRequestsWithDetailsUseCase("2024_2025")
-                _allRequests.value = result
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
+    // Funções de interação
     fun onSearchQueryChange(newQuery: String) {
         _searchQuery.value = newQuery
     }
 
-    // Chamado pelo Dropdown para mudar o estado
     fun onFilterChange(status: StatusType?) {
         _selectedStatusFilter.value = status
     }

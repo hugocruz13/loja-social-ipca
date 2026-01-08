@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import pt.ipca.lojasocial.domain.models.RequestCategory
-import pt.ipca.lojasocial.domain.models.educationLevels
+import pt.ipca.lojasocial.domain.models.EducationLevels
+import pt.ipca.lojasocial.domain.models.RequestType
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppDropdownField
 import pt.ipca.lojasocial.presentation.components.AppProgressBar
@@ -41,7 +41,7 @@ fun RegisterStep2Screen(
 
     // Helper function local
     fun updateStep2Fields(
-        category: RequestCategory? = state.requestCategory,
+        category: RequestType? = state.requestCategory,
         education: String = state.educationLevel,
         dependents: Int = state.dependents,
         school: String = state.school,
@@ -85,29 +85,29 @@ fun RegisterStep2Screen(
                 Column(modifier = Modifier.padding(bottom = 24.dp)) {
                     AppRadioCardItem(
                         label = "Produtos Alimentares",
-                        isSelected = state.requestCategory == RequestCategory.ALIMENTARES,
-                        onClick = { updateStep2Fields(category = RequestCategory.ALIMENTARES) }
+                        isSelected = state.requestCategory == RequestType.FOOD,
+                        onClick = { updateStep2Fields(category = RequestType.FOOD) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Produtos de Higiene Pessoal",
-                        isSelected = state.requestCategory == RequestCategory.HIGIENE,
-                        onClick = { updateStep2Fields(category = RequestCategory.HIGIENE) }
+                        isSelected = state.requestCategory == RequestType.HYGIENE,
+                        onClick = { updateStep2Fields(category = RequestType.HYGIENE) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Produtos de Limpeza",
-                        isSelected = state.requestCategory == RequestCategory.LIMPEZA,
-                        onClick = { updateStep2Fields(category = RequestCategory.LIMPEZA) }
+                        isSelected = state.requestCategory == RequestType.CLEANING,
+                        onClick = { updateStep2Fields(category = RequestType.CLEANING) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     AppRadioCardItem(
                         label = "Todos",
-                        isSelected = state.requestCategory == RequestCategory.TODOS,
-                        onClick = { updateStep2Fields(category = RequestCategory.TODOS) }
+                        isSelected = state.requestCategory == RequestType.ALL,
+                        onClick = { updateStep2Fields(category = RequestType.ALL) }
                     )
                 }
 
@@ -130,7 +130,7 @@ fun RegisterStep2Screen(
                 AppDropdownField(
                     label = "Nível de Ensino",
                     selectedValue = state.educationLevel,
-                    options = educationLevels,
+                    options = EducationLevels.entries.map { it.name },
                     onOptionSelected = { novoNivel -> updateStep2Fields(education = novoNivel) },
                     placeholder = "Selecione nível de ensino",
                     modifier = Modifier

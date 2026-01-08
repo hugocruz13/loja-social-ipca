@@ -14,6 +14,7 @@ import pt.ipca.lojasocial.data.repository.CampaignRepositoryImpl
 import pt.ipca.lojasocial.data.repository.CommunicationRepositoryImpl
 import pt.ipca.lojasocial.data.repository.DeliveryRepositoryImpl
 import pt.ipca.lojasocial.data.repository.LogRepositoryImpl
+import pt.ipca.lojasocial.data.repository.NotificationRepositoryImpl
 import pt.ipca.lojasocial.data.repository.ProductRepositoryImpl
 import pt.ipca.lojasocial.data.repository.RequestRepositoryImpl
 import pt.ipca.lojasocial.data.repository.SchoolYearRepositoryImpl
@@ -26,6 +27,7 @@ import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import pt.ipca.lojasocial.domain.repository.CommunicationRepository
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import pt.ipca.lojasocial.domain.repository.LogRepository
+import pt.ipca.lojasocial.domain.repository.NotificationRepository
 import pt.ipca.lojasocial.domain.repository.ProductRepository
 import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
@@ -150,6 +152,14 @@ object AppModule {
     @Singleton
     fun provideStorageRepository(storage: FirebaseStorage): StorageRepository {
         return StorageRepositoryImpl(storage)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNotificationRepository(
+        firestore: FirebaseFirestore
+    ): NotificationRepository {
+        return NotificationRepositoryImpl(firestore)
     }
 
 }

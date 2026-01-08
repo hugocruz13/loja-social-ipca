@@ -27,9 +27,6 @@ import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -214,22 +211,6 @@ fun DashboardHeader(
                     text = userName,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color(0xFF1E293B)
-                )
-            }
-        }
-
-        // Ícone de Notificação com Badge
-        Box(modifier = Modifier.clickable { onNotificationClick() }) {
-            BadgedBox(
-                badge = {
-                    Badge(containerColor = Color(0xFFEF4444)) { Text("2") }
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Notifications,
-                    contentDescription = "Notificações",
-                    tint = Color(0xFF1E293B),
-                    modifier = Modifier.size(28.dp)
                 )
             }
         }

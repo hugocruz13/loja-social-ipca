@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.delivery
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import javax.inject.Inject
@@ -24,7 +25,7 @@ class GetDeliveryByIdUseCase @Inject constructor(
      * @param id O identificador único da entrega.
      * @return O objeto [Delivery] se encontrado, ou `null` caso contrário.
      */
-    suspend operator fun invoke(id: String): Delivery? {
+    operator fun invoke(id: String): Flow<Delivery?> {
         return repository.getDeliveryById(id)
     }
 }

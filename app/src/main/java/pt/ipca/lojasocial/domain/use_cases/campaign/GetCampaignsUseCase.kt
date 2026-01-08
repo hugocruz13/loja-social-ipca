@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.campaign
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import javax.inject.Inject
@@ -23,7 +24,7 @@ class GetCampaignsUseCase @Inject constructor(
      *
      * @return Lista não filtrada de [Campaign] (internas e externas).
      */
-    suspend operator fun invoke(): List<Campaign> {
+    operator fun invoke(): Flow<List<Campaign>> {
         return repository.getCampaigns()
     }
 }

@@ -26,7 +26,6 @@ import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
-import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
@@ -52,6 +51,7 @@ import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.EntregasViewModel
+import pt.ipca.lojasocial.presentation.viewmodels.NotificationsViewModel
 
 sealed class AppScreen(val route: String) {
     // ... (Mantém as tuas rotas iguais) ...
@@ -91,6 +91,16 @@ fun AppNavHost(
 ) {
     val navController = rememberNavController()
 
+    // 1. Instanciar o ViewModel das Notificações aqui no topo
+    val notificationsViewModel: NotificationsViewModel = hiltViewModel()
+
+    // 2. Observar as notificações em tempo real
+    val notifications by notificationsViewModel.notifications.collectAsState()
+
+    // 3. Calcular o número de não lidas
+    val unreadCount = notifications.count { it.isUnread }
+
+    // 4. Transformar a lista em algo dinâmico (recalculada sempre que unreadCount muda)
     val bottomNavItems = listOf(
         BottomNavItem(
             route = AppScreen.Dashboard.route,
@@ -102,7 +112,8 @@ fun AppNavHost(
             route = AppScreen.Notification.route,
             selectedIcon = Icons.Filled.Notifications,
             unselectedIcon = Icons.Outlined.Notifications,
-            label = "Alertas"
+            label = "Alertas",
+            badgeCount = unreadCount // <--- AQUI PASSA O NÚMERO!
         ),
         BottomNavItem(
             route = AppScreen.Profile.route,
@@ -227,7 +238,8 @@ fun AppNavHost(
             NotificationsScreen(
                 onBackClick = { navController.popBackStack() },
                 navItems = bottomNavItems,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                viewModel = notificationsViewModel
             )
         }
 
@@ -283,6 +295,7 @@ fun AppNavHost(
                 observations = state.requestObservations,
                 documents = state.requestDocuments,
                 onResubmitDoc = { docKey, uri -> viewModel.resubmitDocument(docKey, uri) },
+                uploadingDocKey = state.uploadingDocKey,
                 onBackClick = {
                     viewModel.logout()
                     navController.navigate(AppScreen.Login.route) {
@@ -426,9 +439,6 @@ fun AppNavHost(
             )
         }
 
-        composable("add_product_type") {
-            AddProductTypeScreen(onBackClick = { navController.popBackStack() })
-        }
 
         // =====================================================================
         // ENTREGAS

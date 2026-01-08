@@ -45,9 +45,12 @@ class EntregasViewModel @Inject constructor(
     private val _pendingCount = MutableStateFlow(0)
     val pendingCount = _pendingCount.asStateFlow()
 
+    // Lógica de Filtro
     val deliveries: StateFlow<List<DeliveryUiModel>> =
         combine(_allDeliveries, _searchQuery, _selectedFilter) { deliveries, query, filter ->
-            val filteredList = if (filter == "All") {
+
+            // 1. Filtrar por Estado
+            val filteredByStatus = if (filter == "All") {
                 deliveries
             } else {
                 val statusToFilter = when (filter) {
@@ -56,18 +59,20 @@ class EntregasViewModel @Inject constructor(
                     "Cancelada" -> DeliveryStatus.CANCELLED
                     else -> null
                 }
-                deliveries.filter { it.delivery.status == statusToFilter }
+                if (statusToFilter != null) {
+                    deliveries.filter { it.delivery.status == statusToFilter }
+                } else deliveries
             }
 
+            // 2. Filtrar por Texto
             if (query.isBlank()) {
-                filteredList
+                filteredByStatus
             } else {
                 val lowerCaseQuery = query.lowercase(Locale.getDefault())
-                filteredList.filter { uiModel ->
-                    val formattedDate = SimpleDateFormat(
-                        "dd MMM yyyy",
-                        Locale.getDefault()
-                    ).format(Date(uiModel.delivery.scheduledDate))
+                filteredByStatus.filter { uiModel ->
+                    val formattedDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        .format(Date(uiModel.delivery.scheduledDate))
+
                     uiModel.delivery.id.contains(lowerCaseQuery, ignoreCase = true) ||
                             uiModel.beneficiaryName.contains(lowerCaseQuery, ignoreCase = true) ||
                             formattedDate.contains(lowerCaseQuery, ignoreCase = true) ||
@@ -79,7 +84,6 @@ class EntregasViewModel @Inject constructor(
             kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
             emptyList()
         )
-
 
     init {
         loadDeliveries()
@@ -113,6 +117,7 @@ class EntregasViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
+
             try {
                 val currentUser = getCurrentUserUseCase()
                 if (currentUser == null) {
@@ -121,28 +126,38 @@ class EntregasViewModel @Inject constructor(
                     return@launch
                 }
 
-                val rawDeliveries = when (currentUser.role) {
+                // Decide qual o Flow a escutar
+                val flowToCollect = when (currentUser.role) {
                     UserRole.STAFF -> deliveryRepository.getDeliveries()
                     UserRole.BENEFICIARY -> deliveryRepository.getDeliveriesByBeneficiary(
                         currentUser.id
                     )
                 }
 
-                // Ordenação: Data mais próxima primeiro
-                val sortedDeliveries = rawDeliveries.sortedBy { it.scheduledDate }
+                // "Ligar o rádio"
+                flowToCollect.collect { domainDeliveries ->
 
-                val uiModels = sortedDeliveries.map { delivery ->
-                    val beneficiary =
-                        beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
-                    DeliveryUiModel(
-                        delivery = delivery,
-                        beneficiaryName = beneficiary?.name ?: "Beneficiário Desconhecido"
-                    )
+                    // Ordenação: Data mais próxima primeiro
+                    val sortedDeliveries = domainDeliveries.sortedBy { it.scheduledDate }
+
+                    // Mapeamento para UI Model (Buscar nomes dos beneficiários)
+                    val uiModels = sortedDeliveries.map { delivery ->
+
+                        val beneficiary =
+                            beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+
+                        DeliveryUiModel(
+                            delivery = delivery,
+                            beneficiaryName = beneficiary?.name ?: "A carregar..."
+                        )
+                    }
+
+                    _allDeliveries.value = uiModels
+                    _isLoading.value = false
                 }
-                _allDeliveries.value = uiModels
+
             } catch (e: Exception) {
-                _error.value = "Falha ao carregar as entregas: ${e.message}"
-            } finally {
+                _error.value = "Falha ao ligar stream de entregas: ${e.message}"
                 _isLoading.value = false
             }
         }
