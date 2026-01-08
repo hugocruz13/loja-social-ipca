@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.use_cases.delivery
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.repository.DeliveryRepository
 import javax.inject.Inject
@@ -22,7 +23,7 @@ class GetDeliveriesUseCase @Inject constructor(
      *
      * @return Lista de [Delivery] (sem filtros aplicados, contendo agendadas, realizadas, canceladas, etc.).
      */
-    suspend operator fun invoke(): List<Delivery> {
+    operator fun invoke(): Flow<List<Delivery>> {
         return repository.getDeliveries()
     }
 }

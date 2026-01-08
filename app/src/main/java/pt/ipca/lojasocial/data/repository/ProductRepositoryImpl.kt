@@ -1,6 +1,11 @@
 package pt.ipca.lojasocial.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import pt.ipca.lojasocial.data.mapper.toDomain
 import pt.ipca.lojasocial.data.mapper.toDto
@@ -16,7 +21,9 @@ class ProductRepositoryImpl @Inject constructor(
 ) : ProductRepository {
 
     private val collection = firestore.collection("bens")
+    private val TAG = "ProductRepo"
 
+    // Função auxiliar para gerar IDs
     private fun generateProductId(name: String): String {
         val normalized = java.text.Normalizer
             .normalize(name.trim(), java.text.Normalizer.Form.NFD)
@@ -28,50 +35,66 @@ class ProductRepositoryImpl @Inject constructor(
         return "bens_$normalized"
     }
 
+    //Obter produtos
+    override fun getProducts(): Flow<List<Product>> = callbackFlow {
+        val listenerRegistration: ListenerRegistration = collection
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    Log.e(TAG, "Erro ao escutar produtos: ${exception.message}")
+                    close(exception)
+                    return@addSnapshotListener
+                }
 
-    /**
-     * Obtém todos os produtos.
-     * Mapeia cada documento para o objeto de domínio Product.
-     */
-    override suspend fun getProducts(): List<Product> {
-        return try {
-            val snapshot = collection.get().await()
-            snapshot.documents.mapNotNull { doc ->
-                doc.toObject(ProductDto::class.java)?.toDomain(doc.id)
+                if (snapshot != null) {
+                    val products = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            doc.toObject(ProductDto::class.java)?.toDomain(doc.id)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    trySend(products)
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
-        }
+
+        awaitClose { listenerRegistration.remove() }
     }
 
-    /**
-     * Procura um produto específico pelo ID (ex: código de barras ou UUID).
-     */
-    override suspend fun getProductById(id: String): Product? {
-        return try {
-            val doc = collection.document(id).get().await()
-            if (doc.exists()) {
-                doc.toObject(ProductDto::class.java)?.toDomain(doc.id)
-            } else {
-                null
+    //Obter produto por ID
+    override fun getProductById(id: String): Flow<Product?> = callbackFlow {
+        val listenerRegistration = collection.document(id)
+            .addSnapshotListener { snapshot, exception ->
+                if (exception != null) {
+                    close(exception)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    try {
+                        val product =
+                            snapshot.toObject(ProductDto::class.java)?.toDomain(snapshot.id)
+                        trySend(product)
+                    } catch (e: Exception) {
+                        trySend(null)
+                    }
+                } else {
+                    trySend(null)
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+
+        awaitClose { listenerRegistration.remove() }
     }
 
-    /**
-     * Adiciona um produto ao catálogo.
-     * O ID do documento é gerado automaticamente baseado no nome do produto.
-     */
+    // --- ESCRITA ---
     override suspend fun addProduct(product: Product) {
         try {
             val dto = product.toDto()
-            val documentId = generateProductId(product.name)
-            collection.document(documentId).set(dto).await()
 
+            val documentId = if (product.id.isBlank() || product.id.length > 30)
+                generateProductId(product.name)
+            else product.id
+
+            collection.document(documentId).set(dto).await()
         } catch (e: Exception) {
             throw e
         }

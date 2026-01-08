@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,13 +30,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 data class BottomNavItem(
     val route: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
-    val label: String
+    val label: String,
+    val badgeCount: Int = 0 // Agora suporta contagem de notificações
 )
 
 @Composable
@@ -44,8 +50,8 @@ fun AppBottomBar(
     modifier: Modifier = Modifier
 ) {
     val brandColor = Color(0XFF00713C)
+    val badgeColor = Color.Red
 
-    // Configurações de Dimensão
     val barHeight = 64.dp
     val popUpHeight = 16.dp
     val totalHeight = barHeight + popUpHeight
@@ -53,12 +59,11 @@ fun AppBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            // ALTERAÇÃO AQUI: Adicionei padding no fundo para subir a barra
             .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
             .height(totalHeight),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // CAMADA 1: Fundo Branco
+        // CAMADA 1: Fundo Branco (Capsule Shape)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -70,9 +75,7 @@ fun AppBottomBar(
                 ),
             color = Color.White,
             shape = RoundedCornerShape(50)
-        ) {
-            // Vazio
-        }
+        ) {}
 
         // CAMADA 2: Ícones
         Row(
@@ -85,8 +88,6 @@ fun AppBottomBar(
         ) {
             navItems.forEach { item ->
                 val isSelected = currentRoute == item.route
-
-                // Animações
                 val animSpec = tween<androidx.compose.ui.unit.Dp>(300, easing = FastOutSlowInEasing)
 
                 val offsetY by animateDpAsState(
@@ -104,14 +105,12 @@ fun AppBottomBar(
                     animSpec,
                     label = "icon"
                 )
-
                 val iconColor by animateColorAsState(
                     targetValue = if (isSelected) brandColor else Color(0xFF94A3B8),
                     animationSpec = tween(300),
                     label = "color"
                 )
 
-                // Item Individual
                 Box(
                     modifier = Modifier
                         .size(60.dp)
@@ -121,12 +120,11 @@ fun AppBottomBar(
                         ) { onItemSelected(item) },
                     contentAlignment = Alignment.Center
                 ) {
-                    // Grupo que sobe (Bola + Ícone)
                     Box(
                         modifier = Modifier.offset(y = offsetY),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Bola Verde
+                        // Background circular suave quando selecionado
                         Box(
                             modifier = Modifier
                                 .size(bgSize)
@@ -136,13 +134,37 @@ fun AppBottomBar(
                                 )
                         )
 
-                        // Ícone
-                        Icon(
-                            imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                            contentDescription = item.label,
-                            tint = iconColor,
-                            modifier = Modifier.size(iconSize)
-                        )
+                        // Content (Ícone + Badge)
+                        Box {
+                            Icon(
+                                imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.label,
+                                tint = iconColor,
+                                modifier = Modifier.size(iconSize)
+                            )
+
+                            // --- DESENHO DO BADGE ---
+                            if (item.badgeCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        // Offset para posicionar a bolinha no "ombro" do ícone
+                                        .offset(x = 4.dp, y = (-2).dp)
+                                        .sizeIn(minWidth = 16.dp, minHeight = 16.dp)
+                                        .background(badgeColor, CircleShape)
+                                        .padding(horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (item.badgeCount > 99) "99+" else item.badgeCount.toString(),
+                                        color = Color.White,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

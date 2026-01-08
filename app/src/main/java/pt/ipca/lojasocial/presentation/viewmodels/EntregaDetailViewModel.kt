@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull // Importante para ações one-shot
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
@@ -53,63 +54,81 @@ class EntregaDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(EntregaDetailUiState())
     val uiState: StateFlow<EntregaDetailUiState> = _uiState.asStateFlow()
 
+    // ✅ REALTIME: Mantém o ecrã atualizado automaticamente
     fun loadDelivery(deliveryId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val delivery = deliveryRepository.getDeliveryById(deliveryId)
-                if (delivery == null) {
-                    _uiState.update { it.copy(isLoading = false, error = "Entrega não encontrada") }
-                    return@launch
-                }
+                // MUDANÇA: Usamos .collect para ouvir mudanças em tempo real
+                deliveryRepository.getDeliveryById(deliveryId).collect { delivery ->
 
-                val beneficiary = beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
+                    if (delivery == null) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Entrega não encontrada ou removida"
+                            )
+                        }
+                        return@collect
+                    }
 
-                val productDetails = delivery.items.map { (productId, quantity) ->
-                    val product = productRepository.getProductById(productId)
-                    DeliveryProductDetailUi(
-                        name = product?.name ?: "Produto Desconhecido",
-                        quantity = quantity,
-                        photoUrl = product?.photoUrl
-                    )
-                }
+                    // Carregar dados relacionados (Beneficiário e Produtos)
+                    // Nota: O Beneficiário é carregado de forma 'suspend' (one-shot) a cada update da entrega
+                    val beneficiary =
+                        beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId)
 
-                val dateObj = Date(delivery.scheduledDate)
-                val dateFormat = SimpleDateFormat("dd 'de' MMMM, yyyy", Locale("pt", "PT"))
-                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                    val productDetails = delivery.items.map { (productId, quantity) ->
+                        // Como getProductById devolve Flow, usamos firstOrNull() para pegar o nome atual
+                        val product = productRepository.getProductById(productId).firstOrNull()
 
-                val uiStatus = when (delivery.status) {
-                    DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
-                    DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
-                    DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
-                    DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
-                    DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE
-                }
+                        DeliveryProductDetailUi(
+                            name = product?.name ?: "Produto Desconhecido ($productId)",
+                            quantity = quantity,
+                            photoUrl = product?.photoUrl
+                        )
+                    }
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        beneficiaryName = beneficiary?.name ?: "Desconhecido",
-                        beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.id ?: "N/A"}",
-                        date = dateFormat.format(dateObj),
-                        time = timeFormat.format(dateObj),
-                        status = uiStatus,
-                        items = productDetails
-                    )
+                    val dateObj = Date(delivery.scheduledDate)
+                    val dateFormat = SimpleDateFormat("dd 'de' MMMM, yyyy", Locale("pt", "PT"))
+                    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+                    val uiStatus = when (delivery.status) {
+                        DeliveryStatus.DELIVERED -> StatusType.ENTREGUE
+                        DeliveryStatus.SCHEDULED -> StatusType.PENDENTE
+                        DeliveryStatus.CANCELLED -> StatusType.NOT_ENTREGUE
+                        DeliveryStatus.REJECTED -> StatusType.NOT_ENTREGUE
+                        DeliveryStatus.UNDER_ANALYSIS -> StatusType.ANALISE
+                    }
+
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            beneficiaryName = beneficiary?.name ?: "Desconhecido",
+                            beneficiaryIdDisplay = "NIF/CC: ${beneficiary?.id ?: "N/A"}",
+                            date = dateFormat.format(dateObj),
+                            time = timeFormat.format(dateObj),
+                            status = uiStatus,
+                            items = productDetails
+                        )
+                    }
                 }
 
             } catch (e: Exception) {
+                Log.e("EntregaDetailVM", "Erro ao carregar entrega", e)
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
+    // ✅ ONE-SHOT: Ações pontuais usam .firstOrNull()
     fun updateStatus(deliveryId: String, delivered: Boolean) {
         viewModelScope.launch {
             try {
-                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                // MUDANÇA: Usamos firstOrNull() porque queremos o objeto AGORA para processar lógica
+                val delivery = deliveryRepository.getDeliveryById(deliveryId).firstOrNull()
                 val beneficiary =
                     if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
+
                 if (delivered) {
                     confirmDeliveryUseCase(deliveryId)
 
@@ -171,7 +190,7 @@ class EntregaDetailViewModel @Inject constructor(
                         )
                     }
                 }
-                loadDelivery(deliveryId)
+                // Não precisamos chamar loadDelivery() porque o .collect já está ativo e vai apanhar a mudança!
             } catch (e: Exception) {
                 Log.e("EntregaDetailVM", "Erro ao atualizar estado: ${e.message}", e)
             }
@@ -184,7 +203,8 @@ class EntregaDetailViewModel @Inject constructor(
                 // 1. Update status to SCHEDULED
                 deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.SCHEDULED)
 
-                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                // MUDANÇA: Usamos firstOrNull() para obter dados para notificação
+                val delivery = deliveryRepository.getDeliveryById(deliveryId).firstOrNull()
                 val beneficiary =
                     if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
 
@@ -215,9 +235,6 @@ class EntregaDetailViewModel @Inject constructor(
                         )
                     )
                 }
-
-                // 3. Reload
-                loadDelivery(deliveryId)
             } catch (e: Exception) {
                 Log.e("EntregaDetailVM", "Error approving delivery", e)
             }
@@ -230,7 +247,8 @@ class EntregaDetailViewModel @Inject constructor(
                 // 1. Update status to REJECTED
                 deliveryRepository.updateDeliveryStatus(deliveryId, DeliveryStatus.REJECTED)
 
-                val delivery = deliveryRepository.getDeliveryById(deliveryId)
+                // MUDANÇA: Usamos firstOrNull()
+                val delivery = deliveryRepository.getDeliveryById(deliveryId).firstOrNull()
                 val beneficiary =
                     if (delivery != null) beneficiaryRepository.getBeneficiaryById(delivery.beneficiaryId) else null
 
@@ -261,9 +279,6 @@ class EntregaDetailViewModel @Inject constructor(
                         )
                     )
                 }
-
-                // 3. Reload
-                loadDelivery(deliveryId)
             } catch (e: Exception) {
                 Log.e("EntregaDetailVM", "Error rejecting delivery", e)
             }

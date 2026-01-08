@@ -12,6 +12,6 @@ data class RequestDetailUiModel(
     val phone: String,
     val submissionDate: String,
     val status: StatusType,
-    val type: RequestType,
+    val type: RequestType?,
     val documents: Map<String, String?> = emptyMap()
 )

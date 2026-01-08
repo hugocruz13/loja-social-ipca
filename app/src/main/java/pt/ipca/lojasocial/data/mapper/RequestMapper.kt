@@ -35,7 +35,7 @@ fun Request.toDto(): RequestDto {
         schoolYearId = this.schoolYearId,
         submissionDate = this.submissionDate,
         status = this.status.name,
-        type = this.type.name,
+        type = this.type?.name ?: "ALL",
         documentUrls = this.documents,
         observations = this.observations
     )

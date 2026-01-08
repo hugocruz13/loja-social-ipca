@@ -5,14 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.BeneficiaryStatus
 import pt.ipca.lojasocial.domain.models.EmailRequest
-import pt.ipca.lojasocial.domain.models.RequestCategory
+import pt.ipca.lojasocial.domain.models.RequestType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.repository.AuthRepository
 import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
@@ -28,7 +30,7 @@ class AuthViewModel @Inject constructor(
     private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase,
     private val authRepository: AuthRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
-    private val requestRepository: RequestRepository,
+    private val requestRepository: RequestRepository, // O repositório que agora devolve Flow
     private val storageRepository: StorageRepository,
     private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
@@ -36,7 +38,9 @@ class AuthViewModel @Inject constructor(
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    // --- INIT: Verificar se já existe user logado ao abrir a app ---
+    // Variável para controlar o "listener" do Firestore e evitar duplicados
+    private var requestsJob: Job? = null
+
     init {
         checkAuthStatus()
     }
@@ -45,49 +49,38 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             val currentUser = authRepository.getCurrentUser()
             if (currentUser != null) {
-                // 1. App abriu e já havia login: Atualiza Token
                 updateFcmToken(currentUser.id)
-
                 _state.update { it.copy(userId = currentUser.id) }
+
+                // Carrega perfil e inicia a escuta em tempo real
                 loadUserProfile(currentUser.id)
+
                 _state.update { it.copy(isLoggedIn = true) }
             }
         }
     }
 
-    // Função centralizada para guardar o token
     private fun updateFcmToken(userId: String) {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
             viewModelScope.launch {
-                // O repositório trata de guardar na coleção certa (Beneficiários ou Colaboradores)
                 communicationRepository.saveFcmToken(userId, token)
             }
         }
     }
 
     // ==========================================================
-    // --- LÓGICA DE LOGIN & CARREGAMENTO DE PERFIL ---
+    // --- LOGIN & CARREGAMENTO DE PERFIL (ALTERADO PARA TEMPO REAL) ---
     // ==========================================================
 
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
-
             val result = authRepository.login(email, pass)
 
             result.onSuccess { user ->
-                // 2. Login Manual efetuado: Atualiza Token
                 updateFcmToken(user.id)
-
-                loadUserProfile(user.id)
-
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isLoggedIn = true,
-                        userId = user.id
-                    )
-                }
+                loadUserProfile(user.id) // Inicia a escuta
+                _state.update { it.copy(isLoading = false, isLoggedIn = true, userId = user.id) }
             }.onFailure { error ->
                 _state.update {
                     it.copy(
@@ -99,6 +92,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Esta função agora faz duas coisas:
+     * 1. Carrega dados estáticos do Beneficiário (Nome, email, etc.)
+     * 2. Inicia uma sub-coroutine (Job) para ficar à escuta das mudanças nos Requerimentos.
+     */
     private suspend fun loadUserProfile(userId: String) {
         try {
             val role = authRepository.getUserRole(userId)
@@ -112,9 +110,8 @@ class AuthViewModel @Inject constructor(
                     )
                 }
             } else if (role == "beneficiario") {
+                // 1. Carregar Dados Estáticos (Uma vez só)
                 val beneficiary = beneficiaryRepository.getBeneficiaryById(userId)
-                val requests = requestRepository.getRequestsByBeneficiary(userId)
-                val latestRequest = requests.maxByOrNull { it.submissionDate }
 
                 _state.update {
                     it.copy(
@@ -122,11 +119,30 @@ class AuthViewModel @Inject constructor(
                         fullName = beneficiary?.name ?: "Sem Nome",
                         studentNumber = beneficiary?.id ?: "",
                         email = beneficiary?.email ?: "",
-                        beneficiaryStatus = beneficiary?.status ?: BeneficiaryStatus.ANALISE,
-                        requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
-                        requestObservations = latestRequest?.observations ?: "",
-                        requestDocuments = latestRequest?.documents ?: emptyMap()
+                        beneficiaryStatus = beneficiary?.status ?: BeneficiaryStatus.ANALISE
                     )
+                }
+
+                // 2. Iniciar Escuta em Tempo Real (Flow)
+                // Cancelamos job anterior se existir para não ter duplicados
+                requestsJob?.cancel()
+
+                requestsJob = viewModelScope.launch {
+                    // AQUI ESTÁ A MUDANÇA: .collect em vez de .first()
+                    // Isto mantém a ligação aberta com o Firestore
+                    requestRepository.getRequestsByBeneficiary(userId).collect { requests ->
+
+                        // Sempre que houver uma mudança na BD, este código corre sozinho
+                        val latestRequest = requests.maxByOrNull { it.submissionDate }
+
+                        _state.update { currentState ->
+                            currentState.copy(
+                                requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
+                                requestObservations = latestRequest?.observations ?: "",
+                                requestDocuments = latestRequest?.documents ?: emptyMap()
+                            )
+                        }
+                    }
                 }
             } else {
                 throw Exception("Utilizador sem perfil associado.")
@@ -138,40 +154,72 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    // ==========================================================
+    // --- REENVIAR DOCUMENTOS ---
+    // ==========================================================
+
     fun resubmitDocument(docKey: String, uri: Uri) {
-        val userId = _state.value.userId ?: return
-        val currentDocs = _state.value.requestDocuments
-
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            try {
-                val requests = requestRepository.getRequestsByBeneficiary(userId)
-                val request = requests.maxByOrNull { it.submissionDate } ?: return@launch
 
+            _state.update { it.copy(uploadingDocKey = docKey) }
+
+            val userId = _state.value.userId ?: authRepository.getCurrentUser()?.id
+
+            if (userId == null) {
+                _state.update { it.copy(errorMessage = "Sessão inválida. Por favor, faça login novamente.") }
+                return@launch
+            }
+
+            val currentDocs = _state.value.requestDocuments
+
+            _state.update { it.copy(isLoading = true) }
+
+            try {
+                // 1. Obter o requerimento
+                val requests = requestRepository.getRequestsByBeneficiary(userId).first()
+
+                if (requests.isEmpty()) {
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Requerimento não encontrado."
+                        )
+                    }
+                    return@launch
+                }
+
+                val request = requests.maxByOrNull { it.submissionDate }
+
+                if (request == null) {
+                    return@launch
+                }
+
+                // 2. Upload
                 val fileName =
                     "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
                 val downloadUrl = storageRepository.uploadFile(uri, fileName)
 
+                if (downloadUrl.isBlank()) throw Exception("URL do upload veio vazio.")
+
+                // 3. Atualizar Dados Locais
                 val updatedDocs = currentDocs.toMutableMap()
                 updatedDocs[docKey] = downloadUrl
 
                 val allDocumentsCompleted = updatedDocs.values.none { it.isNullOrBlank() }
+                val newStatus =
+                    if (allDocumentsCompleted) StatusType.ANALISE else StatusType.DOCS_INCORRETOS
 
-                val newStatus = if (allDocumentsCompleted) {
-                    StatusType.ANALISE
-                } else {
-                    StatusType.DOCS_INCORRETOS
-                }
-
+                // 4. Atualizar BD
                 requestRepository.updateRequestDocsAndStatus(
                     id = request.id,
                     documents = updatedDocs,
                     status = newStatus
                 )
 
+                // 5. Atualização Otimista da UI
                 _state.update {
                     it.copy(
-                        isLoading = false,
+                        uploadingDocKey = null,
                         requestDocuments = updatedDocs,
                         requestStatus = newStatus
                     )
@@ -181,8 +229,8 @@ class AuthViewModel @Inject constructor(
                 e.printStackTrace()
                 _state.update {
                     it.copy(
-                        isLoading = false,
-                        errorMessage = "Erro ao enviar documento. Tente novamente."
+                        uploadingDocKey = null,
+                        errorMessage = "Erro ao enviar: ${e.message}"
                     )
                 }
             }
@@ -191,6 +239,7 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            requestsJob?.cancel() // Parar de escutar mudanças
             authRepository.logout()
             _state.value = AuthState()
         }
@@ -200,26 +249,17 @@ class AuthViewModel @Inject constructor(
         _state.update { it.copy(isSuccess = false, errorMessage = null) }
     }
 
-    // ==========================================================
-    // --- LÓGICA DE REGISTO (STEPS 1, 2, 3) ---
-    // ==========================================================
-
-    fun isStep1Valid(): Boolean {
-        val s = _state.value
-        return s.fullName.isNotBlank() && s.cc.length >= 8 && s.birthDate.isNotBlank() &&
-                s.phone.length >= 9 && s.email.contains("@") && s.password.length >= 6
+    fun isStep1Valid(): Boolean = _state.value.run {
+        fullName.isNotBlank() && cc.length >= 8 && birthDate.isNotBlank() && phone.length >= 9 && email.contains(
+            "@"
+        ) && password.length >= 6
     }
 
-    fun isStep2Valid(): Boolean {
-        val s = _state.value
-        return s.requestCategory != null && s.educationLevel.isNotBlank() &&
-                s.school.isNotBlank() && s.studentNumber.isNotBlank()
-    }
+    fun isStep2Valid(): Boolean =
+        _state.value.run { requestCategory != null && educationLevel.isNotBlank() && school.isNotBlank() && studentNumber.isNotBlank() }
 
-    fun isStep3Valid(): Boolean {
-        val s = _state.value
-        return s.docIdentification != null && s.docMorada != null
-    }
+    fun isStep3Valid(): Boolean =
+        _state.value.run { docIdentification != null && docMorada != null }
 
     fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
         _state.update {
@@ -238,7 +278,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun updateStep2(
-        category: RequestCategory?,
+        category: RequestType?,
         education: String,
         dependents: Int,
         school: String,
@@ -257,20 +297,12 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun updateStep3(
-        docIdentification: Uri?,
-        docFamily: Uri?,
-        docMorada: Uri?,
-        docRendimento: Uri?,
-        docMatricula: Uri?
-    ) {
+    fun updateStep3(docIdentification: Uri?, docFamily: Uri?, docMorada: Uri?) {
         _state.update {
             it.copy(
                 docIdentification = docIdentification,
                 docFamily = docFamily,
-                docMorada = docMorada,
-                docRendimento = docRendimento,
-                docMatricula = docMatricula
+                docMorada = docMorada
             )
         }
     }
@@ -279,36 +311,21 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                // 1. Regista o utilizador no Firebase Auth, Firestore e guarda ficheiros
                 registerBeneficiaryUseCase(_state.value)
-
-                // 2. Verifica se o user foi criado
                 val currentUser = authRepository.getCurrentUser()
                 if (currentUser != null) {
                     updateFcmToken(currentUser.id)
-
-                    loadUserProfile(currentUser.id)
+                    loadUserProfile(currentUser.id) // Isto ativa a escuta também para novos registos
 
                     communicationRepository.sendEmail(
                         EmailRequest(
-                            to = _state.value.email, // Email inserido no formulário
+                            to = _state.value.email,
                             subject = "Bem-vindo à Loja Social IPCA! \uD83D\uDC4B",
-                            body = """
-                                <div style="font-family: Arial, sans-serif; color: #333;">
-                                    <h2>Olá ${_state.value.fullName}!</h2>
-                                    <p>O teu registo na <strong>Loja Social IPCA</strong> foi efetuado com sucesso.</p>
-                                    <p>O teu requerimento foi submetido e encontra-se agora em <strong>ANÁLISE</strong>.</p>
-                                    <p>Serás notificado assim que a equipa validar os teus documentos.</p>
-                                    <br>
-                                    <p>Obrigado,<br>Equipa Loja Social</p>
-                                </div>
-                            """.trimIndent(),
-                            isHtml = true,
-                            senderName = "Loja Social IPCA"
+                            body = "<div>Olá ${_state.value.fullName}! O teu registo foi efetuado.</div>",
+                            isHtml = true
                         )
                     )
                 }
-
                 _state.update {
                     it.copy(
                         isLoading = false,

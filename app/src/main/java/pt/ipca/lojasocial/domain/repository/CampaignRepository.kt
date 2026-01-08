@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import pt.ipca.lojasocial.domain.models.Campaign
 import pt.ipca.lojasocial.domain.models.CampaignStatus
 
@@ -9,24 +10,32 @@ import pt.ipca.lojasocial.domain.models.CampaignStatus
  * Permite criar, listar e gerir campanhas (internas ou externas) que servem como
  * agrupadores para doações e gestão de stock sazonal.
  *
+ * Agora suporta **atualizações em Tempo Real** através de Kotlin Flows.
+ *
  * Cumpre os requisitos associados ao **RF24** (Registo e Visibilidade).
  */
 interface CampaignRepository {
 
     /**
-     * Obtém a lista de todas as campanhas registadas no sistema.
+     * Obtém um fluxo (Flow) com a lista de todas as campanhas em tempo real.
      *
-     * @return Lista de [Campaign].
+     * Ao subscrever este Flow, a UI receberá uma nova lista automaticamente sempre
+     * que houver alterações (adição, remoção ou edição) na base de dados.
+     *
+     * @return Flow contendo a lista atualizada de [Campaign].
      */
-    suspend fun getCampaigns(): List<Campaign>
+    fun getCampaigns(): Flow<List<Campaign>>
 
     /**
-     * Obtém os detalhes de uma campanha específica através do seu ID.
+     * Obtém um fluxo (Flow) com os detalhes de uma campanha específica em tempo real.
+     *
+     * Útil para manter o ecrã de detalhes sempre sincronizado (ex: se o estado mudar
+     * de 'Agendada' para 'Ativa' enquanto o utilizador vê a campanha).
      *
      * @param id O identificador único da campanha.
-     * @return [Campaign] se encontrada, ou `null` caso contrário.
+     * @return Flow que emite [Campaign] se encontrada, ou `null` caso não exista/seja removida.
      */
-    suspend fun getCampaignById(id: String): Campaign?
+    fun getCampaignById(id: String): Flow<Campaign?>
 
     /**
      * Regista uma nova campanha na aplicação.
