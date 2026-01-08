@@ -25,7 +25,6 @@ import pt.ipca.lojasocial.presentation.screens.AddEditAnoLetivoScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
-import pt.ipca.lojasocial.presentation.screens.AddProductTypeScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
@@ -408,9 +407,6 @@ fun AppNavHost(
             )
         }
 
-        composable("add_product_type") {
-            AddProductTypeScreen(onBackClick = { navController.popBackStack() })
-        }
 
         // =====================================================================
         // ENTREGAS
