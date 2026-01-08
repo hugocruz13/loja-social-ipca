@@ -215,7 +215,6 @@ fun AddEditEntregaScreen(
                         onValueChange = {},
                         label = "Nome do Beneficiário",
                         placeholder = "", // Adicionado placeholder obrigatório
-                        readOnly = true,
                         enabled = false // Visualmente desativado
                     )
                 }
@@ -236,8 +235,7 @@ fun AddEditEntregaScreen(
                             label = "Data",
                             value = uiState.date,
                             onValueChange = {},
-                            placeholder = "dd/mm/yyyy",
-                            readOnly = true
+                            placeholder = "dd/mm/yyyy"
                         )
                         Spacer(
                             modifier = Modifier
@@ -250,8 +248,7 @@ fun AddEditEntregaScreen(
                             label = "Hora",
                             value = uiState.time,
                             onValueChange = {},
-                            placeholder = "HH:mm",
-                            readOnly = true
+                            placeholder = "HH:mm"
                         )
                         Spacer(
                             modifier = Modifier
@@ -262,13 +259,15 @@ fun AddEditEntregaScreen(
 
                     if (isCollaborator) {
                         Text("Repetição", style = MaterialTheme.typography.labelMedium)
-                        val repeticoes = listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
+                        val repeticoes =
+                            listOf("Não repetir", "Mensalmente", "Bimensal", "Semestral")
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             // Primeira Linha
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 repeticoes.take(2).forEach { repo ->
-                                    val isSelected = uiState.repetition == repo // Verifica se está selecionado
+                                    val isSelected =
+                                        uiState.repetition == repo // Verifica se está selecionado
 
                                     AppButton(
                                         text = repo,
@@ -278,9 +277,13 @@ fun AddEditEntregaScreen(
                                             .weight(1f)
                                             .height(40.dp),
                                         // Fundo: Se selecionado usa Verde, se não usa um Cinza mais escuro que o anterior (E2E8F0)
-                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
+                                        containerColor = if (isSelected) accentGreen else Color(
+                                            0xFFE2E8F0
+                                        ),
                                         // Texto: Se selecionado usa Branco, se não usa um Cinza Escuro/Preto para contraste
-                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
+                                        contentColor = if (isSelected) Color.White else Color(
+                                            0xFF1E293B
+                                        )
                                     )
                                 }
                             }
@@ -298,8 +301,12 @@ fun AddEditEntregaScreen(
                                             .weight(1f)
                                             .height(40.dp),
                                         // Mesma lógica de cores aqui
-                                        containerColor = if (isSelected) accentGreen else Color(0xFFE2E8F0),
-                                        contentColor = if (isSelected) Color.White else Color(0xFF1E293B)
+                                        containerColor = if (isSelected) accentGreen else Color(
+                                            0xFFE2E8F0
+                                        ),
+                                        contentColor = if (isSelected) Color.White else Color(
+                                            0xFF1E293B
+                                        )
                                     )
                                 }
                             }

@@ -23,6 +23,10 @@ import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.repository.StorageRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.RegisterBeneficiaryUseCase
 import pt.ipca.lojasocial.presentation.state.AuthState
+import java.time.LocalDate
+import java.time.Period
+import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -30,7 +34,7 @@ class AuthViewModel @Inject constructor(
     private val registerBeneficiaryUseCase: RegisterBeneficiaryUseCase,
     private val authRepository: AuthRepository,
     private val beneficiaryRepository: BeneficiaryRepository,
-    private val requestRepository: RequestRepository, // O repositório que agora devolve Flow
+    private val requestRepository: RequestRepository,
     private val storageRepository: StorageRepository,
     private val communicationRepository: CommunicationRepository
 ) : ViewModel() {
@@ -38,12 +42,168 @@ class AuthViewModel @Inject constructor(
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    // Variável para controlar o "listener" do Firestore e evitar duplicados
     private var requestsJob: Job? = null
+
+    // Expressões Regulares (Regex) para Validação
+    private val ccRegex = Regex("""^\d{8}\s[A-Z0-7]{4}$""")
+
+    // Pelo menos: 1 Maíuscula, 1 Minúscula, 1 Número, 1 Símbolo, mín. 8 caracteres
+    private val passwordRegex =
+        Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$""")
+    private val phoneRegex = Regex("""^9\d{8}$""")
 
     init {
         checkAuthStatus()
     }
+
+    // ==========================================================
+    // --- LÓGICA DE VALIDAÇÃO REACTIVA (TEMPO REAL) ---
+    // ==========================================================
+
+    private fun validateStep1() {
+        _state.update { s ->
+            val nameErr =
+                if (s.fullName.trim().split(" ").size < 2) "Introduza nome e apelido" else null
+            val ccErr = if (!ccRegex.matches(s.cc)) "Formato inválido (Ex: 12345678 2ZX0)" else null
+            val phoneErr = if (!phoneRegex.matches(s.phone)) "Número inválido (9 dígitos)" else null
+            val emailErr = if (!android.util.Patterns.EMAIL_ADDRESS.matcher(s.email)
+                    .matches()
+            ) "Email inválido" else null
+            val passErr =
+                if (!passwordRegex.matches(s.password)) "Use: 8 carac., Maiúsc., Minúsc., nº e símbolo" else null
+            var dateErr: String? = null
+            if (s.birthDate.isBlank()) {
+                dateErr = "Data obrigatória"
+            } else {
+                try {
+                    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    val birthDate = LocalDate.parse(s.birthDate, formatter)
+                    val today = LocalDate.now()
+                    val age = Period.between(birthDate, today).years
+
+                    if (age < 18) {
+                        dateErr = "Apenas para maiores de 18 anos"
+                    } else if (age > 120) {
+                        dateErr = "Data inválida"
+                    }
+                } catch (e: Exception) {
+                    dateErr = "Formato inválido"
+                }
+            }
+
+            val isValid = nameErr == null && ccErr == null && phoneErr == null &&
+                    emailErr == null && passErr == null && dateErr == null
+
+            s.copy(
+                fullNameError = nameErr,
+                ccError = ccErr,
+                phoneError = phoneErr,
+                emailError = emailErr,
+                passwordError = passErr,
+                birthDateError = dateErr,
+                isStep1Valid = isValid
+            )
+        }
+    }
+
+    private fun validateStep2() {
+        _state.update { s ->
+            val schoolErr = if (s.school.length < 3) "Nome da instituição demasiado curto" else null
+            val courseErr = if (s.courseName.isBlank()) "O nome do curso é obrigatório" else null
+            val studentNumErr =
+                if (s.studentNumber.isBlank()) "Introduza o nº de estudante" else null
+            val categoryErr = if (s.requestCategory == null) "Selecione uma tipologia" else null
+            val educationErr =
+                if (s.educationLevel.isBlank()) "Selecione o nível de ensino" else null
+
+            val isValid = schoolErr == null && courseErr == null &&
+                    studentNumErr == null && categoryErr == null && educationErr == null
+
+            s.copy(
+                studentNumberError = studentNumErr, // Exemplo de mapeamento para o campo
+                isStep2Valid = isValid
+            )
+        }
+    }
+
+    // ==========================================================
+    // --- ATUALIZAÇÃO DE ESTADO ---
+    // ==========================================================
+
+    fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
+        _state.update { currentState ->
+            currentState.copy(
+                fullName = fullName,
+                cc = cc,
+                phone = phone,
+                email = email,
+                password = password,
+                // Só marca como 'touched' se o valor mudou em relação ao que estava no estado
+                fullNameTouched = currentState.fullNameTouched || fullName != currentState.fullName,
+                ccTouched = currentState.ccTouched || cc != currentState.cc,
+                phoneTouched = currentState.phoneTouched || phone != currentState.phone,
+                emailTouched = currentState.emailTouched || email != currentState.email,
+                passwordTouched = currentState.passwordTouched || password != currentState.password
+            )
+        }
+        validateStep1()
+    }
+
+    fun updateBirthDate(date: String) {
+        _state.update {
+            it.copy(
+                birthDate = date,
+                birthDateTouched = true
+            )
+        }
+        validateStep1()
+    }
+
+    fun updateStep2(
+        category: RequestType?,
+        education: String,
+        dependents: Int,
+        school: String,
+        courseName: String,
+        studentNumber: String
+    ) {
+        _state.update { currentState ->
+            currentState.copy(
+                requestCategory = category,
+                educationLevel = education,
+                dependents = dependents,
+                school = school,
+                courseName = courseName,
+                studentNumber = studentNumber,
+                // Marcação de campos tocados no Step 2
+                schoolTouched = currentState.schoolTouched || school != currentState.school,
+                courseNameTouched = currentState.courseNameTouched || courseName != currentState.courseName,
+                studentNumberTouched = currentState.studentNumberTouched || studentNumber != currentState.studentNumber,
+                educationLevelTouched = currentState.educationLevelTouched || education != currentState.educationLevel
+            )
+        }
+        validateStep2()
+    }
+
+    fun updateStep3(docIdentification: Uri?, docFamily: Uri?, docMorada: Uri?) {
+        _state.update { currentState ->
+            currentState.copy(
+                docIdentification = docIdentification,
+                docFamily = docFamily,
+                docMorada = docMorada,
+                // Se o Uri não for nulo, o utilizador interagiu com o seletor
+                docIdentificationTouched = currentState.docIdentificationTouched || docIdentification != null,
+                docFamilyTouched = currentState.docFamilyTouched || docFamily != null,
+                docMoradaTouched = currentState.docMoradaTouched || docMorada != null
+            )
+        }
+        // Validação do Step 3
+        _state.update { it.copy(isStep3Valid = it.docIdentification != null && it.docMorada != null) }
+    }
+
+    // ==========================================================
+    // --- AUTENTICAÇÃO E PERFIL ---
+    // ==========================================================
 
     private fun checkAuthStatus() {
         viewModelScope.launch {
@@ -51,10 +211,7 @@ class AuthViewModel @Inject constructor(
             if (currentUser != null) {
                 updateFcmToken(currentUser.id)
                 _state.update { it.copy(userId = currentUser.id) }
-
-                // Carrega perfil e inicia a escuta em tempo real
                 loadUserProfile(currentUser.id)
-
                 _state.update { it.copy(isLoggedIn = true) }
             }
         }
@@ -62,24 +219,16 @@ class AuthViewModel @Inject constructor(
 
     private fun updateFcmToken(userId: String) {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-            viewModelScope.launch {
-                communicationRepository.saveFcmToken(userId, token)
-            }
+            viewModelScope.launch { communicationRepository.saveFcmToken(userId, token) }
         }
     }
-
-    // ==========================================================
-    // --- LOGIN & CARREGAMENTO DE PERFIL (ALTERADO PARA TEMPO REAL) ---
-    // ==========================================================
 
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = authRepository.login(email, pass)
-
-            result.onSuccess { user ->
+            authRepository.login(email, pass).onSuccess { user ->
                 updateFcmToken(user.id)
-                loadUserProfile(user.id) // Inicia a escuta
+                loadUserProfile(user.id)
                 _state.update { it.copy(isLoading = false, isLoggedIn = true, userId = user.id) }
             }.onFailure { error ->
                 _state.update {
@@ -92,15 +241,9 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Esta função agora faz duas coisas:
-     * 1. Carrega dados estáticos do Beneficiário (Nome, email, etc.)
-     * 2. Inicia uma sub-coroutine (Job) para ficar à escuta das mudanças nos Requerimentos.
-     */
     private suspend fun loadUserProfile(userId: String) {
         try {
             val role = authRepository.getUserRole(userId)
-
             if (role == "colaborador") {
                 _state.update {
                     it.copy(
@@ -110,9 +253,7 @@ class AuthViewModel @Inject constructor(
                     )
                 }
             } else if (role == "beneficiario") {
-                // 1. Carregar Dados Estáticos (Uma vez só)
                 val beneficiary = beneficiaryRepository.getBeneficiaryById(userId)
-
                 _state.update {
                     it.copy(
                         userRole = "beneficiario",
@@ -123,20 +264,12 @@ class AuthViewModel @Inject constructor(
                     )
                 }
 
-                // 2. Iniciar Escuta em Tempo Real (Flow)
-                // Cancelamos job anterior se existir para não ter duplicados
                 requestsJob?.cancel()
-
                 requestsJob = viewModelScope.launch {
-                    // AQUI ESTÁ A MUDANÇA: .collect em vez de .first()
-                    // Isto mantém a ligação aberta com o Firestore
                     requestRepository.getRequestsByBeneficiary(userId).collect { requests ->
-
-                        // Sempre que houver uma mudança na BD, este código corre sozinho
                         val latestRequest = requests.maxByOrNull { it.submissionDate }
-
-                        _state.update { currentState ->
-                            currentState.copy(
+                        _state.update {
+                            it.copy(
                                 requestStatus = latestRequest?.status ?: StatusType.PENDENTE,
                                 requestObservations = latestRequest?.observations ?: "",
                                 requestDocuments = latestRequest?.documents ?: emptyMap()
@@ -144,166 +277,9 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 }
-            } else {
-                throw Exception("Utilizador sem perfil associado.")
             }
-
         } catch (e: Exception) {
-            e.printStackTrace()
             _state.update { it.copy(errorMessage = "Erro ao carregar perfil: ${e.message}") }
-        }
-    }
-
-    // ==========================================================
-    // --- REENVIAR DOCUMENTOS ---
-    // ==========================================================
-
-    fun resubmitDocument(docKey: String, uri: Uri) {
-        viewModelScope.launch {
-
-            _state.update { it.copy(uploadingDocKey = docKey) }
-
-            val userId = _state.value.userId ?: authRepository.getCurrentUser()?.id
-
-            if (userId == null) {
-                _state.update { it.copy(errorMessage = "Sessão inválida. Por favor, faça login novamente.") }
-                return@launch
-            }
-
-            val currentDocs = _state.value.requestDocuments
-
-            _state.update { it.copy(isLoading = true) }
-
-            try {
-                // 1. Obter o requerimento
-                val requests = requestRepository.getRequestsByBeneficiary(userId).first()
-
-                if (requests.isEmpty()) {
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "Requerimento não encontrado."
-                        )
-                    }
-                    return@launch
-                }
-
-                val request = requests.maxByOrNull { it.submissionDate }
-
-                if (request == null) {
-                    return@launch
-                }
-
-                // 2. Upload
-                val fileName =
-                    "requerimentos/$userId/${docKey}_reenvio_${java.util.UUID.randomUUID()}"
-                val downloadUrl = storageRepository.uploadFile(uri, fileName)
-
-                if (downloadUrl.isBlank()) throw Exception("URL do upload veio vazio.")
-
-                // 3. Atualizar Dados Locais
-                val updatedDocs = currentDocs.toMutableMap()
-                updatedDocs[docKey] = downloadUrl
-
-                val allDocumentsCompleted = updatedDocs.values.none { it.isNullOrBlank() }
-                val newStatus =
-                    if (allDocumentsCompleted) StatusType.ANALISE else StatusType.DOCS_INCORRETOS
-
-                // 4. Atualizar BD
-                requestRepository.updateRequestDocsAndStatus(
-                    id = request.id,
-                    documents = updatedDocs,
-                    status = newStatus
-                )
-
-                // 5. Atualização Otimista da UI
-                _state.update {
-                    it.copy(
-                        uploadingDocKey = null,
-                        requestDocuments = updatedDocs,
-                        requestStatus = newStatus
-                    )
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _state.update {
-                    it.copy(
-                        uploadingDocKey = null,
-                        errorMessage = "Erro ao enviar: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            requestsJob?.cancel() // Parar de escutar mudanças
-            authRepository.logout()
-            _state.value = AuthState()
-        }
-    }
-
-    fun resetState() {
-        _state.update { it.copy(isSuccess = false, errorMessage = null) }
-    }
-
-    fun isStep1Valid(): Boolean = _state.value.run {
-        fullName.isNotBlank() && cc.length >= 8 && birthDate.isNotBlank() && phone.length >= 9 && email.contains(
-            "@"
-        ) && password.length >= 6
-    }
-
-    fun isStep2Valid(): Boolean =
-        _state.value.run { requestCategory != null && educationLevel.isNotBlank() && school.isNotBlank() && studentNumber.isNotBlank() }
-
-    fun isStep3Valid(): Boolean =
-        _state.value.run { docIdentification != null && docMorada != null }
-
-    fun updateStep1(fullName: String, cc: String, phone: String, email: String, password: String) {
-        _state.update {
-            it.copy(
-                fullName = fullName,
-                cc = cc,
-                phone = phone,
-                email = email,
-                password = password
-            )
-        }
-    }
-
-    fun updateBirthDate(date: String) {
-        _state.update { it.copy(birthDate = date) }
-    }
-
-    fun updateStep2(
-        category: RequestType?,
-        education: String,
-        dependents: Int,
-        school: String,
-        courseName: String,
-        studentNumber: String
-    ) {
-        _state.update {
-            it.copy(
-                requestCategory = category,
-                educationLevel = education,
-                dependents = dependents,
-                school = school,
-                courseName = courseName,
-                studentNumber = studentNumber
-            )
-        }
-    }
-
-    fun updateStep3(docIdentification: Uri?, docFamily: Uri?, docMorada: Uri?) {
-        _state.update {
-            it.copy(
-                docIdentification = docIdentification,
-                docFamily = docFamily,
-                docMorada = docMorada
-            )
         }
     }
 
@@ -315,12 +291,11 @@ class AuthViewModel @Inject constructor(
                 val currentUser = authRepository.getCurrentUser()
                 if (currentUser != null) {
                     updateFcmToken(currentUser.id)
-                    loadUserProfile(currentUser.id) // Isto ativa a escuta também para novos registos
-
+                    loadUserProfile(currentUser.id)
                     communicationRepository.sendEmail(
                         EmailRequest(
                             to = _state.value.email,
-                            subject = "Bem-vindo à Loja Social IPCA! \uD83D\uDC4B",
+                            subject = "Bem-vindo à Loja Social IPCA! 👋",
                             body = "<div>Olá ${_state.value.fullName}! O teu registo foi efetuado.</div>",
                             isHtml = true
                         )
@@ -342,8 +317,58 @@ class AuthViewModel @Inject constructor(
                         errorMessage = e.message ?: "Erro desconhecido."
                     )
                 }
-                e.printStackTrace()
             }
         }
+    }
+
+    fun resubmitDocument(docKey: String, uri: Uri) {
+        viewModelScope.launch {
+            _state.update { it.copy(uploadingDocKey = docKey, isLoading = true) }
+            val userId = _state.value.userId ?: authRepository.getCurrentUser()?.id ?: return@launch
+
+            try {
+                val requests = requestRepository.getRequestsByBeneficiary(userId).first()
+                val request = requests.maxByOrNull { it.submissionDate }
+                    ?: throw Exception("Requerimento não encontrado.")
+
+                val fileName = "requerimentos/$userId/${docKey}_reenvio_${UUID.randomUUID()}"
+                val downloadUrl = storageRepository.uploadFile(uri, fileName)
+
+                val updatedDocs =
+                    _state.value.requestDocuments.toMutableMap().apply { put(docKey, downloadUrl) }
+                val newStatus =
+                    if (updatedDocs.values.none { it.isNullOrBlank() }) StatusType.ANALISE else StatusType.DOCS_INCORRETOS
+
+                requestRepository.updateRequestDocsAndStatus(request.id, updatedDocs, newStatus)
+                _state.update {
+                    it.copy(
+                        uploadingDocKey = null,
+                        requestDocuments = updatedDocs,
+                        requestStatus = newStatus,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        uploadingDocKey = null,
+                        isLoading = false,
+                        errorMessage = "Erro ao enviar: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            requestsJob?.cancel()
+            authRepository.logout()
+            _state.value = AuthState()
+        }
+    }
+
+    fun resetState() {
+        _state.update { it.copy(isSuccess = false, errorMessage = null) }
     }
 }

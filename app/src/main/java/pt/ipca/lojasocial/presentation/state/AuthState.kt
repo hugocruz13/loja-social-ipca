@@ -15,6 +15,42 @@ data class AuthState(
     val isLoggedIn: Boolean = false,
     val userId: String? = null,
 
+    // --- CONTROLO DE FOCO / TOQUE (STEP 1) ---
+
+    val fullNameTouched: Boolean = false,
+    val ccTouched: Boolean = false,
+    val birthDateTouched: Boolean = false,
+    val phoneTouched: Boolean = false,
+    val emailTouched: Boolean = false,
+    val passwordTouched: Boolean = false,
+
+    // --- CONTROLO DE FOCO / TOQUE (STEP 2) ---
+    val schoolTouched: Boolean = false,
+    val courseNameTouched: Boolean = false,
+    val studentNumberTouched: Boolean = false,
+    val educationLevelTouched: Boolean = false,
+    val requestCategoryTouched: Boolean = false,
+
+    // --- CONTROLO DE FOCO / TOQUE (STEP 3) ---
+    val docIdentificationTouched: Boolean = false,
+    val docFamilyTouched: Boolean = false,
+    val docMoradaTouched: Boolean = false,
+
+    // --- MENSAGENS DE ERRO ESPECÍFICAS (Para os componentes modernos) ---
+    val fullNameError: String? = null,
+    val ccError: String? = null,
+    val birthDateError: String? = null,
+    val phoneError: String? = null,
+    val emailError: String? = null,
+    val passwordError: String? = null,
+    val studentNumberError: String? = null,
+    val schoolError: String? = null,
+    val courseNameError: String? = null,
+
+    // Controlo de submissão
+    val isStep1Valid: Boolean = false,
+    val isStep2Valid: Boolean = false,
+    val isStep3Valid: Boolean = false,
 
     // ==========================================================
     // ROLE / PAPEL DO UTILIZADOR

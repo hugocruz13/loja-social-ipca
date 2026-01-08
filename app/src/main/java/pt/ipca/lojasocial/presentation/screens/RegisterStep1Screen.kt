@@ -34,9 +34,11 @@ fun RegisterStep1Screen(
 ) {
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
+    val accentGreen = Color(0XFF00713C)
 
     Scaffold(
         topBar = { AppTopBar(title = "Registar", onBackClick = onBack) },
+        containerColor = Color.White
     ) { paddingValues ->
 
         Column(
@@ -50,7 +52,7 @@ fun RegisterStep1Screen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 16.dp)
+                    .padding(vertical = 16.dp)
             )
 
             Column(
@@ -66,6 +68,7 @@ fun RegisterStep1Screen(
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
+                // NOME COMPLETO
                 AppTextField(
                     value = state.fullName,
                     onValueChange = {
@@ -78,31 +81,34 @@ fun RegisterStep1Screen(
                         )
                     },
                     label = "Nome Completo",
-                    placeholder = "Insira o seu nome",
+                    placeholder = "Ex: João Silva",
+                    errorMessage = if (state.fullNameTouched) state.fullNameError else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
 
+                // CARTÃO DE CIDADÃO
                 AppTextField(
                     value = state.cc,
                     onValueChange = {
-                        if (it.length <= 14) viewModel.updateStep1(
+                        if (it.length <= 13) viewModel.updateStep1(
                             state.fullName,
-                            it,
+                            it.uppercase(),
                             state.phone,
                             state.email,
                             state.password
                         )
                     },
                     label = "Cartão de Cidadão",
-                    placeholder = "000000000 ZZ0",
+                    placeholder = "12345678 2ZX0",
+                    errorMessage = if (state.ccTouched) state.ccError else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
 
-                // CORREÇÃO: Agora usa o state.birthDate e chama viewModel.updateBirthDate
+                // DATA DE NASCIMENTO - FIX: Garantir que o clique funciona
                 AppDatePickerField(
                     label = "Data de Nascimento",
                     selectedValue = state.birthDate,
@@ -110,11 +116,14 @@ fun RegisterStep1Screen(
                         viewModel.updateBirthDate(newDate)
                     },
                     placeholder = "dd/mm/yyyy",
+                    enabled = true, // Certifica-te que está enabled
+                    errorMessage = if (state.birthDateTouched) state.birthDateError else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
 
+                // TELEMÓVEL
                 AppTextField(
                     value = state.phone,
                     onValueChange = {
@@ -128,11 +137,14 @@ fun RegisterStep1Screen(
                     },
                     label = "Telemóvel",
                     placeholder = "9XX XXX XXX",
+                    errorMessage = if (state.phoneTouched) state.phoneError else null,
+                    keyboardType = KeyboardType.Phone,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
 
+                // EMAIL
                 AppTextField(
                     value = state.email,
                     onValueChange = {
@@ -145,7 +157,9 @@ fun RegisterStep1Screen(
                         )
                     },
                     label = "Email",
-                    placeholder = "seumemail@email.com",
+                    placeholder = "exemplo@email.com",
+                    errorMessage = if (state.emailTouched) state.emailError else null,
+                    keyboardType = KeyboardType.Email,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
@@ -163,24 +177,25 @@ fun RegisterStep1Screen(
                         )
                     },
                     label = "Password",
-                    placeholder = "Introduza a sua password",
+                    placeholder = "8+ caracteres, Maíusc, Símbolo...",
+                    errorMessage = if (state.passwordTouched) state.passwordError else null,
                     keyboardType = KeyboardType.Password,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 32.dp)
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 AppButton(
                     text = "Próximo",
                     onClick = onNext,
-                    enabled = viewModel.isStep1Valid(),
-                    containerColor = Color(0XFF00713C),
+                    enabled = state.isStep1Valid,
+                    containerColor = if (state.isStep1Valid) accentGreen else Color(0XFFC7C7C7),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 24.dp)
                 )
             }
         }

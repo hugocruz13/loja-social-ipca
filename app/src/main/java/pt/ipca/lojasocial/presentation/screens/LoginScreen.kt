@@ -86,8 +86,7 @@ fun LoginScreen(
                 placeholder = "Introduza o seu email",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                isError = state.errorMessage != null
+                    .padding(bottom = 16.dp)
             )
             AppTextField(
                 value = password,
@@ -97,8 +96,7 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Password,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                isError = state.errorMessage != null
+                    .padding(bottom = 16.dp)
             )
 
             if (state.errorMessage != null) {
