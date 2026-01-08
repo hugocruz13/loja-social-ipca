@@ -3,6 +3,9 @@ package pt.ipca.lojasocial.presentation.screens
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,8 +32,10 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,13 +82,12 @@ fun ProductListScreen(
     onProductClick: (String) -> Unit,
     navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
-    onAddProductClick: () -> Unit,
-    onAddNewTypeClick: () -> Unit,
     stockViewModel: StockViewModel = hiltViewModel(),
     productViewModel: ProductViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val pdfService = remember { PdfValidadeService(context) }
+
     val stockList by stockViewModel.stockList.collectAsState()
     val filteredProducts by productViewModel.filteredProducts.collectAsState()
     val isLoading by stockViewModel.isLoading.collectAsState()
@@ -94,8 +98,8 @@ fun ProductListScreen(
         productViewModel.loadProducts()
     }
 
-    val stockMap = remember(stockList) { stockList.groupBy { it.productId } }
-    val groupedStockList = remember(stockMap, filteredProducts) {
+    val groupedStockList = remember(stockList, filteredProducts) {
+        val stockMap = stockList.groupBy { it.productId }
         filteredProducts.map { product ->
             val productBatches = stockMap[product.id] ?: emptyList()
             ProductStockGroup(
@@ -104,11 +108,7 @@ fun ProductListScreen(
                 photoUrl = product.photoUrl,
                 totalQuantity = productBatches.sumOf { it.quantity },
                 batches = productBatches.map {
-                    StockBatchUi(
-                        it.id,
-                        it.quantity,
-                        it.expiryDate ?: 0L
-                    )
+                    StockBatchUi(it.id, it.quantity, it.expiryDate ?: 0L)
                 }.sortedBy { it.expiryDate }
             )
         }.sortedBy { it.totalQuantity }
@@ -126,22 +126,21 @@ fun ProductListScreen(
         onNavigate = onNavigate,
         onDownloadReport = {
             val reportData = stockList.mapNotNull { stock ->
-                filteredProducts.firstOrNull { it.id == stock.productId }?.let {
+                filteredProducts.find { it.id == stock.productId }?.let {
                     pt.ipca.lojasocial.domain.models.ItemRelatorioValidade(
-                        it.name,
-                        stock.quantity,
-                        stock.expiryDate ?: 0L
+                        it.name, stock.quantity, stock.expiryDate ?: 0L
                     )
                 }
             }
             if (reportData.isNotEmpty()) pdfService.gerarRelatorio(reportData)
-            else Toast.makeText(context, "Sem dados", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(context, "Sem dados para relatório", Toast.LENGTH_SHORT).show()
         },
         onConfirmAddStock = { stockViewModel.addStockItem(it) },
         onConfirmCreateProduct = { np, uri -> productViewModel.addProduct(np, uri) }
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListContent(
     groupedStockList: List<ProductStockGroup>,
@@ -159,6 +158,7 @@ fun ProductListContent(
 ) {
     val productViewModel: ProductViewModel = hiltViewModel()
     val selectedType by productViewModel.selectedType.collectAsState()
+    val formState by productViewModel.formState.collectAsState()
 
     var showAddProductSheet by remember { mutableStateOf(false) }
     var showAddStockDialog by remember { mutableStateOf(false) }
@@ -168,7 +168,6 @@ fun ProductListContent(
     Scaffold(
         topBar = { AppTopBar(title = "Stock e Produtos", onBackClick = onBackClick) },
         bottomBar = {
-            // BARRA COM O BOTÃO ACOPLADO
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "product_list",
@@ -179,78 +178,73 @@ fun ProductListContent(
                         containerColor = Color(0XFF00713C),
                         contentColor = Color.White,
                         shape = CircleShape,
-                        modifier = Modifier.fillMaxSize() // Preenche o Box da AppBottomBar
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Icon(Icons.Default.Add, "Adicionar Stock")
+                        Icon(Icons.Default.Add, "Adicionar")
                     }
                 }
             )
-        }
+        },
+        containerColor = Color(0xFFF8F9FA)
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
-                .background(Color(0xFFF8F9FA))
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Surface(color = Color.White, shadowElevation = 2.dp) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(color = Color.White, shadowElevation = 2.dp) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    AppSearchBar(
+                        query = searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        placeholder = "Procurar produto..."
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        AppSearchBar(
-                            query = searchQuery,
-                            onQueryChange = onSearchQueryChange,
-                            placeholder = "Procurar produto..."
+                        AppFilterDropdown(
+                            label = "Tipo",
+                            selectedValue = selectedType,
+                            options = listOf("HYGIENE", "FOOD", "CLEANING", "OTHER"),
+                            onOptionSelected = { productViewModel.onTypeSelected(it) },
+                            leadingIcon = Icons.Default.Tune,
+                            modifier = Modifier.weight(1f)
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        IconButton(
+                            onClick = onDownloadReport,
+                            modifier = Modifier
+                                .background(Color(0xFFF1F8F5), RoundedCornerShape(12.dp))
+                                .size(48.dp)
                         ) {
-                            AppFilterDropdown(
-                                label = "Tipo",
-                                selectedValue = selectedType,
-                                options = listOf("HYGIENE", "FOOD", "CLEANING", "OTHER"),
-                                onOptionSelected = { productViewModel.onTypeSelected(it) },
-                                leadingIcon = Icons.Default.Tune,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Surface(
-                                onClick = onDownloadReport,
-                                color = Color(0xFFF1F8F5),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Default.Download,
-                                        null,
-                                        tint = Color(0XFF00713C)
-                                    )
-                                }
-                            }
+                            Icon(Icons.Default.Download, null, tint = Color(0XFF00713C))
                         }
                     }
                 }
+            }
 
-                if (isLoading) {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator(color = Color(0XFF00713C)) }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(
-                            top = 16.dp,
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 120.dp
-                        )
-                    ) {
-                        items(groupedStockList, key = { it.productId }) { group ->
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0XFF00713C))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 100.dp)
+                ) {
+                    itemsIndexed(
+                        groupedStockList,
+                        key = { _, item -> item.productId }) { index, group ->
+                        val animDelay = index * 50
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(tween(400, animDelay)) +
+                                    slideInVertically(tween(400, animDelay)) { 50 }
+                        ) {
                             StockListItem(
                                 group.productName,
                                 group.totalQuantity,
@@ -265,24 +259,47 @@ fun ProductListContent(
         }
     }
 
+    // --- Diálogos ---
     if (showAddProductSheet) {
         AddProductDialog(
-            products,
-            { showAddProductSheet = false },
-            { p -> selectedProduct = p; showAddProductSheet = false; showAddStockDialog = true },
-            { showAddProductSheet = false; showCreateProductDialog = true })
+            products = products,
+            onDismiss = { showAddProductSheet = false },
+            onProductSelected = { p: Product ->
+                selectedProduct = p
+                showAddProductSheet = false
+                showAddStockDialog = true
+            },
+            onAddProductClick = {
+                showAddProductSheet = false
+                showCreateProductDialog = true
+            }
+        )
     }
+
     if (showAddStockDialog && selectedProduct != null) {
         AddStockDialog(
-            selectedProduct!!,
-            null,
-            { showAddStockDialog = false },
-            { s -> onConfirmAddStock(s); showAddStockDialog = false })
+            product = selectedProduct!!,
+            campaignId = null,
+            onDismiss = { showAddStockDialog = false },
+            onConfirm = { s ->
+                onConfirmAddStock(s)
+                showAddStockDialog = false
+            }
+        )
     }
+
     if (showCreateProductDialog) {
         AddNewProductDialog(
-            { showCreateProductDialog = false },
-            { np, uri -> onConfirmCreateProduct(np, uri); showCreateProductDialog = false })
+            onDismiss = { showCreateProductDialog = false },
+            onConfirm = { np, uri ->
+                onConfirmCreateProduct(np, uri)
+                showCreateProductDialog = false
+                showAddProductSheet = true
+            },
+            formState = formState,
+            onNameChange = { name, type -> productViewModel.onNameChange(name, type) },
+            onTypeChange = { type, name -> productViewModel.onTypeSelectedForm(type, name) }
+        )
     }
 }
 
@@ -296,14 +313,18 @@ fun StockListItem(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val rotationState by animateFloatAsState(if (expanded) 180f else 0f)
-    val statusColor =
-        if (totalQuantity == 0) Color(0xFFB3261E) else if (totalQuantity < 5) Color(0xFFE2A000) else Color(
-            0xFF00713C
-        )
+
+    val statusColor = when {
+        totalQuantity == 0 -> Color(0xFFB3261E)
+        totalQuantity < 10 -> Color(0xFFE2A000)
+        else -> Color(0xFF00713C)
+    }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = if (totalQuantity == 0) Color(0xFFFFF0F0) else Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (totalQuantity == 0) Color(0xFFFFF0F0) else Color.White
+        ),
+        elevation = CardDefaults.cardElevation(2.dp),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -319,31 +340,37 @@ fun StockListItem(
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFF5F5F5)
                 ) {
-                    if (!imageUrl.isNullOrBlank()) AsyncImage(
-                        model = imageUrl,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop
-                    )
-                    else Icon(
-                        Icons.Default.Inventory,
-                        null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    if (!imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = name,
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Inventory,
+                            null,
+                            tint = Color.LightGray,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
+
                 Spacer(Modifier.width(12.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = name, fontWeight = FontWeight.Bold, color = Color(0xFF1A1C1E))
                     Text(
-                        text = if (totalQuantity == 0) "Sem stock" else "Stock total",
+                        text = if (totalQuantity == 0) "Ruptura de Stock" else "Stock disponível",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (totalQuantity == 0) statusColor else Color.Gray
                     )
                 }
+
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "$totalQuantity",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = statusColor
                     )
@@ -357,6 +384,7 @@ fun StockListItem(
                     )
                 }
             }
+
             AnimatedVisibility(visible = expanded) {
                 Column(
                     modifier = Modifier
@@ -365,6 +393,7 @@ fun StockListItem(
                         .padding(16.dp)
                 ) {
                     batches.forEach { batch ->
+                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -373,12 +402,8 @@ fun StockListItem(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                "Validade: ${
-                                    SimpleDateFormat(
-                                        "dd/MM/yyyy",
-                                        Locale.getDefault()
-                                    ).format(Date(batch.expiryDate))
-                                }"
+                                "Validade: ${sdf.format(Date(batch.expiryDate))}",
+                                style = MaterialTheme.typography.bodyMedium
                             )
                             Text("${batch.quantity} un", fontWeight = FontWeight.Bold)
                         }

@@ -195,6 +195,13 @@ fun AddEditEntregaScreen(
                         onQueryChange = viewModel::onBeneficiaryQueryChange,
                         placeholder = "Procurar beneficiário"
                     )
+                    uiState.beneficiaryError?.let {
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                     if (uiState.searchedBeneficiaries.isNotEmpty()) {
                         LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
                             items(uiState.searchedBeneficiaries) { beneficiary ->
@@ -235,7 +242,8 @@ fun AddEditEntregaScreen(
                             label = "Data",
                             value = uiState.date,
                             onValueChange = {},
-                            placeholder = "dd/mm/yyyy"
+                            placeholder = "dd/mm/yyyy",
+                            errorMessage = uiState.dateError
                         )
                         Spacer(
                             modifier = Modifier
@@ -341,6 +349,15 @@ fun AddEditEntregaScreen(
                 }
             }
 
+            uiState.productsError?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
+                )
+            }
+
             DeliveryProductHeader(onAddProductClick = viewModel::showProductPickerDialog)
 
             Card(
@@ -375,7 +392,8 @@ fun AddEditEntregaScreen(
             AppButton(
                 text = if (entregaId == null) "Agendar Entrega" else "Guardar Alterações",
                 onClick = viewModel::saveDelivery,
-                containerColor = accentGreen,
+                containerColor = if (uiState.isFormValid) accentGreen else Color(0xFFC7C7C7),
+                enabled = uiState.isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

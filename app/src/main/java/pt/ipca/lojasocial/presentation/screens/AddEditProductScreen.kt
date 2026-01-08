@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,6 +48,7 @@ import pt.ipca.lojasocial.presentation.components.ProductInfoRow
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditProductScreen(
     stockId: String,

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -62,6 +63,7 @@ import pt.ipca.lojasocial.presentation.viewmodels.CampanhasViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.StockViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CampanhaDetailScreen(
     campanhaId: String,
@@ -74,6 +76,9 @@ fun CampanhaDetailScreen(
     viewModel: CampanhasViewModel = hiltViewModel()
 ) {
     val campanha by viewModel.selectedCampanha.collectAsState()
+
+    val formState by productViewModel.formState.collectAsState()
+
     val scrollState = rememberScrollState()
 
     // Estados para os Dialogs (Vindos do feature/gerir-stock)
@@ -275,7 +280,8 @@ fun CampanhaDetailScreen(
             AddProductDialog(
                 products = products,
                 onDismiss = { showAddProductSheet = false },
-                onProductSelected = { product ->
+                // CORRIGIDO: Nomes de parâmetros atualizados
+                onProductSelected = { product: Product ->
                     selectedProduct = product
                     showAddProductSheet = false
                     showAddStockDialog = true
@@ -287,7 +293,7 @@ fun CampanhaDetailScreen(
             )
         }
 
-        // 2. Definir Quantidade (Stock)
+        // 2. Definir Quantidade (AddStockDialog permanece igual pois a validação é local)
         if (showAddStockDialog && selectedProduct != null) {
             AddStockDialog(
                 product = selectedProduct!!,
@@ -296,13 +302,12 @@ fun CampanhaDetailScreen(
                 onConfirm = { stock ->
                     stockViewModel.addStockItem(stock)
                     showAddStockDialog = false
-                    // Opcional: Recarregar stock da campanha
                     stockViewModel.loadStockByCampaign(campanhaId)
                 }
             )
         }
 
-        // 3. Criar Novo Produto (se não existir na lista)
+        // 3. Criar Novo Produto (CORRIGIDO: Injeção de validação)
         if (showCreateProductDialog) {
             AddNewProductDialog(
                 onDismiss = { showCreateProductDialog = false },
@@ -313,11 +318,20 @@ fun CampanhaDetailScreen(
                     )
                     productViewModel.loadProducts()
                     showCreateProductDialog = false
-                    showAddProductSheet = true // Reabre a lista após criar
+                    showAddProductSheet = true
+                },
+                // ADICIONADO: Parâmetros de validação obrigatórios
+                formState = formState,
+                onNameChange = { name, type ->
+                    productViewModel.onNameChange(name, type)
+                },
+                onTypeChange = { type, name ->
+                    productViewModel.onTypeSelectedForm(type, name)
                 }
             )
         }
     }
+    
 }
 
 // --- COMPONENTES AUXILIARES ---

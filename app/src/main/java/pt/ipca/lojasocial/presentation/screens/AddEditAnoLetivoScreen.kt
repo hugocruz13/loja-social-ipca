@@ -1,5 +1,8 @@
 package pt.ipca.lojasocial.presentation.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,6 +41,7 @@ import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.viewmodels.AnosLetivosViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditAnoLetivoScreen(
     anoLetivoId: String? = null,
@@ -49,10 +54,11 @@ fun AddEditAnoLetivoScreen(
         if (anoLetivoId == "{id}" || anoLetivoId.isNullOrBlank()) null else anoLetivoId
     }
 
-
-    var dataInicio by remember { mutableStateOf("") }
-    var dataFim by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(realId == null) }
+
+    // Animação de entrada
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
 
     val accentGreen = Color(0XFF00713C)
     val isLoading by viewModel.isLoading.collectAsState()
@@ -61,20 +67,6 @@ fun AddEditAnoLetivoScreen(
         if (realId != null) {
             viewModel.loadAnoLetivoPorId(realId)
             isEditing = false
-        }
-    }
-
-    LaunchedEffect(viewModel.dataInicioInput, viewModel.dataFimInput) {
-        if (realId != null) {
-            dataInicio = viewModel.dataInicioInput
-            dataFim = viewModel.dataFimInput
-        }
-    }
-
-    LaunchedEffect(viewModel.dataInicioInput, viewModel.dataFimInput) {
-        if (realId != null) {
-            dataInicio = viewModel.dataInicioInput
-            dataFim = viewModel.dataFimInput
         }
     }
 
@@ -105,7 +97,8 @@ fun AddEditAnoLetivoScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
         ) {
-            if (realId != null) {
+            // Botão de Editar (com animação)
+            AnimatedVisibility(visible = realId != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -134,30 +127,45 @@ fun AddEditAnoLetivoScreen(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                AppDatePickerField(
-                    label = "Data Ínicio",
-                    selectedValue = dataInicio,
-                    onDateSelected = { dataInicio = it },
-                    enabled = isEditing,
-                    placeholder = "Selecionar Data"
-                )
+                // DATA INÍCIO
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = slideInVertically(initialOffsetY = { 40 }) + fadeIn()
+                ) {
+                    AppDatePickerField(
+                        label = "Data Ínicio",
+                        selectedValue = viewModel.dataInicioInput,
+                        onDateSelected = { viewModel.onDataInicioChange(it) },
+                        enabled = isEditing,
+                        errorMessage = if (viewModel.dataInicioTouched) viewModel.dataInicioError else null,
+                        placeholder = "Selecionar Data"
+                    )
+                }
 
-                AppDatePickerField(
-                    label = "Data Fim",
-                    selectedValue = dataFim,
-                    onDateSelected = { dataFim = it },
-                    enabled = isEditing,
-                    placeholder = "Selecionar Data"
-                )
+                // DATA FIM
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = slideInVertically(initialOffsetY = { 60 }) + fadeIn()
+                ) {
+                    AppDatePickerField(
+                        label = "Data Fim",
+                        selectedValue = viewModel.dataFimInput,
+                        onDateSelected = { viewModel.onDataFimChange(it) },
+                        enabled = isEditing,
+                        errorMessage = if (viewModel.dataFimTouched) viewModel.dataFimError else null,
+                        placeholder = "Selecionar Data"
+                    )
+                }
             }
 
-            if (isEditing) {
+            // BOTÃO DE SUBMETER
+            AnimatedVisibility(visible = isEditing) {
                 AppButton(
                     text = if (realId == null) "Registar" else "Guardar Alterações",
-                    onClick = {
-                        viewModel.saveAnoLetivo(realId, dataInicio, dataFim)
-                    },
-                    containerColor = accentGreen,
+                    onClick = { viewModel.saveAnoLetivo(realId) },
+                    // COR DINÂMICA E ENABLED
+                    enabled = viewModel.isFormValid && !isLoading,
+                    containerColor = if (viewModel.isFormValid) accentGreen else Color(0XFFC7C7C7),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp)

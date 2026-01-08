@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.use_cases.product.AddProductUseCase
@@ -18,12 +19,23 @@ import pt.ipca.lojasocial.domain.use_cases.product.GetProductsUseCase
 import java.util.UUID
 import javax.inject.Inject
 
+data class ProductFormState(
+    val nameError: String? = null,
+    val typeError: String? = null,
+    val nameTouched: Boolean = false,
+    val typeTouched: Boolean = false,
+    val isFormValid: Boolean = false
+)
+
 @HiltViewModel
 class ProductViewModel @Inject constructor(
     private val addProductUseCase: AddProductUseCase,
     private val getProductByIdUseCase: GetProductByIdUseCase,
     private val getProductsUseCase: GetProductsUseCase
 ) : ViewModel() {
+
+    private val _formState = MutableStateFlow(ProductFormState())
+    val formState = _formState.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -123,6 +135,29 @@ class ProductViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun validateProduct(name: String, type: String) {
+        val nameErr = if (name.isBlank()) "O nome do produto é obrigatório" else null
+        val typeErr = if (type.isBlank()) "Selecione uma categoria" else null
+
+        _formState.update {
+            it.copy(
+                nameError = nameErr,
+                typeError = typeErr,
+                isFormValid = nameErr == null && typeErr == null && name.isNotBlank()
+            )
+        }
+    }
+
+    fun onNameChange(name: String, type: String) {
+        _formState.update { it.copy(nameTouched = true) }
+        validateProduct(name, type)
+    }
+
+    fun onTypeSelectedForm(type: String, name: String) {
+        _formState.update { it.copy(typeTouched = true) }
+        validateProduct(name, type)
     }
 
     fun onSearchQueryChange(query: String) {

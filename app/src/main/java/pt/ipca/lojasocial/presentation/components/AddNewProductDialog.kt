@@ -23,14 +23,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.Product
 import pt.ipca.lojasocial.domain.models.ProductType
+import pt.ipca.lojasocial.presentation.viewmodels.ProductFormState
+import pt.ipca.lojasocial.presentation.viewmodels.ProductViewModel
 import java.util.UUID
 
 @Composable
 fun AddNewProductDialog(
     onDismiss: () -> Unit,
-    onConfirm: (Product, Uri?) -> Unit
+    onConfirm: (Product, Uri?) -> Unit,
+    formState: ProductFormState, // Recebe o estado de erro do ViewModel
+    onNameChange: (String, String) -> Unit, // Gatilho de validação do nome
+    onTypeChange: (String, String) -> Unit, // Gatilho de validação do tipo
+    viewModel: ProductViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(ProductType.FOOD) }
@@ -64,20 +71,31 @@ fun AddNewProductDialog(
                     color = Color(0xFF2B2B2B)
                 )
 
+                // NOME COM VALIDAÇÃO
                 AppTextField(
                     label = "Nome do Produto",
                     value = name,
-                    onValueChange = { name = it },
-                    placeholder = "Ex: Arroz 1kg"
+                    onValueChange = {
+                        name = it
+                        onNameChange(it, type.name) // Notifica o ViewModel para validar
+                    },
+                    placeholder = "Ex: Arroz 1kg",
+                    // MOSTRA ERRO APENAS SE TOCADO
+                    errorMessage = if (formState.nameTouched) formState.nameError else null
                 )
 
+                // TIPO COM VALIDAÇÃO
                 AppDropdownField(
                     label = "Tipo",
                     selectedValue = type.name,
                     options = ProductType.values().map { it.name },
                     onOptionSelected = {
-                        type = ProductType.valueOf(it)
-                    }
+                        val selectedType = ProductType.valueOf(it)
+                        type = selectedType
+                        onTypeChange(it, name) // Notifica o ViewModel para validar
+                    },
+                    // MOSTRA ERRO APENAS SE TOCADO
+                    errorMessage = if (formState.typeTouched) formState.typeError else null
                 )
 
                 AppTextField(
@@ -95,6 +113,7 @@ fun AddNewProductDialog(
                     }
                 )
 
+                // BOTÃO REATIVO AO ESTADO DE VALIDAÇÃO
                 AppButton(
                     text = "Guardar",
                     onClick = {
@@ -108,8 +127,11 @@ fun AddNewProductDialog(
                             imageUri
                         )
                     },
-                    enabled = name.isNotBlank(),
-                    containerColor = Color(0XFF00713C),
+                    // SÓ HABILITA SE O FORMULÁRIO FOR VÁLIDO NO VIEWMODEL
+                    enabled = formState.isFormValid,
+                    containerColor = if (formState.isFormValid) Color(0XFF00713C) else Color(
+                        0XFFC7C7C7
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
