@@ -49,7 +49,7 @@ class AuthViewModel @Inject constructor(
 
     // Pelo menos: 1 Maíuscula, 1 Minúscula, 1 Número, 1 Símbolo, mín. 8 caracteres
     private val passwordRegex =
-        Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$""")
+        Regex("""^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$""")
     private val phoneRegex = Regex("""^9\d{8}$""")
 
     init {

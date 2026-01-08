@@ -110,7 +110,7 @@ fun RegisterStep1Screen(
                         .padding(bottom = 16.dp)
                 )
 
-                // DATA DE NASCIMENTO - FIX: Garantir que o clique funciona
+                // DATA DE NASCIMENTO
                 AppDatePickerField(
                     label = "Data de Nascimento",
                     selectedValue = state.birthDate,
@@ -118,7 +118,7 @@ fun RegisterStep1Screen(
                         viewModel.updateBirthDate(newDate)
                     },
                     placeholder = "dd/mm/yyyy",
-                    enabled = true, // Certifica-te que está enabled
+                    enabled = true,
                     errorMessage = if (state.birthDateTouched) state.birthDateError else null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -184,7 +184,7 @@ fun RegisterStep1Screen(
                     keyboardType = KeyboardType.Password,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 32.dp)
+                        .padding(bottom = 10.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -196,7 +196,7 @@ fun RegisterStep1Screen(
                     containerColor = if (state.isStep1Valid) accentGreen else Color(0XFFC7C7C7),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+                        .height(80.dp)
                         .padding(bottom = 24.dp)
                 )
             }
