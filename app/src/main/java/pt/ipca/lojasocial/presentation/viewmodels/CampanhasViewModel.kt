@@ -23,6 +23,7 @@ import pt.ipca.lojasocial.domain.models.CampaignType
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.domain.use_cases.UploadImageUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.AddCampaignUseCase
+import pt.ipca.lojasocial.domain.use_cases.campaign.GetActiveCampaignsCountUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignByIdUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.GetCampaignsUseCase
 import pt.ipca.lojasocial.domain.use_cases.campaign.UpdateCampaignUseCase
@@ -30,7 +31,6 @@ import pt.ipca.lojasocial.presentation.screens.CampanhaModel
 import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
-import pt.ipca.lojasocial.domain.use_cases.campaigns.GetActiveCampaignsCountUseCase
 
 /**
  * ViewModel responsável pela gestão de Campanhas com suporte a Tempo Real.
@@ -43,6 +43,7 @@ class CampanhasViewModel @Inject constructor(
     private val addCampaignUseCase: AddCampaignUseCase,
     private val updateCampaignUseCase: UpdateCampaignUseCase,
     private val uploadImageUseCase: UploadImageUseCase,
+    private val GetActiveCampaignsCountUseCase: GetActiveCampaignsCountUseCase,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
@@ -138,10 +139,11 @@ class CampanhasViewModel @Inject constructor(
             }
         }
     }
+
     fun loadActiveCount() {
         viewModelScope.launch {
             try {
-                val count = getActiveCampaignsCountUseCase()
+                val count = GetActiveCampaignsCountUseCase()
                 _activeCount.value = count
             } catch (e: Exception) {
                 _activeCount.value = 0

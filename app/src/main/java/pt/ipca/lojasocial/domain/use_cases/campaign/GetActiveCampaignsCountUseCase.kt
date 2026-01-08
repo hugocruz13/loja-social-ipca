@@ -1,4 +1,4 @@
-package pt.ipca.lojasocial.domain.use_cases.campaigns
+package pt.ipca.lojasocial.domain.use_cases.campaign
 
 import pt.ipca.lojasocial.domain.repository.CampaignRepository
 import javax.inject.Inject

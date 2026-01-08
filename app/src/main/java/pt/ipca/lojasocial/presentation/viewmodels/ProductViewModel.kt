@@ -133,12 +133,4 @@ class ProductViewModel @Inject constructor(
         _selectedType.value = type
     }
 
-    fun onSearchQueryChange(query: String) {
-        _searchQuery.value = query
-    }
-
-    fun onTypeSelected(type: String) {
-        _selectedType.value = type
-    }
-
 }
