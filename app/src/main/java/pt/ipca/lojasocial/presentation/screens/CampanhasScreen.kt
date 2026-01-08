@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -21,6 +23,7 @@ import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.AdicionarButton
 import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppCampanhaCard
+import pt.ipca.lojasocial.presentation.components.AppFilterDropdown
 import pt.ipca.lojasocial.presentation.components.AppSearchBar
 import pt.ipca.lojasocial.presentation.components.AppTopBar
 import pt.ipca.lojasocial.presentation.components.BottomNavItem
@@ -51,6 +54,13 @@ fun CampanhasScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val campanhas by viewModel.filteredCampanhas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val selectedFilter by viewModel.selectedStatusFilter.collectAsState()
+
+    val statusOptions = listOf(
+        StatusType.ATIVA,
+        StatusType.AGENDADA,
+        StatusType.COMPLETA
+    )
 
     Scaffold(
         topBar = {
@@ -81,6 +91,32 @@ fun CampanhasScreen(
                 placeholder = "Procurar campanhas",
                 modifier = Modifier.padding(16.dp)
             )
+
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                AppFilterDropdown(
+                    label = "Estado",
+                    selectedValue = selectedFilter?.name ?: "",
+                    options = statusOptions.map { it.name },
+                    leadingIcon = androidx.compose.material.icons.Icons.Default.Tune,
+                    onOptionSelected = { selectedName ->
+                        if (selectedName.isEmpty()) {
+                            viewModel.onFilterChange(null)
+                        } else {
+                            val status = StatusType.valueOf(selectedName)
+                            viewModel.onFilterChange(status)
+                        }
+                    },
+                    modifier = Modifier.wrapContentWidth()
+                )
+            }
+
+
 
             if (isLoading) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())

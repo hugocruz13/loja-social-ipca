@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.BlendMode.Companion.Screen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -31,6 +32,7 @@ import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
 import pt.ipca.lojasocial.presentation.screens.DashboardScreen
 import pt.ipca.lojasocial.presentation.screens.EntregaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.EntregasScreen
+import pt.ipca.lojasocial.presentation.screens.ListBeneficiariesScreen
 import pt.ipca.lojasocial.presentation.screens.LoginScreen
 import pt.ipca.lojasocial.presentation.screens.LogsListScreen
 import pt.ipca.lojasocial.presentation.screens.NotificationsScreen
@@ -78,6 +80,9 @@ sealed class AppScreen(val route: String) {
     object EntregaDetail : AppScreen("entrega_detail/{entregaId}/{userRole}")
     object AnoLetivoList : AppScreen("anoletivolist")
     object AnoLetivoAddEdit : AppScreen("anoletivoaddedit?id={id}")
+    object Beneficiaries : AppScreen("beneficiaries")
+    object BeneficiaryDetail : AppScreen("beneficiary_detail/{id}")
+    object AddBeneficiary : AppScreen("add_beneficiary")
 }
 
 @Composable
@@ -323,6 +328,19 @@ fun AppNavHost(
                 onNavigate = onNavigate
             )
         }
+
+        composable(AppScreen.Beneficiaries.route) {
+            ListBeneficiariesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onBeneficiaryClick = { id ->
+                    navController.navigate("beneficiary_detail/$id")
+                },
+                onAddBeneficiaryClick = {
+                    navController.navigate(AppScreen.AddBeneficiary.route)
+                }
+            )
+        }
+
 
         // =====================================================================
         // CAMPANHAS

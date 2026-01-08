@@ -115,6 +115,10 @@ fun ProductListScreen(
     val filteredProducts by productViewModel.filteredProducts.collectAsState()
     val isLoading by stockViewModel.isLoading.collectAsState()
 
+    val searchQuery by productViewModel.searchQuery.collectAsState()
+    val selectedType by productViewModel.selectedType.collectAsState()
+
+    // Carregar dados iniciais
     // Estado local para a SearchBar
     var localSearchQuery by remember { mutableStateOf("") }
 
@@ -212,12 +216,14 @@ fun ProductListContent(
     onConfirmAddStock: (pt.ipca.lojasocial.domain.models.Stock) -> Unit,
     onConfirmCreateProduct: (Product, android.net.Uri?) -> Unit
 ) {
-    var expandedFab by remember { mutableStateOf(false) }
-    var selectedYear by remember { mutableStateOf("2024-2025") }
-    var selectedStatus by remember { mutableStateOf("") }
+    val productViewModel: ProductViewModel = hiltViewModel()
+    val selectedType by productViewModel.selectedType.collectAsState()
 
-    val years = listOf("2023-2024", "2024-2025")
-    val statusOptions = listOf("Ativo", "Inativo")
+    val typeOptions = listOf("HYGIENE", "FOOD", "CLEANING", "OTHER")
+
+    // Estados locais de UI (Filtros, Dialogs, FAB)
+    var searchQuery by remember { mutableStateOf("") }
+    var expandedFab by remember { mutableStateOf(false) }
 
     var showAddProductSheet by remember { mutableStateOf(false) }
     var showAddStockDialog by remember { mutableStateOf(false) }
@@ -284,20 +290,12 @@ fun ProductListContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AppFilterDropdown(
-                        "Ano",
-                        selectedYear,
-                        years,
-                        { selectedYear = it },
-                        Icons.Default.CalendarToday,
-                        Modifier.weight(1f)
-                    )
-                    AppFilterDropdown(
-                        "Status",
-                        selectedStatus,
-                        statusOptions,
-                        { selectedStatus = it },
-                        Icons.Default.Tune,
-                        Modifier.weight(1f)
+                        label = "Tipo",
+                        selectedValue = selectedType,
+                        options = typeOptions,
+                        onOptionSelected = { productViewModel.onTypeSelected(it) },
+                        leadingIcon = Icons.Default.Tune,
+                        modifier = Modifier.weight(1f)
                     )
                     Box(
                         modifier = Modifier

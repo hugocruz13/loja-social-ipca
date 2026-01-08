@@ -43,6 +43,9 @@ class ProductViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedType = MutableStateFlow("")
 
+    val searchQuery = _searchQuery.asStateFlow()
+    val selectedType = _selectedType.asStateFlow()
+
     val filteredProducts: StateFlow<List<Product>> = combine(
         _products,
         _searchQuery,
@@ -129,4 +132,13 @@ class ProductViewModel @Inject constructor(
     fun onTypeSelected(type: String) {
         _selectedType.value = type
     }
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun onTypeSelected(type: String) {
+        _selectedType.value = type
+    }
+
 }
