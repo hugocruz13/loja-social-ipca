@@ -1,5 +1,6 @@
 package pt.ipca.lojasocial.presentation.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
@@ -26,6 +27,7 @@ import pt.ipca.lojasocial.presentation.screens.AddEditCampanhaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditEntregaScreen
 import pt.ipca.lojasocial.presentation.screens.AddEditProductScreen
 import pt.ipca.lojasocial.presentation.screens.AnoLetivoListScreen
+import pt.ipca.lojasocial.presentation.screens.BeneficiaryDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhaDetailScreen
 import pt.ipca.lojasocial.presentation.screens.CampanhasScreen
 import pt.ipca.lojasocial.presentation.screens.DashboardScreen
@@ -194,6 +196,18 @@ fun AppNavHost(
                     }
                 },
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "beneficiary_detail/{beneficiaryId}",
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) },
+            exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) }
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("beneficiaryId") ?: ""
+            BeneficiaryDetailScreen(
+                beneficiaryId = id,
+                onBackClick = { navController.popBackStack() }
             )
         }
 
