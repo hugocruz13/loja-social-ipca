@@ -38,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,14 +67,22 @@ val docLabels = mapOf(
 @Composable
 fun RequerimentoEstadoScreen(
     onBackClick: () -> Unit,
+    onApprovedRedirect: () -> Unit,
     status: StatusType,
     beneficiaryName: String,
     cc: String,
     observations: String = "",
-    documents: Map<String, String?> = emptyMap(), // Recebe o mapa de documentos
+    documents: Map<String, String?> = emptyMap(),
     uploadingDocKey: String?,
     onResubmitDoc: (String, Uri) -> Unit = { _, _ -> } // Callback para o ViewModel
 ) {
+
+    LaunchedEffect(status) {
+        if (status == StatusType.APROVADA) {
+            onApprovedRedirect()
+        }
+    }
+
     // Gestão do Upload de ficheiros
     var selectedDocKey by remember { mutableStateOf<String?>(null) }
 
@@ -91,58 +100,57 @@ fun RequerimentoEstadoScreen(
         },
         containerColor = Color(0xFFF9FAFB) // Fundo cinza claro
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // 1. Cabeçalho
-            ProfileHeaderCard(name = beneficiaryName, cc = cc)
-
-            // 2. Cartão de Estado (Sem opção de Aprovado)
-            StatusCard(status = status)
-
-            // --- LÓGICA CONDICIONAL ---
-
-            // CASO A: REJEITADA -> Mostra Observações
-            if (status == StatusType.REJEITADA) {
-                ObservationCard(observations)
+        if (status == StatusType.APROVADA) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color(0xFF00713C))
+                    Spacer(Modifier.height(16.dp))
+                    Text("Requerimento Aprovado! A entrar...", fontWeight = FontWeight.Bold)
+                }
             }
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                ProfileHeaderCard(name = beneficiaryName, cc = cc)
+                StatusCard(status = status)
 
-            // CASO B: DOCS INCORRETOS -> Mostra Lista de Documentos para corrigir
-            if (status == StatusType.DOCS_INCORRETOS) {
-                Text(
-                    text = "Documentos Enviados",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
+                if (status == StatusType.REJEITADA) {
+                    ObservationCard(observations)
+                }
 
-                // Itera sobre os documentos esperados
-                // Se o mapa documents vier vazio, usamos as chaves padrão, senão usamos as do mapa
-                val keysToShow = if (documents.isNotEmpty()) documents.keys else docLabels.keys
+                if (status == StatusType.DOCS_INCORRETOS) {
+                    Text(
+                        text = "Documentos Enviados",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    keysToShow.forEach { key ->
-                        val url = documents[key]
-                        // Se URL for null ou vazio, é inválido -> Precisa alterar
-                        val isValid = !url.isNullOrBlank()
-                        val label = docLabels[key] ?: "Documento"
+                    val keysToShow = if (documents.isNotEmpty()) documents.keys else docLabels.keys
 
-                        val isUploading = (key == uploadingDocKey)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        keysToShow.forEach { key ->
+                            val url = documents[key]
+                            val isValid = !url.isNullOrBlank()
+                            val label = docLabels[key] ?: "Documento"
+                            val isUploading = (key == uploadingDocKey)
 
-                        DocumentStatusRow(
-                            name = label,
-                            isValid = isValid,
-                            isUploading = isUploading,
-                            onUploadClick = {
-                                selectedDocKey = key
-                                launcher.launch("application/pdf") // Ou "*/*"
-                            }
-                        )
+                            DocumentStatusRow(
+                                name = label,
+                                isValid = isValid,
+                                isUploading = isUploading,
+                                onUploadClick = {
+                                    selectedDocKey = key
+                                    launcher.launch("application/pdf")
+                                }
+                            )
+                        }
                     }
                 }
             }

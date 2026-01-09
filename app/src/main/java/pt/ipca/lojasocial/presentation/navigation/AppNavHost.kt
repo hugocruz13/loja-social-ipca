@@ -295,6 +295,11 @@ fun AppNavHost(
                 documents = state.requestDocuments,
                 onResubmitDoc = { docKey, uri -> viewModel.resubmitDocument(docKey, uri) },
                 uploadingDocKey = state.uploadingDocKey,
+                onApprovedRedirect = {
+                    navController.navigate(AppScreen.Dashboard.route) {
+                        popUpTo(AppScreen.RequerimentoStatus.route) { inclusive = true }
+                    }
+                },
                 onBackClick = {
                     viewModel.logout()
                     navController.navigate(AppScreen.Login.route) {
