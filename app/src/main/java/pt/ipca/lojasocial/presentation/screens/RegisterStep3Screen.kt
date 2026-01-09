@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,13 @@ fun RegisterStep3Screen(
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
     val accentGreen = Color(0XFF00713C)
+
+    LaunchedEffect(state.isSuccess) {
+        if (state.isSuccess) {
+            onRegisterSuccess()
+            viewModel.resetState()
+        }
+    }
 
     // Launcher para ficheiros
     var currentDocType by remember { mutableStateOf("") }

@@ -296,7 +296,13 @@ class CampanhasViewModel @Inject constructor(
         }
     }
 
-    fun validateCampaign(nome: String, desc: String, dataInicioStr: String, dataFimStr: String) {
+    fun validateCampaign(
+        nome: String,
+        desc: String,
+        dataInicioStr: String,
+        dataFimStr: String,
+        isEdit: Boolean = false
+    ) {
         val startTs = parseDateToLong(dataInicioStr)
         val endTs = parseDateToLong(dataFimStr)
 
@@ -306,17 +312,15 @@ class CampanhasViewModel @Inject constructor(
         val nomeErr = if (nome.isBlank()) "Nome é obrigatório" else null
         val descErr = if (desc.length < 10) "Descrição muito curta (mín. 10 carac.)" else null
 
-        // REGRA: Início deve ser estritamente APÓS hoje (não pode ser antes, nem hoje)
         val inicioErr = when {
-            dataInicioStr.isBlank() -> "Data de início obrigatória"
-            startTs <= hojeTs -> "O início deve ser, no mínimo, a partir de amanhã"
+            dataInicioStr.isBlank() && !isEdit -> "Data de início obrigatória"
+            dataInicioStr.isNotBlank() && startTs <= hojeTs -> "O início deve ser, no mínimo, a partir de amanhã"
             else -> null
         }
 
-        // REGRA: Fim deve ser após o início
         val fimErr = when {
-            dataFimStr.isBlank() -> "Data de fim obrigatória"
-            endTs <= startTs -> "O fim deve ser posterior à data de início"
+            dataFimStr.isBlank() && !isEdit -> "Data de fim obrigatória"
+            dataFimStr.isNotBlank() && endTs <= startTs -> "O fim deve ser posterior ao início"
             else -> null
         }
 

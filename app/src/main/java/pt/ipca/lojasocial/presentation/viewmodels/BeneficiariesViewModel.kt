@@ -15,6 +15,7 @@ import pt.ipca.lojasocial.domain.models.Beneficiary
 import pt.ipca.lojasocial.domain.models.Request // Certifica-te que tens este import
 import pt.ipca.lojasocial.domain.models.UserRole
 import pt.ipca.lojasocial.domain.repository.RequestRepository // Import do repositório
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.AddBeneficiaryUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase
@@ -25,7 +26,6 @@ class BeneficiariesViewModel @Inject constructor(
     private val getBeneficiariesUseCase: GetBeneficiariesUseCase,
     private val addBeneficiaryUseCase: AddBeneficiaryUseCase,
     private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase,
-    // ADICIONADO: Necessário para buscar os requerimentos do beneficiário
     private val requestRepository: RequestRepository
 ) : ViewModel() {
 
@@ -155,6 +155,7 @@ class BeneficiariesViewModel @Inject constructor(
             _errorMessage.value = null
             _isUpdateSuccess.value = false
 
+            // Chama o UseCase do Passo 1
             val result = updateBeneficiaryUseCase(
                 role = role,
                 original = original,
