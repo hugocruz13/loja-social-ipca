@@ -83,6 +83,13 @@ fun AddEditCampanhaScreen(
             dataInicio = formatLongToString(camp.startDate)
             dataFim = formatLongToString(camp.endDate)
             selectedType = camp.type
+            viewModel.validateCampaign(
+                camp.nome,
+                camp.desc,
+                formatLongToString(camp.startDate),
+                formatLongToString(camp.endDate),
+                isEdit = true
+            )
         }
     }
 
@@ -146,6 +153,13 @@ fun AddEditCampanhaScreen(
                 value = descricao,
                 onValueChange = {
                     descricao = it
+                    viewModel.validateCampaign(
+                        nome,
+                        it,
+                        dataInicio,
+                        dataFim,
+                        isEdit = campanhaId != null
+                    )
                 },
                 errorMessage = if (formState.descTouched) formState.descError else null,
                 placeholder = "Introduza uma descrição...",
@@ -205,7 +219,7 @@ fun AddEditCampanhaScreen(
                         selectedImageUri
                     )
                 },
-                enabled = formState.isFormValid && !viewModel.isLoading.value,
+                enabled = formState.isFormValid && !viewModel.isLoading.collectAsState().value,
                 containerColor = if (formState.isFormValid) accentGreen else Color(0xFFC7C7C7),
                 modifier = Modifier
                     .fillMaxWidth()
