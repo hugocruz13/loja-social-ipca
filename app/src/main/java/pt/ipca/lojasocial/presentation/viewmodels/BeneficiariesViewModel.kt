@@ -12,10 +12,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
-import pt.ipca.lojasocial.domain.models.Request // Certifica-te que tens este import
+import pt.ipca.lojasocial.domain.models.Request
 import pt.ipca.lojasocial.domain.models.UserRole
-import pt.ipca.lojasocial.domain.repository.RequestRepository // Import do repositório
-import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.AddBeneficiaryUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase
