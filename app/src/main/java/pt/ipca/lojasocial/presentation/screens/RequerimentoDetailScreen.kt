@@ -50,12 +50,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppExpandableCard
 import pt.ipca.lojasocial.presentation.components.AppTextField
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.InfoRow
 import pt.ipca.lojasocial.presentation.viewmodels.RequerimentoDetailViewModel
 
@@ -64,7 +62,6 @@ import pt.ipca.lojasocial.presentation.viewmodels.RequerimentoDetailViewModel
 fun RequerimentoDetailScreen(
     requerimentoId: String, // (Opcional, o ViewModel já pega pelo SavedStateHandle)
     onBackClick: () -> Unit,
-    navItems: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     // Injetamos o ViewModel
     viewModel: RequerimentoDetailViewModel = hiltViewModel()
@@ -242,12 +239,6 @@ fun RequerimentoDetailScreen(
     // --- UI PRINCIPAL ---
     Scaffold(
         topBar = { AppTopBar(title = "Detalhe do Requerimento", onBackClick = onBackClick) },
-        bottomBar = {
-            AppBottomBar(
-                navItems = navItems,
-                currentRoute = "",
-                onItemSelected = { onNavigate(it.route) })
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier

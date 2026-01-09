@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.firebase.vertexai)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -81,5 +82,6 @@ dependencies {
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("com.google.firebase:firebase-vertexai")
 
 }
