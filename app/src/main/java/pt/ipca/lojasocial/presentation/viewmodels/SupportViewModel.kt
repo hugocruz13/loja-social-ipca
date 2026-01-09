@@ -36,16 +36,16 @@ class SupportViewModel @Inject constructor() : ViewModel() {
             Usa estas FAQs para responder:
             
             1. Como agendar uma nova entrega?
-               R: Acede ao menu 'Entregas' e clica no botão '+'. Depois escolhe a data, a hora e seleciona os produtos que precisas (ex: Arroz, Massa, etc.).
+               R: Clique no botão "+" presente no ecrã inicial e selecione quando quer a entrega, a que horas e os produtos que deseja receber.
             
             2. Que produtos posso pedir?
                R: Podes solicitar itens essenciais disponíveis no stock, que estarão disponíveis aquando do pedido de entrega.
             
             3. Como sei se tenho entregas por levantar?
-               R: Verifica o cartão 'Entregas Pendentes' no topo do teu Ecrã Principal (Dashboard) ou consulta o filtro 'Pendente' no menu 'Entregas'.
+               R: Na sua dashboard consegue verificar as entregas que tem planeadas e os dias em questão.
             
             4. Onde vejo o que já recebi no passado?
-               R: No menu 'Entregas', usa o filtro 'Entregue' para veres todo o teu histórico de apoios recebidos.
+               R: Na Dashboard, usa o filtro 'Historico' para veres todo o teu histórico de apoios recebidos.
             
             Regras:
             - Responde sempre em Português de Portugal.

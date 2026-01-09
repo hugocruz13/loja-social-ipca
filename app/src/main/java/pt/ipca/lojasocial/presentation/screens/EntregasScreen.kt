@@ -70,7 +70,6 @@ fun EntregasScreen(
             AppTopBar(title = "Entregas", onBackClick = onBackClick)
         },
         bottomBar = {
-            // IMPLEMENTAÇÃO DO BOTÃO ENCAIXADO (DOCKED FAB)
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "entregaslist",
@@ -89,7 +88,7 @@ fun EntregasScreen(
             )
         },
         containerColor = Color(0xFFF8F9FA)
-    ) { innerPadding -> // CORREÇÃO: paddingValues do Scaffold
+    ) { innerPadding ->
 
         Box(
             modifier = Modifier
