@@ -260,6 +260,7 @@ class AuthViewModel @Inject constructor(
                         fullName = beneficiary?.name ?: "Sem Nome",
                         studentNumber = beneficiary?.id ?: "",
                         email = beneficiary?.email ?: "",
+                        cc = beneficiary?.ccNumber ?: "",
                         beneficiaryStatus = beneficiary?.status ?: BeneficiaryStatus.ANALISE
                     )
                 }
