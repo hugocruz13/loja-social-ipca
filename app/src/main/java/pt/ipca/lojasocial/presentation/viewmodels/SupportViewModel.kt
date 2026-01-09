@@ -59,7 +59,7 @@ class SupportViewModel @Inject constructor() : ViewModel() {
 
     // Inicializa o modelo (Flash é rápido e barato)
     private val generativeModel = Firebase.vertexAI.generativeModel(
-        modelName = "gemini-1.5-flash",
+        modelName = "gemini-2.0-flash-001",
         systemInstruction = systemInstructions
     )
 
