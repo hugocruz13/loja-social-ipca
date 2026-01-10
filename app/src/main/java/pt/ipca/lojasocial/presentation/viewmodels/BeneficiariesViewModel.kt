@@ -7,11 +7,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import pt.ipca.lojasocial.domain.models.Beneficiary
+import pt.ipca.lojasocial.domain.models.Request
 import pt.ipca.lojasocial.domain.models.UserRole
+import pt.ipca.lojasocial.domain.repository.BeneficiaryRepository
+import pt.ipca.lojasocial.domain.repository.RequestRepository
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.AddBeneficiaryUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.GetBeneficiariesUseCase
 import pt.ipca.lojasocial.domain.use_cases.beneficiary.UpdateBeneficiaryUseCase
@@ -21,10 +25,18 @@ import javax.inject.Inject
 class BeneficiariesViewModel @Inject constructor(
     private val getBeneficiariesUseCase: GetBeneficiariesUseCase,
     private val addBeneficiaryUseCase: AddBeneficiaryUseCase,
-    private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase
+    private val updateBeneficiaryUseCase: UpdateBeneficiaryUseCase,
+    private val requestRepository: RequestRepository,
+    private val beneficiaryRepository: BeneficiaryRepository
 ) : ViewModel() {
 
-    // --- ESTADOS DA UI (Mantive igual) ---
+    private val _selectedBeneficiary = MutableStateFlow<Beneficiary?>(null)
+    val selectedBeneficiary = _selectedBeneficiary.asStateFlow()
+
+    private val _selectedRequest = MutableStateFlow<Request?>(null)
+    val selectedRequest = _selectedRequest.asStateFlow()
+
+    // --- ESTADOS DA UI ---
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -86,6 +98,32 @@ class BeneficiariesViewModel @Inject constructor(
         }
     }
 
+    fun loadBeneficiaryDetail(id: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                // Tenta encontrar na lista que já temos
+                var ben = _beneficiaries.value.find { it.id == id }
+
+                // SE NÃO ENCONTRAR (Lista vazia ou reload), vai à base de dados
+                if (ben == null) {
+                    ben = beneficiaryRepository.getBeneficiaryById(id)
+                }
+
+                _selectedBeneficiary.value = ben
+
+                // Carrega o requerimento (isso já está a funcionar segundo dizes)
+                requestRepository.getRequestsByBeneficiary(id).collectLatest { requests ->
+                    _selectedRequest.value = requests.maxByOrNull { it.submissionDate }
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun addBeneficiary(beneficiary: Beneficiary) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -100,7 +138,7 @@ class BeneficiariesViewModel @Inject constructor(
         }
     }
 
-    // --- NOVA FUNÇÃO: ATUALIZAR PERFIL (PASSO 2) ---
+    // ATUALIZAR PERFIL ---
     /**
      * Esta função conecta a UI ao UseCase que criaste.
      * Ela recebe os dados e deixa o UseCase decidir o que pode ser guardado com base na Role.
