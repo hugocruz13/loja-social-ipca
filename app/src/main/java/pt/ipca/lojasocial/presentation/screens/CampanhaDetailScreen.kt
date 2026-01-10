@@ -280,7 +280,6 @@ fun CampanhaDetailScreen(
             AddProductDialog(
                 products = products,
                 onDismiss = { showAddProductSheet = false },
-                // CORRIGIDO: Nomes de parâmetros atualizados
                 onProductSelected = { product: Product ->
                     selectedProduct = product
                     showAddProductSheet = false
@@ -331,7 +330,7 @@ fun CampanhaDetailScreen(
             )
         }
     }
-    
+
 }
 
 // --- COMPONENTES AUXILIARES ---

@@ -181,7 +181,7 @@ fun DashboardScreen(
                         AppAccessCard(
                             "Canal de Apoio",
                             Icons.Default.SupportAgent,
-                            { onNavigate("apoio") })
+                            { onNavigate("support") })
                     }
                 }
             }

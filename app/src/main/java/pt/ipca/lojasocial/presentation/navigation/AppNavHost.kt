@@ -46,6 +46,7 @@ import pt.ipca.lojasocial.presentation.screens.RegisterStep3Screen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoDetailScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentoEstadoScreen
 import pt.ipca.lojasocial.presentation.screens.RequerimentosScreen
+import pt.ipca.lojasocial.presentation.screens.SupportScreen
 import pt.ipca.lojasocial.presentation.viewmodels.AddEditEntregaViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.AuthViewModel
 import pt.ipca.lojasocial.presentation.viewmodels.BeneficiariesViewModel
@@ -84,6 +85,7 @@ sealed class AppScreen(val route: String) {
     object Beneficiaries : AppScreen("beneficiaries")
     object BeneficiaryDetail : AppScreen("beneficiary_detail/{id}")
     object AddBeneficiary : AppScreen("add_beneficiary")
+    object Support : AppScreen("support")
 }
 
 @Composable
@@ -232,6 +234,7 @@ fun AppNavHost(
 
                     when (destination) {
                         // --- Mapeamento dos Cards da Dashboard (Chaves) ---
+                        "support" -> navController.navigate(AppScreen.Support.route)
                         "entregas" -> navController.navigate(AppScreen.EntregasList.route)
                         "requerimentos" -> navController.navigate(AppScreen.RequerimentosList.route)
                         "campanhas" -> navController.navigate(AppScreen.CampanhasList.route)
@@ -342,7 +345,6 @@ fun AppNavHost(
             RequerimentoDetailScreen(
                 requerimentoId = id,
                 onBackClick = { navController.popBackStack() },
-                navItems = emptyList(),
                 onNavigate = onNavigate
             )
         }
@@ -356,6 +358,12 @@ fun AppNavHost(
                 onAddBeneficiaryClick = {
                     navController.navigate(AppScreen.AddBeneficiary.route)
                 }
+            )
+        }
+
+        composable(AppScreen.Support.route) {
+            SupportScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 

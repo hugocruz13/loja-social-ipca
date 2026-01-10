@@ -66,7 +66,6 @@ fun CampanhasScreen(
             )
         },
         bottomBar = {
-            // APLICAMOS O BOTÃO ENCAIXADO AQUI
             AppBottomBar(
                 navItems = navItems,
                 currentRoute = "campanhaslist", // Verifica se esta é a rota no teu NavHost
