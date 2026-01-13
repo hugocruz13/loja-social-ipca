@@ -26,6 +26,7 @@ import pt.ipca.lojasocial.domain.repository.SchoolYearRepository
 import pt.ipca.lojasocial.domain.repository.StockRepository
 import pt.ipca.lojasocial.domain.use_cases.auth.GetCurrentUserUseCase
 import pt.ipca.lojasocial.presentation.models.AddEditEntregaUiState
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -157,7 +158,7 @@ class AddEditEntregaViewModel @Inject constructor(
         if (query.length > 2) {
             viewModelScope.launch {
                 val beneficiaries = beneficiaryRepository.getBeneficiaries()
-                    .filter { it.name.contains(query, ignoreCase = true) }
+                    .filter { normalize(it.name).contains(normalize(query), ignoreCase = true) }
                 _uiState.update { it.copy(searchedBeneficiaries = beneficiaries) }
             }
         }
@@ -426,5 +427,10 @@ class AddEditEntregaViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Notification error", e)
         }
+    }
+
+    private fun normalize(input: String): String {
+        return Normalizer.normalize(input, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
     }
 }
