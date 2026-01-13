@@ -42,6 +42,8 @@ class EntregasViewModel @Inject constructor(
     val selectedFilter = _selectedFilter.asStateFlow()
 
     private val _allDeliveries = MutableStateFlow<List<DeliveryUiModel>>(emptyList())
+
+    val allDeliveriesForDashboard: StateFlow<List<DeliveryUiModel>> = _allDeliveries.asStateFlow()
     private val _pendingCount = MutableStateFlow(0)
     val pendingCount = _pendingCount.asStateFlow()
 

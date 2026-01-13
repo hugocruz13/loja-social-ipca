@@ -77,7 +77,7 @@ const Donations = () => {
       `;
 
       await addDoc(collection(db, "mail_queue"), {
-        to: "lojasocial@ipca.pt",
+        to: "a27962@alunos.ipca.pt",
         message: {
           subject: `Nova Doação: ${formData.name}`,
           html: emailHtmlBody,

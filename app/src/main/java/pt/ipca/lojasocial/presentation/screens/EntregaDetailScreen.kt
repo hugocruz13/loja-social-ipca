@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,13 +44,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import pt.ipca.lojasocial.domain.models.StatusType
-import pt.ipca.lojasocial.presentation.components.AppBottomBar
 import pt.ipca.lojasocial.presentation.components.AppButton
 import pt.ipca.lojasocial.presentation.components.AppStatusBadge
 import pt.ipca.lojasocial.presentation.components.AppTopBar
-import pt.ipca.lojasocial.presentation.components.BottomNavItem
 import pt.ipca.lojasocial.presentation.components.SimpleProductListItem
-import pt.ipca.lojasocial.presentation.navigation.AppScreen
 import pt.ipca.lojasocial.presentation.viewmodels.EntregaDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,8 +56,6 @@ fun EntregaDetailScreen(
     entregaId: String,
     userRole: String, // "colaborador" ou "beneficiario"
     onBackClick: () -> Unit,
-    navItems: List<BottomNavItem>,
-    onNavigate: (String) -> Unit,
     viewModel: EntregaDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -75,13 +71,6 @@ fun EntregaDetailScreen(
         topBar = {
             AppTopBar(title = "Detalhe Entrega", onBackClick = onBackClick)
         },
-        bottomBar = {
-            AppBottomBar(
-                navItems = navItems,
-                currentRoute = AppScreen.EntregasList.route,
-                onItemSelected = { item -> onNavigate(item.route) }
-            )
-        }
     ) { padding ->
         if (uiState.isLoading) {
             Box(
@@ -120,22 +109,25 @@ fun EntregaDetailScreen(
                     DetailCardWrapper(title = "Beneficiário") {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
+                                contentAlignment = Alignment.Center,
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(Color.LightGray)
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Ícone de utilizador",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
                                     uiState.beneficiaryName,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
-                                )
-                                Text(
-                                    uiState.beneficiaryIdDisplay,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
                                 )
                             }
                         }

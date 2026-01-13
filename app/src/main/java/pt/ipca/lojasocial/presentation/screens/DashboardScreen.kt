@@ -63,6 +63,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import pt.ipca.lojasocial.domain.models.Delivery
 import pt.ipca.lojasocial.domain.models.DeliveryStatus
 import pt.ipca.lojasocial.domain.models.StatusType
 import pt.ipca.lojasocial.presentation.components.AppAccessCard
@@ -95,7 +96,7 @@ fun DashboardScreen(
     // Carregar dados
     val activeCount by viewModel.activeCount.collectAsState()
     val pendingDeliveriesCount by entregasViewModel.pendingCount.collectAsState()
-    val deliveries by entregasViewModel.deliveries.collectAsState()
+    val deliveries by entregasViewModel.allDeliveriesForDashboard.collectAsState()
 
     // Cor Institucional
     val accentGreen = Color(0XFF00713C)
@@ -150,9 +151,19 @@ fun DashboardScreen(
 @Composable
 fun BeneficiaryDashboard(
     userName: String,
-    deliveries: List<pt.ipca.lojasocial.domain.models.Delivery>,
+    deliveries: List<Delivery>,
     onNavigate: (String) -> Unit
 ) {
+
+    android.util.Log.d("BeneficiaryDashboard", "=== ENTREGAS RECEBIDAS ===")
+    android.util.Log.d("BeneficiaryDashboard", "Total de entregas: ${deliveries.size}")
+    deliveries.forEachIndexed { index, delivery ->
+        android.util.Log.d(
+            "BeneficiaryDashboard",
+            "Entrega #$index: id=${delivery.id}, status=${delivery.status}, data=${delivery.scheduledDate}"
+        )
+    }
+
     val accentGreen = Color(0XFF00713C)
 
     // Estado para controlar a aba selecionada: 0 = Agendadas, 1 = Histórico

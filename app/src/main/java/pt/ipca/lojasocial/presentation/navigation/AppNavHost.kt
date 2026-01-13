@@ -526,9 +526,7 @@ fun AppNavHost(
                 entregaId = entregaId,
                 userRole = userRole,
                 viewModel = viewModel,
-                onBackClick = { navController.popBackStack() },
-                navItems = emptyList(),
-                onNavigate = onNavigate
+                onBackClick = { navController.popBackStack() }
             )
         }
 
