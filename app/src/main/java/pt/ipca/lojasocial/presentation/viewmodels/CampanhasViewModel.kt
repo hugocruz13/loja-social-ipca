@@ -354,7 +354,7 @@ class CampanhasViewModel @Inject constructor(
     private fun parseDateToLong(dateStr: String): Long {
         if (dateStr.isBlank()) return 0L
         return try {
-            val sdf = java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.getDefault())
+            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
             val date = sdf.parse(dateStr) ?: return 0L
 
             val cal = Calendar.getInstance()

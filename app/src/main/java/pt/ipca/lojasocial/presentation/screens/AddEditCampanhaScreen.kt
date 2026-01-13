@@ -234,6 +234,6 @@ fun AddEditCampanhaScreen(
 fun formatLongToString(timestamp: Long): String {
     if (timestamp == 0L) return ""
     val date = Date(timestamp)
-    val sdf = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return sdf.format(date)
 }
